@@ -55,4 +55,3 @@ not a matter of restoring those stub files.
 - `transactions/{giftId}` for the original gift audit record
 - `transactions/{redemptionId}` for QRIS redemption approval
 - `cards/{cardId}` receives `gifted`, `giftId`, `giftAssetValue`, `assetCurrency`, and `assetStatus` fields
-"# eugene-card-1" 
