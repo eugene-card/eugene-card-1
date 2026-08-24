@@ -4121,6 +4121,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
     let currentLanguage = 'ID';
     let currentUser = null;
+    let currentActiveTab = 'home';
     let cart = [];
     let wishlist = new Set();
     let currentFilter = 'ALL';
@@ -8015,7 +8016,16 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       renderAuthHeader();
       startAuctionTimer();
       setupCardTiltEffect();
-      switchTab('home'); // Home is the main landing page on first open
+
+      // If we just landed back here after a Google login redirect, restore
+      // the tab the user was on instead of resetting to Home.
+      const pendingTab = sessionStorage.getItem('eugene_pending_tab');
+      if (pendingTab) {
+        sessionStorage.removeItem('eugene_pending_tab');
+        switchTab(pendingTab);
+      } else {
+        switchTab('home'); // Home is the main landing page on first open
+      }
       trackSiteVisit();
       showOnboardingIfFirstVisit();
       setupPushNotificationSystem();
@@ -8136,8 +8146,14 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
     async function loginWithGoogle() {
       try {
+        // Google OAuth here is a full-page redirect (not an actual popup), so
+        // the whole app reloads when the user comes back from Google. Stash
+        // the tab they were on so we can restore it instead of always
+        // snapping back to Home after login.
+        sessionStorage.setItem('eugene_pending_tab', currentActiveTab || 'home');
         await auth.signInWithPopup();
       } catch (error) {
+        sessionStorage.removeItem('eugene_pending_tab');
         showToast('Google Login Error: ' + error.message);
       }
     }
@@ -11279,6 +11295,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     function switchTab(tabName) {
+      currentActiveTab = tabName;
       if (tabName === 'dashboard') setTimeout(renderCollectorReputationPanel, 50);
       if (tabName === 'catalog') setTimeout(renderMarketIntelligence, 50);
       ['home', 'catalog', 'trade', 'auction', 'trade-req', 'analytics', 'revenue', 'inbox', 'holders', 'holder-vault', 'history', 'dashboard', 'gifts', 'wishlist', 'inventory', 'admin'].forEach(t => {
