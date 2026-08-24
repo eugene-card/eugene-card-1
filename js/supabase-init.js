@@ -3,152 +3,153 @@
   const URL = 'https://tsjgvzpzfjyecnginipt.supabase.co';
   const KEY = 'sb_publishable_o3oWlPh_EPj5xd0GBjDWYQ_UhVicSH3';
   const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'eugenecard.market@gmail.com'];
+
   if (!window.supabase) throw new Error('Supabase SDK missing');
 
   const sb = window.supabaseClient = window.supabase.createClient(URL, KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      flowType: 'pkce'
+    }
   });
+
   window.isUserAdmin = email => ADMIN_EMAILS.includes(String(email || '').trim().toLowerCase());
   window.EUGENE_ADMIN_EMAIL = ADMIN_EMAILS[0];
 
-  const toLegacyAuthUser = user => {
+  function normalizeAuthUser(user) {
     if (!user) return null;
-    const metadata = user.user_metadata || {};
+    const m = user.user_metadata || {};
     return {
       ...user,
       uid: user.id,
-      displayName: metadata.full_name || metadata.name || user.email || '',
-      photoURL: metadata.avatar_url || metadata.picture || null,
+      displayName: m.full_name || m.name || user.email || '',
+      photoURL: m.avatar_url || m.picture || null,
       emailVerified: !!user.email_confirmed_at,
-      providerData: user.identities || []
+      providerData: user.identities || [],
+      isAdmin: window.isUserAdmin(user.email)
     };
-  };
+  }
 
-  const originalGetSession = sb.auth.getSession.bind(sb.auth);
-  sb.auth.getSession = async (...args) => {
-    const result = await originalGetSession(...args);
-    if (result?.data?.session?.user) result.data.session.user = toLegacyAuthUser(result.data.session.user);
-    return result;
-  };
-
-  const originalOnAuthStateChange = sb.auth.onAuthStateChange.bind(sb.auth);
-  sb.auth.onAuthStateChange = callback => originalOnAuthStateChange((event, session) => {
-    callback(event, session ? { ...session, user: toLegacyAuthUser(session.user) } : null);
-  });
-
-  const normalize = r => r ? ({
-    ...r,
-    name: r.name ?? r.display_name ?? '',
-    display_name: r.display_name ?? r.name ?? '',
-    avatarUrl: r.avatarUrl ?? r.avatar_url ?? '',
-    isPlusMember: r.isPlusMember ?? r.is_plus_member ?? false,
-    socialIg: r.socialIg ?? r.social_ig ?? '',
-    socialTwitter: r.socialTwitter ?? r.social_twitter ?? '',
-    socialTiktok: r.socialTiktok ?? r.social_tiktok ?? '',
-    socialWeb: r.socialWeb ?? r.social_web ?? '',
-    profileCompleted: r.profileCompleted ?? r.profile_completed ?? false,
-    isAdmin: r.isAdmin ?? r.role === 'admin'
-  }) : null;
+  function normalizeProfile(row) {
+    if (!row) return null;
+    return {
+      ...row,
+      name: row.name ?? row.display_name ?? '',
+      display_name: row.display_name ?? row.name ?? '',
+      avatarUrl: row.avatarUrl ?? row.avatar_url ?? '',
+      isPlusMember: row.isPlusMember ?? row.is_plus_member ?? false,
+      socialIg: row.socialIg ?? row.social_ig ?? '',
+      socialTwitter: row.socialTwitter ?? row.social_twitter ?? '',
+      socialTiktok: row.socialTiktok ?? row.social_tiktok ?? '',
+      socialWeb: row.socialWeb ?? row.social_web ?? '',
+      profileCompleted: row.profileCompleted ?? row.profile_completed ?? false,
+      isAdmin: row.isAdmin ?? row.role === 'admin'
+    };
+  }
 
   async function ensureSupabaseProfile(user) {
     if (!user) return null;
-    const email = String(user.email || '').toLowerCase().trim();
-    let { data: p } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
-    if (!p) {
-      const { data: legacy } = await sb.from('legacy_profiles').select('*').eq('email', email).maybeSingle();
-      const m = legacy || {};
-      const name = m.display_name || user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0];
+    const email = String(user.email || '').trim().toLowerCase();
+    let { data: profile, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    if (error) {
+      console.warn('Supabase profile read:', error);
+      return null;
+    }
+
+    if (!profile) {
+      const metadata = user.user_metadata || {};
+      const name = metadata.full_name || metadata.name || email.split('@')[0];
       const row = {
         id: user.id,
-        username: m.username || name.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, ''),
+        username: name.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, ''),
         display_name: name,
-        avatar_url: m.avatar_url || user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(email)}`,
-        bio: m.bio || '',
+        avatar_url: metadata.avatar_url || metadata.picture || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(email)}`,
+        bio: '',
         role: window.isUserAdmin(email) ? 'admin' : 'user',
-        is_plus_member: !!m.is_plus_member,
-        social_ig: m.social_ig || '',
-        social_twitter: m.social_twitter || '',
-        social_tiktok: m.social_tiktok || '',
-        social_web: m.social_web || '',
-        profile_completed: !!m.profile_completed,
+        is_plus_member: false,
+        social_ig: '',
+        social_twitter: '',
+        social_tiktok: '',
+        social_web: '',
+        profile_completed: false,
         updated_at: new Date().toISOString()
       };
       const created = await sb.from('profiles').upsert(row, { onConflict: 'id' }).select().single();
-      p = created.data || row;
-    } else if (window.isUserAdmin(email) && p.role !== 'admin') {
+      profile = created.data || row;
+    } else if (window.isUserAdmin(email) && profile.role !== 'admin') {
       const updated = await sb.from('profiles').update({ role: 'admin', updated_at: new Date().toISOString() }).eq('id', user.id).select().single();
-      p = updated.data || { ...p, role: 'admin' };
+      profile = updated.data || { ...profile, role: 'admin' };
     }
-    return normalize(p);
+    return normalizeProfile(profile);
   }
+
   window.ensureSupabaseProfile = ensureSupabaseProfile;
 
-  const syncLegacyCurrentUser = user => {
-    const legacyUser = user ? toLegacyAuthUser(user) : null;
-    if (window.auth) window.auth.currentUser = legacyUser;
-    window.currentUser = legacyUser;
-    if (legacyUser) ensureSupabaseProfile(legacyUser).catch(err => console.warn('Profile bootstrap:', err));
-  };
+  // Keep the existing index.html/UI untouched. This bridge only mirrors the
+  // real Supabase session into the user object expected by the existing UI.
+  function syncCurrentUser(user) {
+    const normalized = normalizeAuthUser(user);
+    window.currentUser = normalized;
+    if (window.auth) window.auth.currentUser = normalized;
+    if (normalized) ensureSupabaseProfile(normalized).catch(err => console.warn('Profile bootstrap:', err));
+    return normalized;
+  }
 
-  const syncExistingSession = async () => {
-    try {
-      const { data } = await originalGetSession();
-      syncLegacyCurrentUser(data?.session?.user || null);
-    } catch (err) {
-      console.warn('Session bootstrap:', err);
+  // Bootstrap an already-authenticated browser session as soon as the app loads.
+  sb.auth.getSession().then(({ data, error }) => {
+    if (error) console.warn('Supabase session:', error);
+    syncCurrentUser(data?.session?.user || null);
+  }).catch(err => console.warn('Supabase session bootstrap:', err));
+
+  // Do not monkey-patch Supabase Auth methods. The compatibility layer owns the
+  // existing app's auth callback and calls this bridge through the real session.
+  sb.auth.onAuthStateChange((_event, session) => {
+    const user = syncCurrentUser(session?.user || null);
+    // Let the existing header render after the session has been committed.
+    setTimeout(() => {
+      if (typeof window.renderAuthHeader === 'function') window.renderAuthHeader();
+    }, 0);
+    if (user) setTimeout(() => ensureSupabaseProfile(user), 0);
+  });
+
+  // Wait for the compatibility layer to create window.auth, then keep its
+  // currentUser in sync without replacing any of its existing behavior.
+  let attempts = 0;
+  const syncCompat = () => {
+    if (window.auth) {
+      if (window.currentUser) window.auth.currentUser = window.currentUser;
+      return;
     }
+    if (++attempts < 100) setTimeout(syncCompat, 25);
   };
+  syncCompat();
 
-  const bridgeAuthListener = () => {
-    if (!window.auth || window.auth.__supabaseBridgeInstalled) return !!window.auth;
-    const original = window.auth.onAuthStateChanged;
-    if (typeof original !== 'function') return false;
-    window.auth.onAuthStateChanged = callback => original(user => {
-      const normalized = user ? toLegacyAuthUser(user) : null;
-      syncLegacyCurrentUser(normalized);
-      callback(normalized);
-    });
-    window.auth.__supabaseBridgeInstalled = true;
-    if (window.auth.currentUser) syncLegacyCurrentUser(window.auth.currentUser);
-    return true;
-  };
-
-  let bridgeAttempts = 0;
-  const installBridge = () => {
-    if (bridgeAuthListener() || ++bridgeAttempts >= 50) return;
-    setTimeout(installBridge, 50);
-  };
-  installBridge();
-
+  // Existing profile customization button: only relabel it when the user is
+  // logged in; no new feature or route is introduced here.
   const enhanceProfileButton = () => {
     const container = document.getElementById('auth-header-container');
     if (!container || !window.currentUser) return;
-    if (container.querySelector('[data-profile-customize-label]')) return;
-    const editButton = container.querySelector('button[aria-label="Edit Profile"]');
-    if (!editButton) return;
-    editButton.classList.remove('p-2');
-    editButton.classList.add('px-2.5', 'py-2');
-    editButton.innerHTML = '<i class="fa-solid fa-user-pen text-xs mr-1.5"></i><span data-profile-customize-label>Customize</span>';
-    editButton.title = 'Customize Profile';
-    editButton.setAttribute('aria-label', 'Customize Profile');
+    const button = container.querySelector('button[aria-label="Edit Profile"]');
+    if (!button || button.querySelector('[data-profile-customize-label]')) return;
+    button.classList.remove('p-2');
+    button.classList.add('px-2.5', 'py-2');
+    button.innerHTML = '<i class="fa-solid fa-user-pen text-xs mr-1.5"></i><span data-profile-customize-label>Customize</span>';
+    button.title = 'Customize Profile';
+    button.setAttribute('aria-label', 'Customize Profile');
   };
 
-  const watchProfileHeader = () => {
-    enhanceProfileButton();
+  const observeHeader = () => {
     const container = document.getElementById('auth-header-container');
     if (!container || container.__profileEnhancer) return;
     container.__profileEnhancer = true;
-    new MutationObserver(() => enhanceProfileButton()).observe(container, { childList: true, subtree: true });
+    new MutationObserver(enhanceProfileButton).observe(container, { childList: true, subtree: true });
+    enhanceProfileButton();
   };
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchProfileHeader);
-  else watchProfileHeader();
-  setTimeout(watchProfileHeader, 1000);
-  setTimeout(watchProfileHeader, 2500);
-
-  setTimeout(syncExistingSession, 0);
-  originalOnAuthStateChange((_event, session) => {
-    syncLegacyCurrentUser(session?.user || null);
-    setTimeout(watchProfileHeader, 50);
-  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', observeHeader);
+  else observeHeader();
+  setTimeout(observeHeader, 500);
+  setTimeout(observeHeader, 1500);
 })();
