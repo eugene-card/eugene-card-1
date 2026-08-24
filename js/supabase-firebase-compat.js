@@ -9,18 +9,7 @@
   const sb = window.supabaseClient;
   if (!sb) throw new Error('Supabase client is not initialized.');
 
-  // BUGFIX (admin recognition): was 'eugeneaquila06@gmail.com' (missing the
-  // dot in "eugene.aquila06"), so it never matched the real admin account
-  // used everywhere else (index.html/revenue.html/admin-command-center.html/
-  // analytics.html all use ADMIN_EMAILS with the dotted address, plus a
-  // second admin 'yujinybwork@gmail.com' this file was missing entirely).
-  // isAdminEmail() below decides the `role` column written to the "profiles"
-  // table on every login/profile save, and phase8.sql's RLS policies gate
-  // real admin reads/writes on `profiles.role = 'admin'` — so the typo meant
-  // the admin account's row in Postgres never actually got marked admin,
-  // even though the client-side UI (which checks its own separate list)
-  // still showed the Admin Hub.
-  const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'yujinybwork@gmail.com'];
+  const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'eugenecard.market@gmail.com'];
   const tableMap = {
     profiles: 'profiles', cards: 'cards', user_cards: 'user_cards',
     listings: 'listings', transactions: 'transactions',
@@ -36,10 +25,23 @@
     'chat_messages','notifications','posts'
   ]);
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-  const isAdminEmail = (email) => ADMIN_EMAILS.includes(String(email || '').toLowerCase().trim());
+  const isAdminEmail = email => ADMIN_EMAILS.includes(String(email || '').toLowerCase().trim());
   const meta = row => row && row.metadata && typeof row.metadata === 'object' ? row.metadata : {};
   const wrap = (row, id) => ({ id: id ?? row?.id, data: () => ({ ...(row || {}) }), exists: !!row });
+
+  function normalizeAuthUser(user) {
+    if (!user) return null;
+    const m = user.user_metadata || {};
+    return {
+      ...user,
+      uid: user.id,
+      displayName: m.full_name || m.name || user.email || '',
+      photoURL: m.avatar_url || m.picture || null,
+      emailVerified: !!user.email_confirmed_at,
+      providerData: user.identities || [],
+      isAdmin: isAdminEmail(user.email)
+    };
+  }
 
   function normalizeProfile(row) {
     if (!row) return row;
@@ -179,18 +181,12 @@
               };
             } else if (name === 'cards') {
               row = {
-                id: merged.id || id,
-                name: merged.name || 'Eugene Card',
+                id: merged.id || id, name: merged.name || 'Eugene Card',
                 description: merged.description ?? null,
                 image_url: merged.imgUrl ?? merged.image_url ?? null,
                 asset_value: Number(merged.price ?? merged.asset_value ?? 0),
                 status: merged.status || 'active',
-                metadata: {
-                  ...meta(existing || {}), ...meta(merged), serial: merged.serial, sn: merged.sn,
-                  type: merged.type, edition: merged.edition, tier: merged.tier, printing: merged.printing,
-                  owner: merged.owner, imgUrl: merged.imgUrl, price: Number(merged.price ?? merged.asset_value ?? 0),
-                  baseFloorPrice: merged.baseFloorPrice
-                },
+                metadata: { ...meta(existing || {}), ...meta(merged), serial: merged.serial, sn: merged.sn, type: merged.type, edition: merged.edition, tier: merged.tier, printing: merged.printing, owner: merged.owner, imgUrl: merged.imgUrl, price: Number(merged.price ?? merged.asset_value ?? 0), baseFloorPrice: merged.baseFloorPrice },
                 updated_at: new Date().toISOString()
               };
             } else if (name === 'listings') {
@@ -245,8 +241,7 @@
         };
         tick();
         const table = tableMap[name] || name;
-        const channel = sb.channel('eugene-' + name + '-' + Math.random().toString(36).slice(2))
-          .on('postgres_changes', { event: '*', schema: 'public', table }, tick).subscribe();
+        const channel = sb.channel('eugene-' + name + '-' + Math.random().toString(36).slice(2)).on('postgres_changes', { event: '*', schema: 'public', table }, tick).subscribe();
         const timer = setInterval(tick, 10000);
         return () => { active = false; clearInterval(timer); sb.removeChannel(channel); };
       }
@@ -258,27 +253,25 @@
     collection(name) { return collection(name); },
     batch() {
       const ops = [];
-      return {
-        set(ref, payload, opts) { ops.push(() => ref.set(payload, opts)); },
-        update(ref, payload) { ops.push(() => ref.update(payload)); },
-        delete(ref) { ops.push(() => ref.delete()); },
-        async commit() { for (const op of ops) await op(); }
-      };
+      return { set(ref, payload, opts) { ops.push(() => ref.set(payload, opts)); }, update(ref, payload) { ops.push(() => ref.update(payload)); }, delete(ref) { ops.push(() => ref.delete()); }, async commit() { for (const op of ops) await op(); } };
     }
   };
 
   const auth = {
     onAuthStateChanged(callback) {
-      sb.auth.getSession().then(({ data }) => callback(data?.session?.user || null));
-      const { data } = sb.auth.onAuthStateChange((_event, session) => callback(session?.user || null));
+      const emit = user => {
+        const normalized = normalizeAuthUser(user);
+        auth.currentUser = normalized;
+        window.currentUser = normalized;
+        callback(normalized);
+      };
+      sb.auth.getSession().then(({ data }) => emit(data?.session?.user || null)).catch(() => emit(null));
+      const { data } = sb.auth.onAuthStateChange((_event, session) => emit(session?.user || null));
       return () => data.subscription.unsubscribe();
     },
     async signInWithPopup() {
       const redirectTo = `${window.location.origin}${window.location.pathname}`;
-      const { error } = await sb.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo, queryParams: { access_type: 'offline', prompt: 'select_account' } }
-      });
+      const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, queryParams: { access_type: 'offline', prompt: 'select_account' } } });
       if (error) throw error;
     },
     async signOut() {
@@ -293,7 +286,7 @@
   const arrayUnion = (...values) => ({ __op: 'arrayUnion', values });
   const arrayRemove = (...values) => ({ __op: 'arrayRemove', values });
 
-  // Small compatibility surface for old UI helpers; no Firebase SDK is loaded.
+  // Compatibility names only; there is no Firebase SDK or Firestore transport.
   window.db = db;
   window.auth = auth;
   window.firebase = { firestore: { FieldValue: { serverTimestamp, increment, arrayUnion, arrayRemove } } };
