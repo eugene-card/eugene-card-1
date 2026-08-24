@@ -99,10 +99,6 @@
     }
   };
 
-  // The UI compatibility layer is loaded immediately after this file. Once it
-  // exists, wrap its auth listener so every callback receives the same
-  // Firebase-shaped user object that the existing UI expects. The backend is
-  // still 100% Supabase; this is only a local object-shape adapter.
   const bridgeAuthListener = () => {
     if (!window.auth || window.auth.__supabaseBridgeInstalled) return !!window.auth;
     const original = window.auth.onAuthStateChanged;
@@ -124,8 +120,39 @@
   };
   installBridge();
 
+  // Add a small profile-customization affordance to the authenticated header.
+  // The existing header already has an avatar/edit icon; this makes the action
+  // explicit and gives logged-in users a single place to customize their name,
+  // username, avatar, bio and social links. It never appears for guests.
+  const enhanceProfileButton = () => {
+    const container = document.getElementById('auth-header-container');
+    if (!container || !window.currentUser) return;
+    if (container.querySelector('[data-profile-customize-label]')) return;
+    const editButton = container.querySelector('button[aria-label="Edit Profile"]');
+    if (!editButton) return;
+    editButton.classList.remove('p-2');
+    editButton.classList.add('px-2.5', 'py-2');
+    editButton.innerHTML = '<i class="fa-solid fa-user-pen text-xs mr-1.5"></i><span data-profile-customize-label>Customize</span>';
+    editButton.title = 'Customize Profile';
+    editButton.setAttribute('aria-label', 'Customize Profile');
+  };
+
+  const watchProfileHeader = () => {
+    enhanceProfileButton();
+    const container = document.getElementById('auth-header-container');
+    if (!container || container.__profileEnhancer) return;
+    container.__profileEnhancer = true;
+    new MutationObserver(() => enhanceProfileButton()).observe(container, { childList: true, subtree: true });
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchProfileHeader);
+  else watchProfileHeader();
+  setTimeout(watchProfileHeader, 1000);
+  setTimeout(watchProfileHeader, 2500);
+
   setTimeout(syncExistingSession, 0);
   originalOnAuthStateChange((_event, session) => {
     syncLegacyCurrentUser(session?.user || null);
+    setTimeout(watchProfileHeader, 50);
   });
 })();
