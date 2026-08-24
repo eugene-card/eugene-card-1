@@ -1,0 +1,36 @@
+name: Standardize Supabase pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '*.html'
+      - 'scripts/standardize-supabase-pages.py'
+      - 'js/supabase-config.js'
+      - '.github/workflows/standardize-supabase-pages.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  standardize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Standardize Supabase configuration
+        run: python scripts/standardize-supabase-pages.py
+
+      - name: Commit normalized pages
+        run: |
+          if git diff --quiet; then
+            echo 'All HTML pages already use the canonical Supabase configuration.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add '*.html'
+          git commit -m 'Normalize HTML pages to canonical Supabase project'
+          git push
