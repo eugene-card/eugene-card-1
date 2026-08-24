@@ -1,57 +1,23 @@
-# Eugene Card — Marketplace CSS Package
+# Eugene Card — Phase 9 E2E Verification / Supabase Cutover Update
 
-`index.html` (and the sibling `analytics.html`, `admin-command-center.html`,
-`revenue.html`) are self-contained pages: all application logic lives in a
-single inline `<script>` block at the bottom of each file, and page layout
-comes from Tailwind (loaded via CDN). `assets/css/main.css` supplies exactly
-the things Tailwind can't — see below.
+This is the Phase 9 update of the Eugene Card Firebase → Supabase migration.
 
-## What's in assets/css/
+## Included
+- `index(9).html` — current Eugene Card frontend
+- `js/supabase-init.js` — Supabase client bootstrap
+- `js/supabase-firebase-compat.js` — Phase 9 schema-aware compatibility bridge; no Firebase SDK/network calls
+- `phase8.sql` — additive schema/policies from Phase 8
+- `PHASE9-VERIFICATION.md` — verification checklist and status
+- `phase9-smoke-test.js` — static smoke test
 
-- **core/** — design tokens (`variables.css`) and a minimal reset
-  (`reset.css`).
-- **layout/** — global page chrome: scrollbar styling, skeleton-loading
-  animation.
-- **components/** — the actual visual system used across the page:
-  - `card.css` — the holographic PREMIUM/STANDARD card shells
-    (`.card-holo-premium`, `.foil-sweep`, `.rarity-ribbon`, `.serial-engraved`,
-    etc.) used in the catalog, vault, trending row, and auction views.
-  - `widget.css` — collector level ring (`.level-ring`), XP/collection
-    progress bars (`.progress-track`/`.progress-fill`), market-profile stat
-    tiles (`.mp-stat`), and achievement badges (`.badge-chip` + variants).
-  - `modal.css`, `button.css`, `table.css`, `navigation.css` — small global
-    polish (modal open transition, focus-visible rings, table/nav styling)
-    that Tailwind's CDN build doesn't provide out of the box.
-- **pages/** — page-specific overrides. Most are intentionally near-empty
-  with a comment explaining why (the shared components already cover them).
-- **themes/** — reserved for a future light/alt theme; the app currently
-  ships dark-only via Tailwind's `darkMode:'class'`.
-- **utilities/** — a few small helper classes (`.ec-hidden`,
-  `.ec-scrollbar-hide`) and a narrow-viewport padding fix.
+## Phase 9 fixes
+- Maps legacy profile email document IDs to the authenticated Supabase UUID.
+- Maps legacy card fields (`serial`, `imgUrl`, `price`, `edition`, etc.) into the real `cards` PostgreSQL schema and preserves legacy fields in `metadata`.
+- Maps legacy listing IDs/payloads into the real `listings` schema.
+- Maps legacy transaction IDs/payloads into the real `transactions` schema and preserves the original order reference in `metadata.legacy_id`.
+- Resolves legacy listing/transaction IDs through metadata when they are not UUIDs.
+- Keeps the existing UI's Firestore-shaped API while all persistence remains Supabase.
+- Hardened `trade_requests` RLS in the live Supabase project so authenticated users can only create/update/delete requests they participate in (or admin requests).
 
-Every selector in this package is referenced somewhere in the HTML — use
-`main.css` as the single entry point; nothing here is dead scaffolding.
-
-## Note on JS
-
-An earlier version of this package also shipped an `assets/js/` module tree
-(`core/router.js`, `modules/cards.js`, etc.). It was never imported by any
-page — all real logic already lives inline in each HTML file — so it was
-unused dead code and has been removed. If you want to actually modularize
-the inline script, that's a real (larger) refactor of `index.html` itself,
-not a matter of restoring those stub files.
-
-
-## Yujin Client Gifts
-- Admins can gift an available card from the Admin Hub.
-- Every gift has a separate `assetValue` in IDR and `assetCurrency: IDR`.
-- Gift records live in Firestore collection `clientGifts`.
-- Client redemption creates a `transactions` record with `type: REDEMPTION` and status `PENDING`.
-- Admin approval marks the gift `REDEEMED` and the card asset as redeemed.
-- Gift and redemption fees are 0%.
-
-### Firestore collections used
-- `clientGifts/{giftId}`
-- `transactions/{giftId}` for the original gift audit record
-- `transactions/{redemptionId}` for QRIS redemption approval
-- `cards/{cardId}` receives `gifted`, `giftId`, `giftAssetValue`, `assetCurrency`, and `assetStatus` fields
+## Verification
+Static smoke test passes. A live authenticated browser test is still required to claim full E2E PASS for Google login, chat, trading, auction, and transaction flows.
