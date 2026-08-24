@@ -8105,7 +8105,8 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
               <span class="text-xs font-black text-white leading-tight">${currentUser.name}</span>
               <span class="text-[9px] font-bold ${badgeColor} font-mono">${badgeText}</span>
             </div>
-            <button onclick="event.stopPropagation(); logoutUser();" class="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg ml-1 transition-all"><i class="fa-solid fa-right-from-bracket text-xs"></i></button>
+            <button type="button" title="Edit Profile" aria-label="Edit Profile" onclick="event.stopPropagation(); openProfileManagerModal();" class="p-2 bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 rounded-lg ml-1 transition-all"><i class="fa-solid fa-user-pen text-xs"></i></button>
+            <button type="button" title="Log Out" aria-label="Log Out" onclick="event.stopPropagation(); logoutUser();" class="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg ml-1 transition-all"><i class="fa-solid fa-right-from-bracket text-xs"></i></button>
           </div>
         `;
       } else {
@@ -8117,6 +8118,16 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       renderAuctionView();
       refreshHomeComposerState();
     }
+
+    // Auth header fallback: render immediately so the Login control is never
+    // blank while the async Supabase session/bootstrap work is running.
+    document.addEventListener('DOMContentLoaded', () => {
+      const c = document.getElementById('auth-header-container');
+      if (c && !c.innerHTML.trim()) {
+        c.innerHTML = '<button type="button" onclick="openAuthModal()" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl transition-all">Log In</button>';
+      }
+      if (typeof renderAuthHeader === 'function') renderAuthHeader();
+    });
 
     function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
     function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }

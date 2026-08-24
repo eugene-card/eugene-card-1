@@ -1,7 +1,7 @@
 /* Eugene Card — Supabase-only auth/profile bootstrap */
 (function () {
-  const URL = 'https://kbxqmgdnzxwshyzasssr.supabase.co';
-  const KEY = 'sb_publishable__tPM9ty9ELyh3X70Hl1S-Q_7hWvPe2R';
+  const URL = 'https://tsjgvzpzfjyecnginipt.supabase.co';
+  const KEY = 'sb_publishable_o3oWlPh_EPj5xd0GBjDWYQ_UhVicSH3';
   // BUGFIX (admin recognition): this was 'eugeneaquila06@gmail.com' — missing
   // the dot in "eugene.aquila06" — so it never matched the real admin account
   // used everywhere else in the app (index.html's ADMIN_EMAILS, revenue.html,
