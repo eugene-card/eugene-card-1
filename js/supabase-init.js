@@ -11,9 +11,6 @@
   window.isUserAdmin = email => ADMIN_EMAILS.includes(String(email || '').trim().toLowerCase());
   window.EUGENE_ADMIN_EMAIL = ADMIN_EMAILS[0];
 
-  // The main UI uses the Firebase-style user shape (uid/photoURL/displayName),
-  // while Supabase supplies id/user_metadata. Normalize both getSession() and
-  // auth-state events before the compatibility layer receives them.
   const toLegacyAuthUser = user => {
     if (!user) return null;
     const metadata = user.user_metadata || {};
@@ -30,9 +27,7 @@
   const originalGetSession = sb.auth.getSession.bind(sb.auth);
   sb.auth.getSession = async (...args) => {
     const result = await originalGetSession(...args);
-    if (result?.data?.session?.user) {
-      result.data.session.user = toLegacyAuthUser(result.data.session.user);
-    }
+    if (result?.data?.session?.user) result.data.session.user = toLegacyAuthUser(result.data.session.user);
     return result;
   };
 
@@ -88,10 +83,6 @@
   }
   window.ensureSupabaseProfile = ensureSupabaseProfile;
 
-  // Bridge Supabase's real session into the legacy UI's window.auth.currentUser.
-  // The compatibility layer exposes window.auth, but its currentUser property
-  // was previously left at null forever, so the header could keep showing
-  // "Log In" even though Supabase had a valid session.
   const syncLegacyCurrentUser = user => {
     const legacyUser = user ? toLegacyAuthUser(user) : null;
     if (window.auth) window.auth.currentUser = legacyUser;
@@ -107,6 +98,32 @@
       console.warn('Session bootstrap:', err);
     }
   };
+
+  // The UI compatibility layer is loaded immediately after this file. Once it
+  // exists, wrap its auth listener so every callback receives the same
+  // Firebase-shaped user object that the existing UI expects. The backend is
+  // still 100% Supabase; this is only a local object-shape adapter.
+  const bridgeAuthListener = () => {
+    if (!window.auth || window.auth.__supabaseBridgeInstalled) return !!window.auth;
+    const original = window.auth.onAuthStateChanged;
+    if (typeof original !== 'function') return false;
+    window.auth.onAuthStateChanged = callback => original(user => {
+      const normalized = user ? toLegacyAuthUser(user) : null;
+      syncLegacyCurrentUser(normalized);
+      callback(normalized);
+    });
+    window.auth.__supabaseBridgeInstalled = true;
+    if (window.auth.currentUser) syncLegacyCurrentUser(window.auth.currentUser);
+    return true;
+  };
+
+  let bridgeAttempts = 0;
+  const installBridge = () => {
+    if (bridgeAuthListener() || ++bridgeAttempts >= 50) return;
+    setTimeout(installBridge, 50);
+  };
+  installBridge();
+
   setTimeout(syncExistingSession, 0);
   originalOnAuthStateChange((_event, session) => {
     syncLegacyCurrentUser(session?.user || null);
