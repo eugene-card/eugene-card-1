@@ -46,11 +46,11 @@
     <div class="glass rounded-3xl p-6 mb-5">
       <h2 class="text-xl font-black mb-4"><i class="fa-solid fa-database text-violet-400 mr-2"></i>Database Tools</h2>
       <div class="flex flex-wrap gap-3">
-        <button onclick="exportFirebaseInventory()" class="px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold text-sm transition inline-flex items-center">
-          <i class="fa-solid fa-download mr-2 text-amber-400"></i> Export Inventory Backup
+        <button onclick="exportSupabaseInventory()" class="px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold text-sm transition inline-flex items-center">
+          <i class="fa-solid fa-download mr-2 text-amber-400"></i> Export Supabase Inventory Backup
         </button>
         <button onclick="triggerQuickSync()" class="px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 font-bold text-sm transition inline-flex items-center">
-          <i class="fa-solid fa-rotate mr-2"></i> Sync Realtime Database
+          <i class="fa-solid fa-rotate mr-2"></i> Sync Supabase Realtime
         </button>
       </div>
     </div>
@@ -131,10 +131,10 @@
     </section>
   </div>
 
-  <!-- Supabase Firestore-compat adapter: routes legacy collection calls to Phase 2 tables while UI migration is completed. -->
+  <!-- Supabase compatibility adapter: routes legacy collection calls to Phase 2 tables while UI migration is completed. -->
   <script>
   (function(){
-    // Firebase Initialization (matches index.html config)
+    // Supabase Initialization (uses the shared Supabase project configuration)
     const SUPABASE_URL = "https://tsjgvzpzfjyecnginipt.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_o3oWlPh_EPj5xd0GBjDWYQ_UhVicSH3";
     const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
@@ -154,7 +154,7 @@
         return () => data.subscription.unsubscribe();
       },
       async signInWithPopup() {
-        const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+        const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
         if (error) throw error;
       },
       async signOut() {
@@ -199,7 +199,7 @@
       window.location.href = `index.html?tab=${tabName}`;
     }
 
-    async function exportFirebaseInventory() {
+    async function exportSupabaseInventory() {
       try {
         const snapshot = await db.collection("cards").get();
         const cards = [];

@@ -293,7 +293,7 @@ body{background:radial-gradient(circle at 12% 0%,rgba(99,102,241,.12),transparen
     Eugene Card Marketplace Analytics &copy; 2026
   </footer>
 
-  <!-- Supabase Firestore-compat adapter: routes legacy collection calls to Phase 2 tables while UI migration is completed. -->
+  <!-- Supabase compatibility adapter: routes legacy collection calls to Phase 2 tables while UI migration is completed. -->
   <script>
   (function(){
     const SUPABASE_URL = "https://tsjgvzpzfjyecnginipt.supabase.co";
@@ -314,7 +314,7 @@ body{background:radial-gradient(circle at 12% 0%,rgba(99,102,241,.12),transparen
         return () => data.subscription.unsubscribe();
       },
       async signInWithPopup() {
-        const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+        const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
         if (error) throw error;
       },
       async signOut() {
