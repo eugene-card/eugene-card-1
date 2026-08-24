@@ -11,6 +11,38 @@
   window.isUserAdmin = email => ADMIN_EMAILS.includes(String(email || '').trim().toLowerCase());
   window.EUGENE_ADMIN_EMAIL = ADMIN_EMAILS[0];
 
+  // The main UI uses the Firebase-style user shape (uid/photoURL/displayName),
+  // while Supabase supplies id/user_metadata. Normalize both getSession() and
+  // auth-state events before the compatibility layer receives them. Without
+  // this, OAuth succeeds but the UI can remain in its Guest state after the
+  // redirect because the legacy auth code never receives a usable uid.
+  const toLegacyAuthUser = user => {
+    if (!user) return null;
+    const metadata = user.user_metadata || {};
+    return {
+      ...user,
+      uid: user.id,
+      displayName: metadata.full_name || metadata.name || user.email || '',
+      photoURL: metadata.avatar_url || metadata.picture || null,
+      emailVerified: !!user.email_confirmed_at,
+      providerData: user.identities || []
+    };
+  };
+
+  const originalGetSession = sb.auth.getSession.bind(sb.auth);
+  sb.auth.getSession = async (...args) => {
+    const result = await originalGetSession(...args);
+    if (result?.data?.session?.user) {
+      result.data.session.user = toLegacyAuthUser(result.data.session.user);
+    }
+    return result;
+  };
+
+  const originalOnAuthStateChange = sb.auth.onAuthStateChange.bind(sb.auth);
+  sb.auth.onAuthStateChange = callback => originalOnAuthStateChange((event, session) => {
+    callback(event, session ? { ...session, user: toLegacyAuthUser(session.user) } : null);
+  });
+
   const normalize = r => r ? ({
     ...r,
     name: r.name ?? r.display_name ?? '',
