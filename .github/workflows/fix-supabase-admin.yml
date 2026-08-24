@@ -1,0 +1,54 @@
+name: Fix Supabase admin pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch admin pages
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          files = [Path('admin-command-center.html'), Path('analytics.html'), Path('revenue.html')]
+          for p in files:
+              if not p.exists():
+                  continue
+              s = p.read_text(encoding='utf-8')
+              # Keep the existing functionality but make the terminology Supabase-native.
+              replacements = {
+                  'exportFirebaseInventory': 'exportSupabaseInventory',
+                  'Export Inventory Backup': 'Export Supabase Inventory Backup',
+                  'Sync Realtime Database': 'Sync Supabase Realtime',
+                  'Supabase Firestore-compat adapter': 'Supabase compatibility adapter',
+                  'Firebase Initialization': 'Supabase Initialization',
+                  'matches index.html config': 'uses the shared Supabase project configuration',
+              }
+              for a,b in replacements.items():
+                  s = s.replace(a,b)
+              # OAuth must return to the exact page that initiated it, not the site root.
+              s = s.replace("redirectTo: window.location.origin", "redirectTo: window.location.href")
+              p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit and push patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add admin-command-center.html analytics.html revenue.html
+          if git diff --cached --quiet; then
+            echo 'No changes needed'
+            exit 0
+          fi
+          git commit -m 'Fix admin Supabase routing and legacy labels'
+          git push
