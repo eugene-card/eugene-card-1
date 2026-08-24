@@ -44,6 +44,68 @@
 
   window.ensureSupabaseProfile = ensureSupabaseProfile;
 
+  async function syncFromServer(reason = 'manual') {
+    try {
+      const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+      if (sessionError) throw sessionError;
+      const user = sessionData?.session?.user || null;
+      const normalized = normalizeAuthUser(user);
+      window.currentUser = normalized;
+      if (window.auth) window.auth.currentUser = normalized;
+      if (normalized) {
+        const profile = await ensureSupabaseProfile(normalized);
+        // Keep the profile fields that the existing UI reads synchronized with
+        // the server copy. Never overwrite server data with device-local data.
+        if (profile) {
+          normalized.profile = profile;
+          normalized.name = profile.name || normalized.displayName;
+          normalized.displayName = profile.name || normalized.displayName;
+          normalized.username = profile.username || '';
+          normalized.avatarUrl = profile.avatarUrl || normalized.photoURL || '';
+          normalized.bio = profile.bio || '';
+          normalized.isPlusMember = !!profile.isPlusMember;
+          normalized.isAdmin = !!profile.isAdmin || window.isUserAdmin(normalized.email);
+          window.currentUser = normalized;
+          if (window.auth) window.auth.currentUser = normalized;
+        }
+      }
+      window.dispatchEvent(new CustomEvent('eugene-card-sync', { detail: { reason, user: normalized } }));
+      if (typeof window.renderAuthHeader === 'function') window.renderAuthHeader();
+      return normalized;
+    } catch (err) {
+      console.warn('Eugene Card server sync failed:', err);
+      return window.currentUser || null;
+    }
+  }
+
+  window.syncEugeneCardFromServer = syncFromServer;
+
+  // Supabase Auth sessions are server-backed, while profile/marketplace data
+  // lives in Postgres. These hooks make every device re-read the authoritative
+  // server state when it becomes active instead of relying on stale page state.
+  const syncWhenActive = () => syncFromServer('device-active');
+  window.addEventListener('focus', syncWhenActive);
+  window.addEventListener('online', syncWhenActive);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) syncWhenActive(); });
+  window.addEventListener('pageshow', syncWhenActive);
+  setInterval(() => { if (!document.hidden) syncFromServer('periodic'); }, 15000);
+
+  // Realtime is used when the Supabase project has replication enabled. The
+  // periodic/focus sync above remains the fallback, so data still converges if
+  // a table is not yet published to Realtime.
+  let realtimeChannel;
+  const startRealtime = () => {
+    if (realtimeChannel) sb.removeChannel(realtimeChannel);
+    realtimeChannel = sb.channel('eugene-card-cross-device-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => syncFromServer('realtime-profile'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => window.dispatchEvent(new Event('eugene-card-sync')))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => window.dispatchEvent(new Event('eugene-card-sync')))
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED') window.dispatchEvent(new Event('eugene-card-realtime-ready'));
+      });
+  };
+  setTimeout(startRealtime, 1000);
+
   function syncCurrentUser(user) {
     const normalized = normalizeAuthUser(user);
     window.currentUser = normalized;
@@ -55,12 +117,13 @@
   sb.auth.getSession().then(({ data, error }) => {
     if (error) console.warn('Supabase session:', error);
     syncCurrentUser(data?.session?.user || null);
+    setTimeout(() => syncFromServer('initial'), 0);
   }).catch(err => console.warn('Supabase session bootstrap:', err));
 
   sb.auth.onAuthStateChange((_event, session) => {
     const user = syncCurrentUser(session?.user || null);
     setTimeout(() => { if (typeof window.renderAuthHeader === 'function') window.renderAuthHeader(); }, 0);
-    if (user) setTimeout(() => ensureSupabaseProfile(user), 0);
+    if (user) setTimeout(() => syncFromServer('auth-change'), 0);
   });
 
   let attempts = 0;
