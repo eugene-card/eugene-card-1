@@ -13,9 +13,7 @@
 
   // The main UI uses the Firebase-style user shape (uid/photoURL/displayName),
   // while Supabase supplies id/user_metadata. Normalize both getSession() and
-  // auth-state events before the compatibility layer receives them. Without
-  // this, OAuth succeeds but the UI can remain in its Guest state after the
-  // redirect because the legacy auth code never receives a usable uid.
+  // auth-state events before the compatibility layer receives them.
   const toLegacyAuthUser = user => {
     if (!user) return null;
     const metadata = user.user_metadata || {};
@@ -89,4 +87,28 @@
     return normalize(p);
   }
   window.ensureSupabaseProfile = ensureSupabaseProfile;
+
+  // Bridge Supabase's real session into the legacy UI's window.auth.currentUser.
+  // The compatibility layer exposes window.auth, but its currentUser property
+  // was previously left at null forever, so the header could keep showing
+  // "Log In" even though Supabase had a valid session.
+  const syncLegacyCurrentUser = user => {
+    const legacyUser = user ? toLegacyAuthUser(user) : null;
+    if (window.auth) window.auth.currentUser = legacyUser;
+    window.currentUser = legacyUser;
+    if (legacyUser) ensureSupabaseProfile(legacyUser).catch(err => console.warn('Profile bootstrap:', err));
+  };
+
+  const syncExistingSession = async () => {
+    try {
+      const { data } = await originalGetSession();
+      syncLegacyCurrentUser(data?.session?.user || null);
+    } catch (err) {
+      console.warn('Session bootstrap:', err);
+    }
+  };
+  setTimeout(syncExistingSession, 0);
+  originalOnAuthStateChange((_event, session) => {
+    syncLegacyCurrentUser(session?.user || null);
+  });
 })();
