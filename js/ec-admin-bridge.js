@@ -1,30 +1,58 @@
-/* Eugene Card — shared Supabase bridge for admin sub-pages */
+// js/ec-admin-bridge.js
+
 (function () {
-  const SUPABASE_URL = 'https://tsjgvzpzfjyecnginipt.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_o3oWlPh_EPj5xd0GBjDWYQ_UhVicSH3';
-  const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'eugenecard.market@gmail.com'];
-  const isAdmin = email => ADMIN_EMAILS.includes(String(email || '').trim().toLowerCase());
+  window.EC_ADMIN = window.EC_ADMIN || {};
 
-  function goMarket() {
-    if (!location.pathname.endsWith('/index.html') && !location.pathname.endsWith('/')) location.replace('index.html');
+  // List of authorized admin emails
+  const ALLOWED_ADMIN_EMAILS = [
+    'eugenecard.market@gmail.com',
+    'eugene.aquila06@gmail.com'
+  ];
+
+  const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+
+  if (!client) {
+    console.error('Supabase client not initialized.');
+    return;
   }
 
-  async function boot() {
-    if (!window.supabase) return;
-    const client = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
-    });
-    window.supabaseClient = client;
-    const { data: { session } } = await client.auth.getSession();
-    const user = session && session.user;
-    if (!user || !isAdmin(user.email)) { goMarket(); return; }
-    window.EUGENE_ADMIN_USER = user;
-    document.documentElement.dataset.supabaseAuth = 'admin';
-    client.auth.onAuthStateChange((_event, nextSession) => {
-      if (!nextSession?.user || !isAdmin(nextSession.user.email)) goMarket();
-    });
+  // Helper function to sync admin session across features
+  async function syncSession(session) {
+    const user = session?.user || null;
+    const userEmail = user?.email?.toLowerCase();
+
+    // Verify user is logged in AND their email is in the allowed list
+    const isAdmin = user && userEmail && ALLOWED_ADMIN_EMAILS.includes(userEmail);
+
+    if (isAdmin) {
+      window.EC_ADMIN.currentUser = user;
+      window.EC_ADMIN.session = session;
+      window.EC_ADMIN.isAdmin = true;
+      localStorage.setItem('ec_admin_authenticated', 'true');
+      localStorage.setItem('ec_admin_email', userEmail);
+    } else {
+      window.EC_ADMIN.currentUser = null;
+      window.EC_ADMIN.session = null;
+      window.EC_ADMIN.isAdmin = false;
+      localStorage.removeItem('ec_admin_authenticated');
+      localStorage.removeItem('ec_admin_email');
+    }
+
+    // Dispatch event so feature components know authentication check has completed
+    window.dispatchEvent(
+      new CustomEvent('ec-auth-ready', {
+        detail: { session, isAdmin, user }
+      })
+    );
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-  else boot();
+  // Initial check on script load
+  client.auth.getSession().then(({ data: { session } }) => {
+    syncSession(session);
+  });
+
+  // Listen for login/logout state changes
+  client.auth.onAuthStateChange((event, session) => {
+    syncSession(session);
+  });
 })();
