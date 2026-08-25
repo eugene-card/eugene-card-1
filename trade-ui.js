@@ -33,6 +33,18 @@
     s.dataset.eugeneEnhancements = '1';
     document.head.appendChild(s);
   };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load, {once:true});
-  else load();
+  const loadDedupe = () => {
+    if (document.querySelector('script[data-eugene-ui-dedupe]')) return;
+    const s = document.createElement('script');
+    s.src = './js/eugene-ui-dedupe.js?v=20260825-1';
+    s.async = true;
+    s.dataset.eugeneUiDedupe = '1';
+    document.head.appendChild(s);
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => { load(); setTimeout(loadDedupe, 300); }, {once:true});
+  } else {
+    load();
+    setTimeout(loadDedupe, 300);
+  }
 })();
