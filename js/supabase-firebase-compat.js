@@ -19,6 +19,20 @@
   const normalizeCard = row => row ? ({ ...row, price: Number(row.price ?? row.asset_value ?? 0), baseFloorPrice: Number(row.baseFloorPrice ?? row.base_floor_price ?? 0), imgUrl: row.imgUrl ?? row.img_url ?? row.image_url ?? null, serial: row.serial ?? row.sn ?? null, sn: row.sn ?? row.serial ?? null }) : null;
   const normalize = (row, collection) => collection === 'profiles' ? normalizeProfile(row) : collection === 'cards' ? normalizeCard(row) : (row || null);
 
+  /* Restore the persisted Supabase session synchronously before the rest of the app
+     installs its click handlers. This prevents authenticated actions from seeing a
+     transient null currentUser during page startup. */
+  function readPersistedUser() {
+    try {
+      const raw = localStorage.getItem('eugene-card-supabase-auth');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      const session = parsed?.currentSession || parsed?.session || parsed;
+      return normalizeUser(session?.user || null);
+    } catch (_) { return null; }
+  }
+  const persistedUser = readPersistedUser();
+
   function applyOps(payload, current = {}) {
     const out = { ...(payload || {}) };
     for (const [k, v] of Object.entries(out)) {
@@ -156,7 +170,9 @@
   const db = { collection: name => collectionRef(name), batch: () => { const ops = []; return { set: (r, d, o) => ops.push(() => r.set(d, o)), update: (r, d) => ops.push(() => r.update(d)), delete: r => ops.push(() => r.delete()), commit: async () => { for (const op of ops) await op(); } }; } };
 
   const auth = {
-    currentUser: null,
+    currentUser: persistedUser,
+    ready: false,
+    readyPromise: null,
     onAuthStateChanged(callback) {
       let stopped = false;
       const emit = async user => {
@@ -176,6 +192,21 @@
       const listener = sb.auth.onAuthStateChange((_event, session) => emit(session?.user || null));
       return () => { stopped = true; listener.data.subscription.unsubscribe(); };
     },
+    async getCurrentUser() {
+      const { data } = await sb.auth.getUser();
+      const normalized = normalizeUser(data?.user || null);
+      if (normalized) {
+        auth.currentUser = normalized;
+        window.currentUser = normalized;
+        try { const profile = await ensureProfile(normalized); if (profile) { normalized.profile = profile; normalized.name = profile.name || normalized.displayName; normalized.username = profile.username || ''; normalized.avatarUrl = profile.avatarUrl || normalized.photoURL || ''; normalized.isAdmin = !!profile.isAdmin || isAdminEmail(normalized.email); } } catch (_) {}
+      }
+      return normalized;
+    },
+    async requireAuth(action) {
+      const user = auth.currentUser || await auth.getCurrentUser();
+      if (!user) throw new Error('AUTH_REQUIRED');
+      return typeof action === 'function' ? action(user) : user;
+    },
     async signInWithPopup() {
       const redirectTo = `${window.location.origin}${window.location.pathname}${window.location.search}`;
       const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, queryParams: { prompt: 'select_account' } } });
@@ -184,11 +215,19 @@
     async signOut() { const { error } = await sb.auth.signOut(); if (error) throw error; auth.currentUser = null; window.currentUser = null; }
   };
 
-  const FieldValue = { serverTimestamp: () => ({ __op: 'serverTimestamp', value: now() }), increment: value => ({ __op: 'increment', value: Number(value) || 0 }), arrayUnion: (...values) => ({ __op: 'arrayUnion', values }), arrayRemove: (...values) => ({ __op: 'arrayRemove', values }) };
   window.db = db;
   window.auth = auth;
-  window.firebase = { firestore: { FieldValue } };
+  window.firebase = { firestore: { FieldValue: { serverTimestamp: () => ({ __op: 'serverTimestamp', value: now() }), increment: value => ({ __op: 'increment', value: Number(value) || 0 }), arrayUnion: (...values) => ({ __op: 'arrayUnion', values }), arrayRemove: (...values) => ({ __op: 'arrayRemove', values }) } } };
   window.isUserAdmin = isAdminEmail;
   window.EUGENE_ADMIN_EMAIL = ADMIN_EMAILS[0];
   window.ensureSupabaseProfile = ensureProfile;
+  window.getEugeneCardUser = () => auth.currentUser || window.currentUser || null;
+  window.requireEugeneCardAuth = () => auth.currentUser ? Promise.resolve(auth.currentUser) : auth.getCurrentUser();
+  window.eugeneCardAuthReady = auth.readyPromise = sb.auth.getSession().then(async ({ data }) => {
+    const u = data?.session?.user ? normalizeUser(data.session.user) : null;
+    if (u) { auth.currentUser = u; window.currentUser = u; try { const p = await ensureProfile(u); if (p) { u.profile = p; u.name = p.name || u.displayName; u.username = p.username || ''; u.avatarUrl = p.avatarUrl || u.photoURL || ''; u.isAdmin = !!p.isAdmin || isAdminEmail(u.email); } } catch (_) {} }
+    auth.ready = true;
+    return auth.currentUser;
+  }).catch(() => { auth.ready = true; return auth.currentUser; });
+  window.eugeneCardAuthReady.then(u => window.dispatchEvent(new CustomEvent('eugene-card-auth-ready', { detail: u })));
 })();
