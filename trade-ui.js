@@ -1,0 +1,22 @@
+(() => {
+  'use strict';
+  const URL='https://tsjgvzpzfjyecnginipt.supabase.co',KEY='sb_publishable_o3oWlPh_EPj5xd0GBjDWYQ_UhVicSH3';
+  const sb=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'eugene-card-supabase-auth'}});
+  const money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n||0));
+  const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+  async function user(){return (await sb.auth.getUser()).data.user||null}
+  async function myCards(){const u=await user();if(!u)return[];const p=(await sb.from('profiles').select('username,display_name').eq('id',u.id).maybeSingle()).data;const ids=[u.id,(u.email||'').toLowerCase(),String(p?.display_name||'').toLowerCase(),String(p?.username||'').toLowerCase()];const cs=(await sb.from('cards').select('*').order('name')).data||[];return cs.filter(c=>ids.includes(String(c.owner||'').trim().toLowerCase()))}
+  async function allCards(){return (await sb.from('cards').select('id,name,serial,sn').order('name')).data||[]}
+  function openTradeModal(kind,listingId=null){
+    Promise.all([myCards(),allCards()]).then(([mine,all])=>{
+      const root=document.getElementById('modal');if(!root)return;
+      const title=kind==='listing'?'List cards for trade':'Make a trade offer';
+      const mineOptions=mine.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} — ${esc(c.serial||c.sn||'no serial')}</option>`).join('');
+      const desiredOptions=all.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} — ${esc(c.serial||c.sn||'no serial')}</option>`).join('');
+      root.className='modal-root open';root.innerHTML=`<div class="modal" style="max-width:720px"><div class="eyebrow">TRADE BUILDER</div><h2>${title}</h2><p class="muted">Select one or more cards. You can also add cash in IDR to make the deal work.</p><form id="trade-builder"><div class="form-grid"><div class="field full"><label>${kind==='listing'?'Cards you are offering':'Cards you are offering'}</label><select class="select" id="trade-offered" name="offered" multiple size="${Math.min(6,Math.max(3,mine.length))}" required>${mineOptions}</select></div><div class="field full"><label>${kind==='listing'?'Cards you want (optional)':'Target card (optional)'}</label><select class="select" id="trade-desired" name="desired" multiple size="5">${desiredOptions}</select></div><div class="field"><label>${kind==='listing'?'Additional money requested':'Additional money you offer'} (IDR)</label><input class="input" name="cash" type="number" min="0" step="1000" value="0"></div><div class="field"><label>Note</label><input class="input" name="note" placeholder="Condition, preference, bundle details…"></div></div><div class="modal-actions"><button type="button" class="btn" id="trade-cancel">Cancel</button><button class="btn primary">${kind==='listing'?'Publish trade':'Send offer'}</button></div></form></div>`;
+      document.getElementById('trade-cancel').onclick=()=>root.className='modal-root';
+      document.getElementById('trade-builder').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const offered=[...document.getElementById('trade-offered').selectedOptions].map(o=>o.value);const desired=[...document.getElementById('trade-desired').selectedOptions].map(o=>o.value);const cash=Math.max(0,Math.round(Number(f.get('cash')||0)));const note=String(f.get('note')||'');if(!offered.length)return alert('Select at least one card to offer.');const u=await user();if(!u)return alert('Please log in first.');let r;if(kind==='listing')r=await sb.from('trade_listings').insert({owner_id:u.id,offered_card_ids:offered,desired_card_ids:desired,cash_amount:cash,note});else r=await sb.from('trade_offers').insert({listing_id:listingId,proposer_id:u.id,offered_card_ids:offered,cash_amount:cash,note});if(r.error){alert(r.error.message);return}root.className='modal-root';if(window.location.search.includes('view=trade'))location.reload()};
+    }).catch(e=>alert(e.message||'Unable to load cards'));
+  }
+  document.addEventListener('click',e=>{const listing=e.target.closest('#new-trade');const offer=e.target.closest('[data-offer]');if(!listing&&!offer)return;e.preventDefault();e.stopImmediatePropagation();openTradeModal(listing?'listing':'offer',offer?.dataset.offer||null)},true);
+})();
