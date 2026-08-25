@@ -1,34 +1,4 @@
-<!DOCTYPE html>
-<html lang="id" class="dark">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#6366f1">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="apple-touch-icon" href="./eugene-card-icon-192.png">
-  <title>Eugene Card Marketplace | Premium Beta Edition</title>
 
-  <!-- Browser Tab Favicon -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='none' stroke='%234f46e5' stroke-width='5' stroke-dasharray='210 50' transform='rotate(-45 50 50)'/><polygon points='50,18 80,35 80,68 50,85 20,68 20,35' fill='%236366f1'/><path d='M 32 42 C 38 32, 52 32, 58 40 C 62 46, 48 54, 40 60 C 35 64, 45 70, 60 62' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linecap='round'/></svg>">
-  <!-- Supabase Authentication + database (Firebase removed) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/supabase-init.js"></script>
-  <script src="./js/supabase-firebase-compat.js"></script>
-  <!-- PAYPAL JS SDK — uses the PUBLIC Client ID only. This is safe to expose in the
-       browser by design (that's how PayPal's own JS SDK works). The Secret Key is
-       NEVER placed in this file — see the note near PAYPAL_CLIENT_ID below for why. -->
-  <script src="https://www.paypal.com/sdk/js?client-id=BAAoYAiZbWF53NkwmMPFG6k-8ryBxtTILmGAUiLyoeAZRSXze-DcPKkOJ3d8rEfgUPAW8KAva3YF3WRnUo&currency=USD&intent=capture"></script>
-
-  <!-- Chart.js (visual analytics: price/volume history, rarity distribution) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -40,3993 +10,41 @@
         }
       }
     }
-  </script>
-
-  <!-- FontAwesome Icons & Google Fonts -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
-  <style>
-    body { font-family: 'Inter', sans-serif; background-color: #030712; color: #f3f4f6; }
-    .card-holo-premium {
-      background: linear-gradient(135deg, #1e1b4b 0%, #311042 50%, #451a03 100%);
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .card-holo-premium:hover { border-color: rgba(245, 158, 11, 0.9); transform: translateY(-4px); box-shadow: 0 10px 25px rgba(245, 158, 11, 0.25); }
-    .card-holo-standard {
-      background: linear-gradient(135deg, #0f172a 0%, #172554 50%, #1e1b4b 100%);
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .card-holo-standard:hover { border-color: rgba(59, 130, 246, 0.8); transform: translateY(-4px); box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2); }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #030712; }
-    ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 9999px; }
   
-    /* ===== EUGENE CARD UI/UX 2026 PREMIUM UPGRADE ===== */
-    :root {
-      --ec-glow: rgba(245,158,11,.22);
-      --ec-panel: rgba(15,23,42,.72);
-    }
 
-    body {
-      background:
-        radial-gradient(circle at 10% 0%, rgba(99,102,241,.16), transparent 35%),
-        radial-gradient(circle at 90% 10%, rgba(245,158,11,.12), transparent 30%),
-        #030712;
-      overflow-x:hidden;
-    }
-
-    body::before {
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      background-image:
-        linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
-      background-size:40px 40px;
-      mask-image:linear-gradient(to bottom,black,transparent);
-      z-index:-1;
-    }
-
-    .premium-panel {
-      background:linear-gradient(145deg,rgba(15,23,42,.85),rgba(2,6,23,.75));
-      backdrop-filter:blur(18px);
-      border:1px solid rgba(148,163,184,.12);
-      box-shadow:0 20px 60px rgba(0,0,0,.35);
-    }
-
-    button, a, input, select {
-      transition:
-        transform .2s ease,
-        border-color .2s ease,
-        background-color .2s ease,
-        box-shadow .2s ease;
-    }
-
-    button:hover:not(:disabled), a:hover {
-      transform:translateY(-1px);
-    }
-
-    .card-holo-premium,
-    .card-holo-standard {
-      position:relative;
-      overflow:hidden;
-    }
-
-    .card-holo-premium::before,
-    .card-holo-standard::before {
-      content:"";
-      position:absolute;
-      inset:-80%;
-      background:linear-gradient(
-        120deg,
-        transparent 35%,
-        rgba(255,255,255,.12),
-        transparent 65%
-      );
-      transform:translateX(-60%) rotate(20deg);
-      transition:.7s;
-      pointer-events:none;
-    }
-
-    .card-holo-premium:hover::before,
-    .card-holo-standard:hover::before {
-      transform:translateX(60%) rotate(20deg);
-    }
-
-    .card-holo-premium:hover,
-    .card-holo-standard:hover {
-      transform:translateY(-8px) scale(1.02);
-    }
-
-    header {
-      box-shadow:0 10px 40px rgba(0,0,0,.35);
-    }
-
-    nav button {
-      position:relative;
-    }
-
-    nav button.bg-slate-800::after {
-      content:"";
-      position:absolute;
-      bottom:-3px;
-      left:20%;
-      right:20%;
-      height:2px;
-      background:#fbbf24;
-      border-radius:999px;
-    }
-
-    .stat-card {
-      background:linear-gradient(135deg,rgba(30,41,59,.75),rgba(2,6,23,.8));
-      border:1px solid rgba(148,163,184,.15);
-      border-radius:1.25rem;
-      padding:1rem;
-    }
-
-    .empty-state {
-      padding:3rem;
-      text-align:center;
-      border-radius:1.5rem;
-      background:rgba(15,23,42,.6);
-      border:1px dashed rgba(148,163,184,.25);
-    }
-
-    @media(max-width:768px){
-      header nav {
-        order:3;
-        width:100%;
+    (function(){
+      function removeStrayText(root){
+        if(!root) return;
+        const walker=document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const nodes=[];
+        let n;
+        while(n=walker.nextNode()){
+          const value=(n.nodeValue||'').trim();
+          if(value==='\">' || value==='>\"') nodes.push(n);
+        }
+        nodes.forEach(node=>node.remove());
       }
-
-      main {
-        padding-bottom:90px!important;
-      }
-    }
-
-    .mobile-safe-bottom {
-      padding-bottom:env(safe-area-inset-bottom);
-    }
-
-    /* ===== HOLOGRAPHIC / RARITY / 3D TILT UPGRADE ===== */
-    .card-holo-premium, .card-holo-standard {
-      transform-style: preserve-3d;
-      will-change: transform;
-    }
-
-    /* Rarity frame borders - replaces flat 1px border with a layered gradient edge */
-    .card-holo-premium {
-      border-width: 1.5px;
-      border-image: linear-gradient(135deg, #fbbf24, #f59e0b 35%, #7c3aed 70%, #fbbf24) 1;
-    }
-    .card-holo-standard {
-      border-width: 1.5px;
-      border-image: linear-gradient(135deg, #60a5fa, #3b82f6 50%, #1d4ed8) 1;
-    }
-
-    /* Animated rainbow holo sweep sitting above the base ::before shine, premium only.
-       --holo-x / --holo-y are set by setupCardTiltEffect() on pointer move, so the
-       sheen tracks the cursor like a real foil card. */
-    .card-holo-premium::after {
-      content:"";
-      position:absolute;
-      inset:0;
-      background: radial-gradient(circle at var(--holo-x,50%) var(--holo-y,50%),
-        rgba(251,191,36,.35), rgba(124,58,237,.28) 30%, rgba(59,130,246,.22) 55%, transparent 75%);
-      mix-blend-mode: color-dodge;
-      opacity:0;
-      transition: opacity .35s ease;
-      pointer-events:none;
-      border-radius: inherit;
-    }
-    .card-holo-premium:hover::after { opacity:.55; }
-
-    /* Serial number "engraving" effect */
-    .serial-engraved {
-      text-shadow: 0 1px 0 rgba(255,255,255,.18), 0 -1px 1px rgba(0,0,0,.7);
-      letter-spacing: 0.03em;
-    }
-
-    /* ===== PREMIUM "OWN THIS" CARD UPGRADE ===== */
-    /* Continuous ambient glow pulse so premium cards read as premium at rest, not just on hover */
-    @keyframes premiumAmbientGlow {
-      0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,.18), 0 0 0px rgba(124,58,237,0); }
-      50% { box-shadow: 0 0 32px rgba(245,158,11,.32), 0 0 18px rgba(124,58,237,.18); }
-    }
-    .card-holo-premium { animation: premiumAmbientGlow 3.2s ease-in-out infinite; }
-
-    /* Diagonal foil sweep — an actual layered element (not just hover ::before) so foil cards
-       always look "alive". Sits above artwork, below text via z-index ordering in markup. */
-    .foil-sweep {
-      position:absolute; inset:0; overflow:hidden; pointer-events:none; border-radius:inherit; z-index:1;
-    }
-    .foil-sweep::before {
-      content:"";
-      position:absolute; top:-60%; left:-60%; width:220%; height:220%;
-      background: linear-gradient(115deg,
-        transparent 42%,
-        rgba(255,255,255,.10) 47%,
-        rgba(251,191,36,.38) 50%,
-        rgba(167,139,250,.22) 52%,
-        rgba(255,255,255,.10) 55%,
-        transparent 60%);
-      animation: foilSweep 5s linear infinite;
-    }
-    @keyframes foilSweep {
-      0% { transform: translate(-15%, -8%) rotate(18deg); }
-      100% { transform: translate(15%, 8%) rotate(18deg); }
-    }
-
-    /* Rarity corner ribbon for premium cards */
-    .rarity-ribbon {
-      position:absolute; top:8px; right:-26px; z-index:3;
-      background: linear-gradient(90deg,#f59e0b,#fbbf24);
-      color:#1c1206; font-size:8px; font-weight:900; letter-spacing:.06em;
-      padding:2px 28px; transform:rotate(40deg);
-      box-shadow:0 2px 8px rgba(0,0,0,.4);
-      pointer-events:none;
-    }
-
-    /* Embossed metallic serial text for premium cards */
-    .serial-embossed-premium {
-      background: linear-gradient(135deg,#fde68a 0%,#f59e0b 35%,#fffbeb 50%,#f59e0b 65%,#fde68a 100%);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-      filter: drop-shadow(0 1px 0 rgba(255,255,255,.3)) drop-shadow(0 -1px 1px rgba(0,0,0,.65));
-    }
-
-    /* Reflective glass sheen strip across the artwork frame */
-    .glass-sheen { position:relative; overflow:hidden; }
-    .glass-sheen::after {
-      content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
-      background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.10) 45%, transparent 60%);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .card-holo-premium { animation: none !important; }
-      .foil-sweep::before { animation: none !important; }
-    }
-
-    /* Rarity star row */
-    .rarity-stars i { font-size: 8px; }
-
-    /* Collector level ring */
-    .level-ring {
-      width: 3.25rem; height: 3.25rem;
-      border-radius: 9999px;
-      display:flex; align-items:center; justify-content:center;
-      background: conic-gradient(#fbbf24 calc(var(--pct,0) * 1%), rgba(51,65,85,.6) 0);
-      padding: 3px;
-    }
-    .level-ring-inner {
-      width:100%; height:100%; border-radius:9999px;
-      background:#0f172a; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    }
-
-    /* Badge chip */
-    .badge-chip {
-      display:inline-flex; align-items:center; gap:.3rem;
-      font-size: 9px; font-weight: 800;
-      padding: .28rem .55rem;
-      border-radius: 999px;
-      background: rgba(15,23,42,.85);
-      border: 1px solid rgba(148,163,184,.2);
-      color: #cbd5e1;
-      white-space: nowrap;
-    }
-    .badge-chip.badge-gold { color:#fbbf24; border-color: rgba(251,191,36,.35); background: rgba(120,53,15,.25); }
-    .badge-chip.badge-rose { color:#fb7185; border-color: rgba(251,113,133,.35); background: rgba(76,5,25,.25); }
-    .badge-chip.badge-cyan { color:#22d3ee; border-color: rgba(34,211,238,.35); background: rgba(8,51,68,.25); }
-    .badge-chip.badge-locked { color:#475569; border-color: rgba(71,85,105,.3); background: rgba(15,23,42,.5); }
-
-    /* Generic progress bar */
-    .progress-track {
-      width:100%; height:.5rem; border-radius:999px;
-      background: rgba(15,23,42,.9);
-      border: 1px solid rgba(148,163,184,.15);
-      overflow:hidden;
-    }
-    .progress-fill {
-      height:100%; border-radius:999px;
-      background: linear-gradient(90deg, #f59e0b, #fbbf24);
-      transition: width .5s ease;
-    }
-
-    /* Market profile stat row */
-    .mp-stat { background: rgba(2,6,23,.6); border:1px solid rgba(148,163,184,.12); border-radius: .85rem; padding: .55rem .7rem; }
-    .mp-stat span.mp-label { display:block; font-size: 9px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:#64748b; }
-    .mp-stat strong.mp-value { font-family: 'JetBrains Mono', monospace; }
-
-    @media (prefers-reduced-motion: reduce) {
-      .card-holo-premium, .card-holo-standard, .card-holo-premium::before, .card-holo-standard::before, .card-holo-premium::after {
-        transition: none !important;
-        transform: none !important;
-      }
-    }
+      removeStrayText(document.body);
+      const observer=new MutationObserver(function(){ removeStrayText(document.body); });
+      observer.observe(document.body,{childList:true,subtree:true,characterData:true});
+      setTimeout(()=>observer.disconnect(),15000);
+    })();
   
-    /* PWA install prompt helper */
-    #pwa-install-hint { position:fixed; left:50%; bottom:18px; transform:translate(-50%, 20px); opacity:0; pointer-events:none; z-index:10050; transition:opacity .2s ease, transform .2s ease; }
-    #pwa-install-hint.show { opacity:1; transform:translate(-50%,0); pointer-events:auto; }
-    @media (max-width:640px){ #pwa-install-hint{ width:calc(100vw - 24px); } }
-  </style>
 
-<style id="eugene-inbox-premium-css">
-.inbox-premium{position:relative}
-.inbox-hero,.inbox-shell,.inbox-modal{background:linear-gradient(135deg,rgba(15,23,42,.94),rgba(5,8,22,.98) 55%,rgba(13,10,34,.94));box-shadow:0 24px 80px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.025)}
-.inbox-hero{min-height:170px}
-.inbox-hero-glow{position:absolute;width:460px;height:260px;right:-120px;top:-130px;background:radial-gradient(circle,rgba(124,58,237,.25),transparent 68%);filter:blur(12px);pointer-events:none}
-.inbox-icon-box{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#c4b5fd;background:linear-gradient(145deg,rgba(124,58,237,.22),rgba(79,70,229,.06));border:1px solid rgba(139,92,246,.35);box-shadow:0 0 30px rgba(124,58,237,.14);font-size:18px}
-.inbox-live-pill{font-size:8px;font-weight:900;letter-spacing:.14em;color:#86efac;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);padding:5px 8px;border-radius:999px}.inbox-live-pill span{display:inline-block;width:5px;height:5px;background:#34d399;border-radius:50%;margin-right:5px;box-shadow:0 0 8px #34d399}
-.inbox-primary-btn,.inbox-ghost-btn,.inbox-secondary-btn,.inbox-icon-btn{border-radius:13px;font-size:11px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.2s ease}
-.inbox-primary-btn{padding:11px 15px;color:#fff;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:1px solid rgba(167,139,250,.35);box-shadow:0 8px 28px rgba(79,70,229,.24)}.inbox-primary-btn:hover{transform:translateY(-1px);filter:brightness(1.08)}
-.inbox-ghost-btn{padding:10px 13px;color:#cbd5e1;background:rgba(15,23,42,.7);border:1px solid #1e293b}.inbox-ghost-btn:hover,.inbox-icon-btn:hover{border-color:rgba(139,92,246,.45);color:#fff;background:rgba(30,41,59,.85)}
-.inbox-icon-btn{width:39px;height:39px;color:#94a3b8;background:rgba(15,23,42,.7);border:1px solid #1e293b}
-.inbox-stat{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:15px;background:rgba(2,6,23,.42);border:1px solid rgba(51,65,85,.6)}.inbox-stat p{font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.08em}.inbox-stat strong{display:block;color:#f8fafc;font-size:15px;line-height:1.2;margin-top:2px}.stat-icon{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px}
-.inbox-shell{background-color:#050817}.inbox-sidebar{background:linear-gradient(180deg,rgba(15,23,42,.74),rgba(2,6,23,.76))}.inbox-thread-list{max-height:650px;overflow-y:auto}.inbox-thread-list::-webkit-scrollbar{width:5px}.inbox-thread-list::-webkit-scrollbar-thumb{background:#27324a;border-radius:99px}
-.inbox-search-wrap{height:42px;display:flex;align-items:center;position:relative;background:rgba(2,6,23,.68);border:1px solid #1e293b;border-radius:13px;transition:.2s}.inbox-search-wrap:focus-within{border-color:rgba(124,58,237,.65);box-shadow:0 0 0 3px rgba(124,58,237,.08),0 0 25px rgba(124,58,237,.08)}.inbox-search-wrap i{position:absolute;left:13px;color:#64748b;font-size:11px}.inbox-search-wrap input{width:100%;height:100%;background:transparent;border:0;outline:0;color:#e2e8f0;font-size:11px;padding:0 55px 0 35px}.inbox-search-wrap input::placeholder{color:#475569}.inbox-search-wrap kbd{position:absolute;right:10px;font-size:8px;color:#475569;border:1px solid #1e293b;background:#0b1222;padding:3px 5px;border-radius:5px}
-.inbox-filter{white-space:nowrap;border:1px solid transparent;border-radius:10px;padding:7px 9px;color:#64748b;font-size:9px;font-weight:900;transition:.18s}.inbox-filter:hover{color:#cbd5e1;background:rgba(30,41,59,.5)}.inbox-filter.active{color:#ddd6fe;background:rgba(124,58,237,.14);border-color:rgba(124,58,237,.35);box-shadow:inset 0 0 18px rgba(124,58,237,.06)}.inbox-filter b{margin-left:4px;color:#94a3b8;font-size:8px}.inbox-filter.active b{color:#c4b5fd}
-.inbox-count-pill{min-width:28px;height:25px;padding:0 8px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#c4b5fd;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.28);font-size:9px;font-weight:900}
-.inbox-thread-card{position:relative;border:1px solid rgba(51,65,85,.58);background:linear-gradient(135deg,rgba(15,23,42,.7),rgba(2,6,23,.72));border-radius:16px;padding:12px;transition:.2s ease;overflow:hidden}.inbox-thread-card:hover{transform:translateX(2px);border-color:rgba(124,58,237,.4);background:linear-gradient(135deg,rgba(30,41,59,.78),rgba(10,12,28,.82))}.inbox-thread-card.is-unread{border-color:rgba(124,58,237,.55);box-shadow:0 8px 25px rgba(76,29,149,.12)}.inbox-thread-card.is-active{background:linear-gradient(135deg,rgba(91,33,182,.18),rgba(30,41,59,.58));border-color:rgba(139,92,246,.72);box-shadow:0 0 0 1px rgba(139,92,246,.1),0 10px 35px rgba(76,29,149,.15)}
-.inbox-empty-stage{align-items:center;justify-content:center;background:radial-gradient(circle at 50% 42%,rgba(76,29,149,.11),transparent 42%),linear-gradient(135deg,rgba(2,6,23,.25),rgba(15,23,42,.3))}.inbox-empty-orb{width:76px;height:76px;margin:auto;border-radius:24px;display:flex;align-items:center;justify-content:center;color:#c4b5fd;font-size:25px;background:radial-gradient(circle,rgba(124,58,237,.22),rgba(30,41,59,.22));border:1px solid rgba(139,92,246,.35);box-shadow:0 0 50px rgba(124,58,237,.14)}.inbox-secondary-btn{padding:10px 14px;color:#c4b5fd;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.28)}
-.inbox-modal{background:rgba(8,12,27,.97);backdrop-filter:blur(24px)}
-#inbox-unread-badge{z-index:3;box-shadow:0 0 0 2px #020617,0 0 14px rgba(244,63,94,.45);animation:inboxBadgePulse 2s infinite}@keyframes inboxBadgePulse{0%,100%{box-shadow:0 0 0 2px #020617,0 0 10px rgba(244,63,94,.35)}50%{box-shadow:0 0 0 2px #020617,0 0 20px rgba(244,63,94,.62)}}
-@media(max-width:640px){.inbox-primary-btn span,.inbox-ghost-btn span{display:none}.inbox-primary-btn{width:40px;height:39px;padding:0}.inbox-ghost-btn{width:40px;height:39px;padding:0}.inbox-stat{padding:9px}.inbox-thread-list{max-height:520px}}
-</style>
-<style id="eugene-global-premium-overhaul">
-/* Eugene Card — Global Premium Surface System */
-body.premium-global {
-  --ec-bg: #020617;
-  --ec-panel: rgba(9,15,31,.78);
-  --ec-panel-2: rgba(13,20,42,.72);
-  --ec-border: rgba(148,163,184,.14);
-  --ec-border-hi: rgba(139,92,246,.35);
-  --ec-purple: #8b5cf6;
-  --ec-indigo: #6366f1;
-  --ec-cyan: #22d3ee;
-  --ec-gold: #fbbf24;
-  --ec-green: #34d399;
-  --ec-shadow: 0 22px 70px rgba(0,0,0,.38);
-  background:
-    radial-gradient(900px 520px at 10% -10%, rgba(99,102,241,.14), transparent 62%),
-    radial-gradient(800px 520px at 92% 6%, rgba(139,92,246,.12), transparent 58%),
-    radial-gradient(900px 620px at 50% 100%, rgba(14,165,233,.055), transparent 62%),
-    #020617 !important;
-  color:#e5e7eb;
-}
-
-body.premium-global::before {
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  z-index:-1;
-  opacity:.22;
-  background-image:
-    linear-gradient(rgba(148,163,184,.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148,163,184,.045) 1px, transparent 1px);
-  background-size:72px 72px;
-  mask-image:linear-gradient(to bottom, black, transparent 88%);
-}
-
-body.premium-global header {
-  background:linear-gradient(180deg, rgba(2,6,23,.96), rgba(2,6,23,.78)) !important;
-  border-bottom:1px solid rgba(139,92,246,.16) !important;
-  box-shadow:0 16px 60px rgba(0,0,0,.42), inset 0 -1px 0 rgba(255,255,255,.025) !important;
-  backdrop-filter:blur(24px) saturate(150%) !important;
-}
-
-body.premium-global header > div:first-child {
-  position:relative;
-}
-body.premium-global header > div:first-child::after {
-  content:"";
-  position:absolute;
-  left:12%; right:12%; bottom:-13px;
-  height:1px;
-  background:linear-gradient(90deg,transparent,rgba(139,92,246,.5),rgba(34,211,238,.25),transparent);
-  filter:blur(.2px);
-}
-
-body.premium-global header .w-10.h-10,
-body.premium-global header .w-12.h-12 {
-  box-shadow:0 0 0 1px rgba(139,92,246,.22), 0 10px 34px rgba(99,102,241,.18), inset 0 0 18px rgba(139,92,246,.08) !important;
-}
-
-body.premium-global nav {
-  background:linear-gradient(180deg, rgba(15,23,42,.82), rgba(7,12,28,.72)) !important;
-  border-color:rgba(148,163,184,.13) !important;
-  box-shadow:0 12px 35px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.025) !important;
-  backdrop-filter:blur(18px) !important;
-}
-body.premium-global nav button {
-  transition:transform .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease !important;
-}
-body.premium-global nav button:hover {
-  transform:translateY(-1px);
-  background:rgba(99,102,241,.09) !important;
-}
-body.premium-global nav button.bg-slate-800,
-body.premium-global nav button[aria-current="page"] {
-  background:linear-gradient(135deg, rgba(99,102,241,.22), rgba(139,92,246,.12)) !important;
-  color:#fff !important;
-  box-shadow:inset 0 0 0 1px rgba(139,92,246,.28), 0 8px 25px rgba(99,102,241,.12) !important;
-}
-body.premium-global nav button.bg-slate-800::after {
-  background:linear-gradient(90deg,#6366f1,#a78bfa,#22d3ee) !important;
-  box-shadow:0 0 12px rgba(139,92,246,.7) !important;
-}
-
-body.premium-global main {
-  position:relative;
-}
-body.premium-global main::before {
-  content:"";
-  position:absolute;
-  width:420px;height:420px;
-  top:30px; right:-180px;
-  border-radius:50%;
-  background:radial-gradient(circle, rgba(139,92,246,.08), transparent 68%);
-  filter:blur(10px);
-  pointer-events:none;
-}
-
-/* Global premium cards / panels */
-body.premium-global main .bg-slate-900,
-body.premium-global main .bg-slate-950,
-body.premium-global main .bg-slate-800 {
-  box-shadow:0 14px 45px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.018) !important;
-}
-body.premium-global main .border-slate-800,
-body.premium-global main .border-slate-700 {
-  border-color:rgba(148,163,184,.12) !important;
-}
-body.premium-global main .rounded-3xl,
-body.premium-global main .rounded-2xl {
-  backdrop-filter:blur(14px) saturate(120%);
-}
-body.premium-global main .rounded-3xl:hover,
-body.premium-global main .rounded-2xl:hover {
-  border-color:rgba(139,92,246,.18);
-}
-
-/* Headings get a subtle editorial hierarchy */
-body.premium-global main h1,
-body.premium-global main h2 {
-  letter-spacing:-.025em;
-}
-body.premium-global main h2 i,
-body.premium-global main h1 i {
-  filter:drop-shadow(0 0 10px currentColor);
-}
-
-/* Inputs */
-body.premium-global input,
-body.premium-global textarea,
-body.premium-global select {
-  background:rgba(2,6,23,.72) !important;
-  border-color:rgba(100,116,139,.22) !important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.025), 0 8px 28px rgba(0,0,0,.12) !important;
-  transition:border-color .2s, box-shadow .2s, background .2s !important;
-}
-body.premium-global input:focus,
-body.premium-global textarea:focus,
-body.premium-global select:focus {
-  border-color:rgba(139,92,246,.72) !important;
-  box-shadow:0 0 0 3px rgba(139,92,246,.10), 0 0 28px rgba(99,102,241,.10), inset 0 1px 0 rgba(255,255,255,.03) !important;
-}
-
-/* Buttons */
-body.premium-global main button:not(.no-premium),
-body.premium-global header button:not(.no-premium) {
-  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, filter .18s ease !important;
-}
-body.premium-global main button:hover:not(:disabled):not(.no-premium) {
-  filter:brightness(1.07);
-}
-body.premium-global main button:active:not(:disabled) {
-  transform:translateY(1px) scale(.99);
-}
-
-/* Primary-looking Tailwind buttons */
-body.premium-global .bg-indigo-600,
-body.premium-global .bg-indigo-500,
-body.premium-global .bg-violet-600 {
-  background:linear-gradient(135deg,#6366f1,#7c3aed) !important;
-  box-shadow:0 10px 28px rgba(99,102,241,.22), inset 0 1px 0 rgba(255,255,255,.12) !important;
-}
-body.premium-global .bg-emerald-500,
-body.premium-global .bg-emerald-600 {
-  box-shadow:0 10px 28px rgba(16,185,129,.16), inset 0 1px 0 rgba(255,255,255,.12) !important;
-}
-
-/* Tables */
-body.premium-global table {
-  border-collapse:separate;
-  border-spacing:0 7px;
-}
-body.premium-global table tbody tr {
-  background:rgba(15,23,42,.54);
-  box-shadow:0 8px 22px rgba(0,0,0,.14);
-}
-body.premium-global table tbody td:first-child { border-radius:14px 0 0 14px; }
-body.premium-global table tbody td:last-child { border-radius:0 14px 14px 0; }
-
-/* Modals / drawers */
-body.premium-global [role="dialog"],
-body.premium-global .modal,
-body.premium-global #chat-drawer {
-  box-shadow:0 35px 100px rgba(0,0,0,.62), 0 0 0 1px rgba(139,92,246,.08) !important;
-}
-body.premium-global .fixed.inset-0 {
-  backdrop-filter:blur(10px);
-}
-
-/* Toast */
-body.premium-global #toast-container > div,
-body.premium-global .toast {
-  background:linear-gradient(135deg,rgba(15,23,42,.94),rgba(9,14,31,.94)) !important;
-  border-color:rgba(139,92,246,.24) !important;
-  box-shadow:0 18px 50px rgba(0,0,0,.45), 0 0 25px rgba(99,102,241,.10) !important;
-  backdrop-filter:blur(18px);
-}
-
-/* Scrollbars */
-body.premium-global ::-webkit-scrollbar { width:8px; height:8px; }
-body.premium-global ::-webkit-scrollbar-track { background:rgba(2,6,23,.55); }
-body.premium-global ::-webkit-scrollbar-thumb {
-  background:linear-gradient(180deg,rgba(99,102,241,.65),rgba(139,92,246,.5));
-  border-radius:999px;
-  border:2px solid rgba(2,6,23,.7);
-}
-body.premium-global ::-webkit-scrollbar-thumb:hover { background:linear-gradient(180deg,#818cf8,#a78bfa); }
-
-/* Hero sections across every tab */
-body.premium-global main > section > .relative.overflow-hidden,
-body.premium-global main > section > .bg-gradient-to-r,
-body.premium-global main > section > .bg-gradient-to-br {
-  box-shadow:0 24px 70px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.035) !important;
-}
-
-/* Stat cards */
-body.premium-global .stat-card {
-  background:linear-gradient(145deg,rgba(17,24,39,.82),rgba(3,7,18,.82)) !important;
-  border-color:rgba(148,163,184,.13) !important;
-  box-shadow:0 15px 38px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.025) !important;
-}
-
-/* Premium card hover */
-body.premium-global .card-holo-premium,
-body.premium-global .card-holo-standard {
-  filter:drop-shadow(0 18px 34px rgba(0,0,0,.22));
-}
-
-/* Footer */
-body.premium-global footer {
-  margin-top:2rem;
-  background:linear-gradient(180deg,rgba(2,6,23,.72),rgba(2,6,23,.96)) !important;
-  border-top-color:rgba(139,92,246,.14) !important;
-  box-shadow:0 -20px 60px rgba(0,0,0,.25) !important;
-}
-
-/* Make the whole application breathe */
-body.premium-global main > section {
-  animation:ec-page-in .45s ease both;
-}
-@keyframes ec-page-in {
-  from { opacity:0; transform:translateY(5px); }
-  to { opacity:1; transform:none; }
-}
-
-@media (max-width: 768px) {
-  body.premium-global main { padding-left:12px !important; padding-right:12px !important; }
-  body.premium-global nav { border-radius:16px !important; }
-}
-@media (prefers-reduced-motion: reduce) {
-  body.premium-global * { animation-duration:.001ms !important; transition-duration:.001ms !important; }
-}
-
-</style>
-
-<style id="eugene-home-feed-images-css">
-    /* Home feed images: preserve the complete artwork instead of cropping it.
-       Clicking an image opens the existing full-size image preview modal. */
-    .home-post-image-button {
-      min-height: 180px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: zoom-in;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.025), 0 14px 35px rgba(0,0,0,.18);
-      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
-    }
-    .home-post-image-button:hover {
-      border-color: rgba(99,102,241,.45);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 18px 45px rgba(0,0,0,.28), 0 0 28px rgba(99,102,241,.08);
-    }
-    .home-post-image {
-      display: block;
-      width: 100%;
-      height: auto;
-      max-height: 560px;
-      min-height: 180px;
-      object-fit: contain;
-      object-position: center;
-    }
-    @media (max-width: 768px) {
-      .home-post-image-button { min-height: 140px; }
-      .home-post-image { min-height: 140px; max-height: 420px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .home-post-image-button { transition: none; }
-    }
-  </style>
-
-  <style id="eugene-premium-modal-system">
-/* =========================================================
-   EUGENE CARD — PREMIUM MODAL SYSTEM
-   Visual-only layer: preserves existing modal IDs, handlers,
-   form fields, Firebase hooks and functionality.
-   ========================================================= */
-
-:root{
-  --ec-modal-bg: rgba(7,11,27,.97);
-  --ec-modal-bg-2: rgba(12,16,36,.94);
-  --ec-modal-border: rgba(139,92,246,.24);
-  --ec-modal-border-soft: rgba(255,255,255,.075);
-  --ec-modal-purple: #8b5cf6;
-  --ec-modal-indigo: #6366f1;
-  --ec-modal-cyan: #22d3ee;
-  --ec-modal-gold: #fbbf24;
-  --ec-modal-text: #f8fafc;
-  --ec-modal-muted: #94a3b8;
-}
-
-/* Backdrops */
-body.premium-global [id$="-modal"].fixed.inset-0,
-body.premium-global #chat-drawer-overlay,
-body.premium-global #cart-drawer-overlay{
-  background:
-    radial-gradient(circle at 50% 35%, rgba(124,58,237,.12), transparent 34%),
-    radial-gradient(circle at 82% 15%, rgba(34,211,238,.055), transparent 25%),
-    rgba(2,6,23,.78) !important;
-  backdrop-filter: blur(18px) saturate(135%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(135%) !important;
-}
-
-/* Modal panels — applies to every existing modal without changing markup */
-body.premium-global [id$="-modal"] > div:not(.absolute){
-  position: relative;
-  isolation: isolate;
-  background:
-    linear-gradient(145deg, rgba(18,24,49,.985), rgba(6,10,25,.99) 58%, rgba(13,9,31,.985)) !important;
-  border: 1px solid var(--ec-modal-border) !important;
-  border-radius: 26px !important;
-  box-shadow:
-    0 40px 120px rgba(0,0,0,.72),
-    0 12px 45px rgba(76,29,149,.18),
-    0 0 0 1px rgba(255,255,255,.025) inset,
-    0 0 70px rgba(99,102,241,.055) !important;
-  overflow: hidden;
-}
-
-/* Premium inner light */
-body.premium-global [id$="-modal"] > div:not(.absolute)::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  z-index:-1;
-  background:
-    radial-gradient(circle at 8% 0%, rgba(139,92,246,.14), transparent 30%),
-    radial-gradient(circle at 100% 100%, rgba(34,211,238,.055), transparent 28%),
-    linear-gradient(180deg, rgba(255,255,255,.025), transparent 25%);
-}
-
-/* Top edge highlight */
-body.premium-global [id$="-modal"] > div:not(.absolute)::after{
-  content:"";
-  position:absolute;
-  top:0;
-  left:8%;
-  right:8%;
-  height:1px;
-  pointer-events:none;
-  background:linear-gradient(90deg, transparent, rgba(167,139,250,.75), rgba(34,211,238,.28), transparent);
-}
-
-/* Modal typography */
-body.premium-global [id$="-modal"] h3{
-  color: #f8fafc !important;
-  letter-spacing: -.02em;
-}
-
-body.premium-global [id$="-modal"] label{
-  color: #a8b5cc !important;
-}
-
-body.premium-global [id$="-modal"] p{
-  color: #94a3b8;
-}
-
-/* Close buttons — every modal gets the same premium treatment */
-body.premium-global [id$="-modal"] button[onclick*="close"],
-body.premium-global [id$="-modal"] button[onclick*="skip"],
-body.premium-global [id$="-modal"] button[onclick*="Cancel"]{
-  background: rgba(15,23,42,.72) !important;
-  border: 1px solid rgba(255,255,255,.08) !important;
-  color: #94a3b8 !important;
-  box-shadow: 0 8px 25px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.035);
-  transition: .2s ease;
-}
-
-body.premium-global [id$="-modal"] button[onclick*="close"]:hover,
-body.premium-global [id$="-modal"] button[onclick*="skip"]:hover,
-body.premium-global [id$="-modal"] button[onclick*="Cancel"]:hover{
-  color:#f8fafc !important;
-  border-color:rgba(139,92,246,.38) !important;
-  background:rgba(139,92,246,.16) !important;
-  box-shadow:0 0 22px rgba(139,92,246,.16);
-  transform:translateY(-1px);
-}
-
-/* Inputs / textareas / selects */
-body.premium-global [id$="-modal"] input:not([type="hidden"]),
-body.premium-global [id$="-modal"] textarea,
-body.premium-global [id$="-modal"] select{
-  background:
-    linear-gradient(180deg, rgba(2,6,23,.78), rgba(15,23,42,.72)) !important;
-  color:#f8fafc !important;
-  border:1px solid rgba(100,116,139,.22) !important;
-  border-radius:14px !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.025),
-    0 5px 20px rgba(0,0,0,.14);
-  transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
-}
-
-body.premium-global [id$="-modal"] input:not([type="hidden"]):focus,
-body.premium-global [id$="-modal"] textarea:focus,
-body.premium-global [id$="-modal"] select:focus{
-  outline:none !important;
-  border-color:rgba(139,92,246,.72) !important;
-  background:rgba(8,12,29,.95) !important;
-  box-shadow:
-    0 0 0 3px rgba(139,92,246,.10),
-    0 0 30px rgba(99,102,241,.10),
-    inset 0 1px 0 rgba(255,255,255,.035) !important;
-}
-
-/* Placeholder */
-body.premium-global [id$="-modal"] input::placeholder,
-body.premium-global [id$="-modal"] textarea::placeholder{
-  color:#64748b !important;
-}
-
-/* Buttons inside modal — elevate existing color utilities */
-body.premium-global [id$="-modal"] button:not([onclick*="close"]):not([onclick*="skip"]),
-body.premium-global [id$="-modal"] a{
-  transition:transform .18s ease, box-shadow .18s ease, filter .18s ease, border-color .18s ease;
-}
-
-body.premium-global [id$="-modal"] button:not([onclick*="close"]):not([onclick*="skip"]):hover{
-  filter:brightness(1.08);
-  transform:translateY(-1px);
-}
-
-/* Primary action buttons */
-body.premium-global [id$="-modal"] button.bg-purple-600,
-body.premium-global [id$="-modal"] button.bg-indigo-600,
-body.premium-global [id$="-modal"] button.bg-violet-600{
-  background:linear-gradient(135deg,#7c3aed,#6366f1 58%,#4f46e5) !important;
-  border:1px solid rgba(167,139,250,.38) !important;
-  box-shadow:0 12px 30px rgba(99,102,241,.24), inset 0 1px 0 rgba(255,255,255,.12) !important;
-}
-
-/* Amber/gold actions */
-body.premium-global [id$="-modal"] button.bg-amber-500{
-  background:linear-gradient(135deg,#f59e0b,#fbbf24) !important;
-  box-shadow:0 12px 30px rgba(245,158,11,.18), inset 0 1px 0 rgba(255,255,255,.22) !important;
-}
-
-/* Emerald/success actions */
-body.premium-global [id$="-modal"] button.bg-emerald-500,
-body.premium-global [id$="-modal"] button.bg-emerald-600{
-  background:linear-gradient(135deg,#059669,#10b981) !important;
-  box-shadow:0 12px 30px rgba(16,185,129,.16), inset 0 1px 0 rgba(255,255,255,.12) !important;
-}
-
-/* Red/destructive actions */
-body.premium-global [id$="-modal"] button.bg-rose-500,
-body.premium-global [id$="-modal"] button.bg-red-500,
-body.premium-global [id$="-modal"] button.bg-red-600{
-  box-shadow:0 12px 28px rgba(244,63,94,.13), inset 0 1px 0 rgba(255,255,255,.08) !important;
-}
-
-/* Secondary surfaces */
-body.premium-global [id$="-modal"] .bg-slate-950,
-body.premium-global [id$="-modal"] .bg-slate-900\/50,
-body.premium-global [id$="-modal"] .bg-slate-800{
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
-}
-
-/* Cards inside modals */
-body.premium-global [id$="-modal"] .border-slate-800,
-body.premium-global [id$="-modal"] .border-slate-700{
-  border-color:rgba(100,116,139,.20) !important;
-}
-
-body.premium-global [id$="-modal"] .rounded-2xl,
-body.premium-global [id$="-modal"] .rounded-xl{
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
-}
-
-/* Images / QR / card previews */
-body.premium-global [id$="-modal"] img{
-  box-shadow:0 18px 45px rgba(0,0,0,.28);
-}
-
-body.premium-global #image-preview-modal > div:not(.absolute){
-  max-width:min(900px,96vw) !important;
-  background:rgba(5,8,20,.98) !important;
-  border-color:rgba(139,92,246,.34) !important;
-}
-
-body.premium-global #image-preview-img{
-  background:rgba(2,6,23,.9) !important;
-  border-color:rgba(139,92,246,.18) !important;
-}
-
-/* Form section separators */
-body.premium-global [id$="-modal"] hr{
-  border-color:rgba(100,116,139,.16) !important;
-}
-
-/* Scrollbars */
-body.premium-global [id$="-modal"] > div:not(.absolute),
-body.premium-global [id$="-modal"] .overflow-y-auto{
-  scrollbar-width:thin;
-  scrollbar-color:rgba(139,92,246,.38) transparent;
-}
-
-body.premium-global [id$="-modal"] > div:not(.absolute)::-webkit-scrollbar,
-body.premium-global [id$="-modal"] .overflow-y-auto::-webkit-scrollbar{
-  width:7px;
-}
-
-body.premium-global [id$="-modal"] > div:not(.absolute)::-webkit-scrollbar-thumb,
-body.premium-global [id$="-modal"] .overflow-y-auto::-webkit-scrollbar-thumb{
-  background:linear-gradient(#8b5cf6,#4f46e5);
-  border-radius:999px;
-}
-
-/* Specific premium modal identities */
-body.premium-global #generic-confirm-modal > div:not(.absolute){
-  border-color:rgba(251,191,36,.22) !important;
-}
-
-body.premium-global #auction-winner-modal > div:not(.absolute){
-  border-color:rgba(16,185,129,.30) !important;
-  box-shadow:0 40px 120px rgba(0,0,0,.72),0 0 70px rgba(16,185,129,.08) !important;
-}
-
-body.premium-global #complete-profile-modal > div:not(.absolute){
-  border-color:rgba(16,185,129,.22) !important;
-}
-
-body.premium-global #onboarding-modal > div:not(.absolute){
-  border-color:rgba(245,158,11,.22) !important;
-}
-
-body.premium-global #admin-edit-collector-modal > div:not(.absolute){
-  border-color:rgba(244,63,94,.22) !important;
-}
-
-body.premium-global #auth-modal > div:not(.absolute){
-  border-color:rgba(99,102,241,.34) !important;
-  box-shadow:0 40px 120px rgba(0,0,0,.76),0 0 80px rgba(99,102,241,.10) !important;
-}
-
-/* Cart / checkout drawers */
-body.premium-global #cart-drawer{
-  background:
-    linear-gradient(145deg,rgba(18,24,49,.985),rgba(5,8,21,.99)) !important;
-  border-left:1px solid rgba(139,92,246,.24) !important;
-  box-shadow:-35px 0 100px rgba(0,0,0,.62), inset 1px 0 0 rgba(255,255,255,.025) !important;
-}
-
-body.premium-global #cart-drawer .border-slate-800{
-  border-color:rgba(100,116,139,.18) !important;
-}
-
-/* Chat drawer shares the modal visual language */
-body.premium-global #chat-drawer{
-  background:
-    radial-gradient(circle at 85% 5%,rgba(124,58,237,.10),transparent 28%),
-    linear-gradient(145deg,rgba(9,13,31,.99),rgba(3,6,18,.995)) !important;
-  border-left:1px solid rgba(139,92,246,.26) !important;
-  box-shadow:-35px 0 110px rgba(0,0,0,.68), inset 1px 0 0 rgba(255,255,255,.025) !important;
-}
-
-/* Dropdown / floating panels */
-body.premium-global #notification-dropdown,
-body.premium-global #trade-dropdown-menu,
-body.premium-global #owner-dropdown-menu{
-  background:
-    linear-gradient(145deg,rgba(18,24,49,.985),rgba(6,10,25,.99)) !important;
-  border:1px solid rgba(139,92,246,.22) !important;
-  box-shadow:0 28px 80px rgba(0,0,0,.60),0 0 45px rgba(99,102,241,.08) !important;
-  backdrop-filter:blur(24px) saturate(140%) !important;
-}
-
-/* Mobile modal ergonomics */
-@media (max-width: 640px){
-  body.premium-global [id$="-modal"]{
-    padding:12px !important;
-  }
-
-  body.premium-global [id$="-modal"] > div:not(.absolute){
-    width:100% !important;
-    max-width:calc(100vw - 24px) !important;
-    max-height:calc(100vh - 24px) !important;
-    border-radius:22px !important;
-    padding-left:18px !important;
-    padding-right:18px !important;
-  }
-
-  body.premium-global #chat-drawer{
-    width:100% !important;
-    max-width:none !important;
-  }
-}
-
-/* Modal entrance animation — only when visible */
-@keyframes eugeneModalIn{
-  from{opacity:0;transform:translateY(12px) scale(.985)}
-  to{opacity:1;transform:translateY(0) scale(1)}
-}
-
-body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
-  animation:eugeneModalIn .22s cubic-bezier(.2,.8,.2,1) both;
-}
-
-/* Reduce motion */
-@media (prefers-reduced-motion: reduce){
-  body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
-    animation:none !important;
-  }
-}
-</style>
-    <style id="eugene-push-notification-ui">
-      #notification-dropdown{max-width:calc(100vw - 1rem);}
-      #notification-list > div{cursor:default;}
-      #notification-list > div:hover{background:rgba(15,23,42,.82);}
-      @media(max-width:640px){
-        #notification-dropdown{left:8px;right:8px;top:72px;width:auto !important;max-width:none;}
-        #enable-push-notifications-btn{font-size:8px;padding:.45rem .6rem;}
-      }
-    </style>
-
-
-<style id="eugene-client-gifts-system">
-.client-gift-card{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(30,15,45,.95),rgba(8,12,27,.98));border:1px solid rgba(236,72,153,.22);border-radius:24px;padding:18px;box-shadow:0 20px 55px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.04);transition:.25s ease}
-.client-gift-card:hover{transform:translateY(-4px);border-color:rgba(244,114,182,.42);box-shadow:0 25px 65px rgba(0,0,0,.35),0 0 35px rgba(236,72,153,.08)}
-.client-gift-card .gift-orb{position:absolute;width:180px;height:180px;right:-80px;top:-90px;border-radius:999px;background:radial-gradient(circle,rgba(236,72,153,.18),transparent 70%);pointer-events:none}
-.client-gift-card .gift-label{font-size:8px;letter-spacing:.13em;text-transform:uppercase;font-weight:900;color:#f9a8d4}
-.client-gift-card .gift-value{font:900 20px ui-monospace,monospace;color:#34d399}
-.client-gift-card .gift-status{font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;padding:4px 7px;border-radius:8px}
-.client-gift-card .gift-status.active{color:#6ee7b7;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18)}
-.client-gift-card .gift-status.pending{color:#fcd34d;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.18)}
-.client-gift-card .gift-status.redeemed{color:#94a3b8;background:rgba(100,116,139,.08);border:1px solid rgba(100,116,139,.18)}
-</style>
-
-<style id="eugene-premium-catalog-system">
-/* =========================================================
-   EUGENE CARD — PREMIUM CATALOG / COLLECTION UI
-   ========================================================= */
-.eugene-catalog-view{
-  --cat-purple:#8b5cf6;
-  --cat-indigo:#6366f1;
-  --cat-cyan:#22d3ee;
-  --cat-gold:#fbbf24;
-}
-
-.catalog-command-hero{
-  min-height:310px;
-  background:
-    radial-gradient(circle at 80% 18%,rgba(139,92,246,.18),transparent 26%),
-    radial-gradient(circle at 12% 100%,rgba(34,211,238,.08),transparent 28%),
-    linear-gradient(135deg,rgba(15,23,52,.98),rgba(5,9,24,.99) 58%,rgba(25,14,42,.98));
-  border:1px solid rgba(139,92,246,.23);
-  box-shadow:0 35px 100px rgba(0,0,0,.35),0 0 80px rgba(99,102,241,.06),inset 0 1px 0 rgba(255,255,255,.045);
-}
-.catalog-hero-grid{
-  position:absolute;inset:0;opacity:.28;pointer-events:none;
-  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
-  background-size:42px 42px;
-  mask-image:linear-gradient(to bottom,black,transparent 92%);
-}
-.catalog-hero-orb{position:absolute;border-radius:999px;filter:blur(2px);pointer-events:none}
-.catalog-hero-orb-a{width:300px;height:300px;right:-100px;top:-130px;background:radial-gradient(circle,rgba(139,92,246,.22),transparent 68%)}
-.catalog-hero-orb-b{width:250px;height:250px;left:-130px;bottom:-130px;background:radial-gradient(circle,rgba(34,211,238,.11),transparent 68%)}
-.catalog-logo-orb{
-  width:48px;height:48px;border-radius:16px;display:grid;place-items:center;
-  background:linear-gradient(145deg,rgba(99,102,241,.18),rgba(139,92,246,.08));
-  border:1px solid rgba(139,92,246,.35);
-  box-shadow:0 0 35px rgba(99,102,241,.13),inset 0 1px 0 rgba(255,255,255,.08)
-}
-.catalog-eyebrow{
-  font-size:9px;font-weight:900;letter-spacing:.2em;color:#a78bfa;text-transform:uppercase
-}
-.catalog-gradient-text{
-  background:linear-gradient(100deg,#fbbf24,#c084fc 52%,#67e8f9);
-  -webkit-background-clip:text;background-clip:text;color:transparent
-}
-.catalog-primary-btn,.catalog-secondary-btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  min-height:38px;padding:0 15px;border-radius:12px;font-size:11px;font-weight:900;
-  transition:.2s ease;border:1px solid transparent
-}
-.catalog-primary-btn{
-  color:#080b18;background:linear-gradient(135deg,#fbbf24,#f59e0b);
-  box-shadow:0 12px 30px rgba(245,158,11,.16),inset 0 1px 0 rgba(255,255,255,.3)
-}
-.catalog-primary-btn:hover{transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 16px 38px rgba(245,158,11,.23)}
-.catalog-secondary-btn{
-  color:#ddd6fe;background:rgba(99,102,241,.09);border-color:rgba(139,92,246,.25)
-}
-.catalog-secondary-btn:hover{transform:translateY(-2px);background:rgba(139,92,246,.15);border-color:rgba(167,139,250,.42)}
-.catalog-supply-card{
-  min-width:min(100%,310px);padding:17px 18px;border-radius:20px;
-  background:rgba(2,6,23,.52);border:1px solid rgba(255,255,255,.08);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 18px 45px rgba(0,0,0,.22)
-}
-.catalog-supply-ring{position:relative;width:78px;height:78px;flex:none}
-.catalog-supply-ring svg{width:100%;height:100%;filter:drop-shadow(0 0 10px rgba(139,92,246,.2))}
-.catalog-supply-ring span{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:900;color:#e2e8f0}
-.catalog-metric{
-  display:flex;align-items:center;gap:10px;padding:12px 13px;border-radius:15px;
-  background:rgba(2,6,23,.35);border:1px solid rgba(255,255,255,.055)
-}
-.catalog-metric-icon{width:31px;height:31px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.035);font-size:12px}
-.catalog-metric p{font-size:8px;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
-.catalog-metric strong{display:block;color:#f8fafc;font-size:14px;font-family:ui-monospace,monospace;margin-top:1px}
-.catalog-surface,.catalog-library{
-  background:linear-gradient(145deg,rgba(15,23,42,.86),rgba(5,9,22,.92));
-  border:1px solid rgba(100,116,139,.16);
-  box-shadow:0 25px 70px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.025)
-}
-.catalog-section-chip{
-  display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;
-  color:#fbbf24;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.16);
-  font-size:8px;font-weight:900;letter-spacing:.12em;text-transform:uppercase
-}
-.catalog-section-chip.cyan{color:#67e8f9;background:rgba(34,211,238,.06);border-color:rgba(34,211,238,.14)}
-.catalog-section-chip.purple{color:#c4b5fd;background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.18)}
-.catalog-icon-button{
-  width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
-  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);font-size:11px
-}
-.catalog-live-badge{display:flex;align-items:center;gap:6px;color:#34d399;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.1em}
-.catalog-live-badge span{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 10px rgba(52,211,153,.65);animation:pulse 1.7s infinite}
-.catalog-toolbar{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-  padding:10px;border-radius:18px;background:rgba(2,6,23,.44);border:1px solid rgba(255,255,255,.055)
-}
-.catalog-search-wrap{
-  position:relative;display:flex;align-items:center;flex:1;min-width:min(100%,280px)
-}
-.catalog-search-wrap>i{position:absolute;left:14px;color:#64748b;font-size:11px;pointer-events:none}
-.catalog-search-wrap input{
-  width:100%;height:40px;padding:0 62px 0 36px;border-radius:12px;
-  background:rgba(2,6,23,.74);border:1px solid rgba(100,116,139,.18);
-  color:#f8fafc;font-size:11px;outline:none
-}
-.catalog-search-wrap input:focus{border-color:rgba(139,92,246,.58);box-shadow:0 0 0 3px rgba(139,92,246,.08),0 0 25px rgba(99,102,241,.08)}
-.catalog-search-wrap kbd{
-  position:absolute;right:10px;padding:3px 6px;border-radius:6px;border:1px solid rgba(255,255,255,.08);
-  background:rgba(255,255,255,.035);color:#64748b;font-size:8px;font-family:ui-monospace,monospace
-}
-.catalog-filter-group{display:flex;align-items:center;gap:3px;padding:3px;border-radius:11px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05)}
-.catalog-filter{
-  height:32px;padding:0 10px;border-radius:8px;color:#64748b;background:transparent;
-  font-size:9px;font-weight:900;transition:.18s ease
-}
-.catalog-filter:hover{color:#e2e8f0;background:rgba(255,255,255,.04)}
-.catalog-filter.active{color:#080b18;background:linear-gradient(135deg,#fbbf24,#f59e0b);box-shadow:0 6px 18px rgba(245,158,11,.13)}
-.catalog-sort{
-  height:38px;padding:0 30px 0 11px;border-radius:11px;color:#a5b4fc;background:rgba(2,6,23,.68);
-  border:1px solid rgba(99,102,241,.18);font-size:9px;font-weight:900;outline:none
-}
-.catalog-view-btn{
-  width:34px;height:34px;border-radius:9px;color:#64748b;background:transparent;border:1px solid transparent;
-  transition:.18s ease
-}
-.catalog-view-btn:hover{color:#e2e8f0;background:rgba(255,255,255,.04)}
-.catalog-view-btn.active{color:#c4b5fd;background:rgba(139,92,246,.13);border-color:rgba(139,92,246,.22);box-shadow:0 0 20px rgba(139,92,246,.08)}
-
-.catalog-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-@media(min-width:640px){.catalog-card-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
-@media(min-width:1024px){.catalog-card-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:17px}}
-@media(min-width:1280px){.catalog-card-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:18px}}
-
-.catalog-card{
-  position:relative;overflow:hidden;border-radius:22px;padding:10px;
-  cursor:pointer;background:linear-gradient(145deg,rgba(17,24,48,.96),rgba(5,9,23,.98));
-  border:1px solid rgba(100,116,139,.15);
-  box-shadow:0 18px 50px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.035);
-  transition:transform .25s cubic-bezier(.2,.8,.2,1),border-color .25s,box-shadow .25s
-}
-.catalog-card:hover{transform:translateY(-6px);border-color:rgba(139,92,246,.34);box-shadow:0 28px 65px rgba(0,0,0,.4),0 0 32px rgba(99,102,241,.08),inset 0 1px 0 rgba(255,255,255,.05)}
-.catalog-card.premium{border-color:rgba(251,191,36,.16)}
-.catalog-card.premium:hover{border-color:rgba(251,191,36,.4);box-shadow:0 28px 65px rgba(0,0,0,.42),0 0 38px rgba(245,158,11,.08)}
-.catalog-card-glow{position:absolute;inset:-50%;pointer-events:none;background:radial-gradient(circle at 50% 0,rgba(139,92,246,.1),transparent 28%);opacity:.8}
-.catalog-card.premium .catalog-card-glow{background:radial-gradient(circle at 50% 0,rgba(251,191,36,.12),transparent 28%)}
-.catalog-card-top{position:relative;z-index:4;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.catalog-type-pill{
-  display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border-radius:999px;
-  font-size:7px;font-weight:900;letter-spacing:.09em;text-transform:uppercase
-}
-.catalog-type-pill.premium{color:#fcd34d;background:rgba(251,191,36,.09);border:1px solid rgba(251,191,36,.18)}
-.catalog-type-pill.standard{color:#93c5fd;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.16)}
-.catalog-heart{
-  width:28px;height:28px;border-radius:9px;display:grid;place-items:center;color:#475569;
-  background:rgba(2,6,23,.55);border:1px solid rgba(255,255,255,.055);font-size:10px;transition:.18s ease
-}
-.catalog-heart:hover,.catalog-heart.active{color:#fb7185;border-color:rgba(244,63,94,.2);background:rgba(244,63,94,.08)}
-.catalog-card-image{position:relative;aspect-ratio:4/5;border-radius:15px;overflow:hidden;background:#020617;border:1px solid rgba(255,255,255,.06)}
-.catalog-card-image-inner{position:absolute;inset:5px;border-radius:11px;overflow:hidden;background:#0f172a}
-.catalog-card-image img{width:100%;height:100%;object-fit:contain;display:block;transition:transform .5s ease}
-.catalog-card:hover .catalog-card-image img{transform:scale(1.035)}
-.catalog-foil{position:absolute;inset:-30%;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.18) 47%,rgba(192,132,252,.16) 51%,transparent 63%);transform:translateX(-45%);transition:transform .7s ease}
-.catalog-card:hover .catalog-foil{transform:translateX(45%)}
-.catalog-image-shine{position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.08),transparent 24%,transparent 76%,rgba(139,92,246,.08))}
-.catalog-serial-badge{position:absolute;bottom:9px;left:9px;padding:4px 7px;border-radius:7px;background:rgba(2,6,23,.78);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.08);color:#f8fafc;font:900 9px ui-monospace,monospace}
-.catalog-card-content{position:relative;z-index:4;padding:9px 2px 1px}
-.catalog-card-edition{font-size:7px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
-.catalog-card h4{font-size:11px;color:#f8fafc;font-weight:900;margin-top:3px}
-.catalog-status-dot{width:7px;height:7px;border-radius:50%;margin-top:3px;flex:none}
-.catalog-status-dot.available{background:#34d399;box-shadow:0 0 10px rgba(52,211,153,.55)}
-.catalog-status-dot.sold{background:#64748b}
-.catalog-card-divider{height:1px;background:rgba(255,255,255,.055);margin:9px 0}
-.catalog-price-label{font-size:7px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-weight:900}
-.catalog-price{font:900 11px ui-monospace,monospace;color:#34d399;margin-top:2px}
-.catalog-buy-btn{
-  height:31px;border-radius:9px;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#080b18;
-  border:1px solid rgba(251,191,36,.25);font-size:9px;font-weight:900;
-  box-shadow:0 8px 20px rgba(245,158,11,.1);transition:.18s ease
-}
-.catalog-buy-btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
-.catalog-buy-btn.disabled{background:rgba(255,255,255,.035);color:#475569;border-color:rgba(255,255,255,.04);box-shadow:none}
-
-.catalog-card-list{display:flex;flex-direction:column;gap:9px}
-.catalog-list-card{
-  display:grid;grid-template-columns:78px minmax(0,1fr) auto;align-items:center;gap:14px;
-  padding:10px;border-radius:17px;background:linear-gradient(145deg,rgba(15,23,42,.9),rgba(4,8,20,.95));
-  border:1px solid rgba(100,116,139,.15);cursor:pointer;transition:.2s ease
-}
-.catalog-list-card:hover{transform:translateX(3px);border-color:rgba(139,92,246,.3);box-shadow:0 15px 40px rgba(0,0,0,.24)}
-.catalog-list-media{position:relative;width:78px;height:98px;border-radius:11px;overflow:hidden;background:#020617;border:1px solid rgba(255,255,255,.06)}
-.catalog-list-media img{width:100%;height:100%;object-fit:contain}
-.catalog-list-media .catalog-type-pill{position:absolute;left:5px;bottom:5px;max-width:68px}
-.catalog-list-main{min-width:0}
-.catalog-list-serial{font:900 10px ui-monospace,monospace;color:#c4b5fd}
-.catalog-list-main h4{font-size:13px;color:#f8fafc;font-weight:900;margin-top:3px}
-.catalog-list-main p:not(.catalog-list-serial){font-size:9px;color:#64748b;margin-top:3px}
-.catalog-list-meta{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;color:#64748b;font-size:8px;font-weight:800}
-.catalog-list-meta span{display:flex;align-items:center;gap:5px}
-.catalog-list-meta .available{color:#34d399}.catalog-list-meta .sold{color:#64748b}
-.catalog-list-price{text-align:right;min-width:130px}
-.catalog-list-price>span{display:block;font-size:7px;color:#64748b;text-transform:uppercase;font-weight:900;letter-spacing:.08em}
-.catalog-list-price strong{display:block;font:900 12px ui-monospace,monospace;color:#34d399;margin:3px 0 7px}
-@media(max-width:640px){.catalog-list-card{grid-template-columns:58px minmax(0,1fr);}.catalog-list-media{width:58px;height:73px}.catalog-list-price{grid-column:2;text-align:left;min-width:0}.catalog-list-price strong{display:inline-block;margin-right:8px}}
-.catalog-empty-state{
-  grid-column:1/-1;min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  border-radius:22px;border:1px dashed rgba(139,92,246,.18);background:rgba(15,23,42,.34);text-align:center
-}
-.catalog-empty-icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:#a78bfa;background:rgba(139,92,246,.09);border:1px solid rgba(139,92,246,.18)}
-.catalog-empty-state h4{font-size:14px;color:#f8fafc;font-weight:900;margin-top:12px}
-.catalog-empty-state p{font-size:10px;color:#64748b;margin-top:4px}
-.catalog-grid-sentinel,.catalog-list-sentinel{grid-column:1/-1;height:50px;display:flex;align-items:center;justify-content:center;gap:8px;color:#64748b;font-size:9px;font-weight:800}
-.catalog-loading-dot{width:6px;height:6px;border-radius:50%;background:#8b5cf6;box-shadow:0 0 10px rgba(139,92,246,.55);animation:pulse 1.2s infinite}
-@media(max-width:640px){
-  .catalog-toolbar{align-items:stretch}
-  .catalog-search-wrap{min-width:100%}
-  .catalog-filter-group{flex:1}
-  .catalog-filter{flex:1}
-  .catalog-sort{flex:1}
-}
-@media(prefers-reduced-motion:reduce){
-  .catalog-card,.catalog-list-card,.catalog-primary-btn,.catalog-secondary-btn,.catalog-buy-btn{transition:none}
-  .catalog-foil{display:none}
-}
-
-
-/* PREMIUM CARD DETAIL EXPERIENCE */
-.card-detail-backdrop{background:radial-gradient(circle at 75% 20%,rgba(139,92,246,.14),transparent 28%),radial-gradient(circle at 15% 80%,rgba(34,211,238,.08),transparent 25%),rgba(2,6,23,.82)}
-.card-detail-shell{position:relative;width:min(980px,100%);max-height:min(92vh,920px);overflow:hidden;border:1px solid rgba(148,163,184,.14);background:linear-gradient(145deg,rgba(15,23,42,.98),rgba(3,7,18,.99));box-shadow:0 40px 120px rgba(0,0,0,.62),0 0 70px rgba(99,102,241,.12);border-radius:30px}
-.card-detail-shell:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.035),transparent 22%,transparent 72%,rgba(139,92,246,.055))}
-.card-detail-scroll{position:relative;z-index:2;overflow-y:auto;max-height:min(92vh,920px)}
-.card-detail-close{width:38px;height:38px;border-radius:13px;border:1px solid rgba(255,255,255,.08);background:rgba(15,23,42,.82);color:#94a3b8;display:grid;place-items:center;transition:.2s}
-.card-detail-close:hover{color:#fff;border-color:rgba(139,92,246,.35);background:rgba(30,41,59,.95);transform:rotate(4deg)}
-.card-detail-art{position:relative;min-height:390px;border-radius:24px;border:1px solid rgba(255,255,255,.08);background:radial-gradient(circle at 50% 15%,rgba(139,92,246,.16),transparent 38%),linear-gradient(145deg,#020617,#0b1225);overflow:hidden;display:flex;align-items:center;justify-content:center;padding:22px}
-.card-detail-art.premium{border-color:rgba(251,191,36,.2);box-shadow:inset 0 0 50px rgba(245,158,11,.05),0 20px 50px rgba(0,0,0,.25)}
-.card-detail-art img{position:relative;z-index:2;width:100%;height:100%;max-height:450px;object-fit:contain;filter:drop-shadow(0 24px 35px rgba(0,0,0,.55));transition:transform .35s ease}
-.card-detail-art:hover img{transform:scale(1.025) translateY(-3px)}
-.card-detail-art-glow{position:absolute;width:75%;height:75%;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.16),transparent 68%);filter:blur(16px)}
-.card-detail-art.premium .card-detail-art-glow{background:radial-gradient(circle,rgba(251,191,36,.16),rgba(139,92,246,.08) 45%,transparent 70%)}
-.card-detail-foil{position:absolute;inset:-50%;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.13) 47%,rgba(167,139,250,.12) 51%,transparent 63%);transform:translateX(-35%);animation:detailFoil 5s ease-in-out infinite;pointer-events:none;z-index:3}
-@keyframes detailFoil{0%,35%{transform:translateX(-38%) rotate(0deg)}65%,100%{transform:translateX(38%) rotate(0deg)}}
-.card-detail-serial{position:absolute;z-index:5;left:16px;bottom:16px;padding:7px 10px;border-radius:10px;background:rgba(2,6,23,.78);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.09);font:900 11px ui-monospace,monospace;color:#fbbf24;letter-spacing:.08em}
-.card-detail-badge{position:absolute;z-index:5;right:16px;top:16px;padding:7px 10px;border-radius:10px;font-size:8px;font-weight:900;letter-spacing:.12em}
-.card-detail-badge.premium{color:#fcd34d;background:rgba(120,53,15,.45);border:1px solid rgba(251,191,36,.28)}
-.card-detail-badge.standard{color:#93c5fd;background:rgba(30,64,175,.3);border:1px solid rgba(96,165,250,.2)}
-.detail-stat-card{border:1px solid rgba(255,255,255,.06);background:rgba(2,6,23,.55);border-radius:15px;padding:12px;min-height:68px}
-.detail-stat-label{font-size:7px;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:.1em}
-.detail-stat-value{display:block;margin-top:5px;font-size:12px;color:#f8fafc;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.detail-info-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:10px}
-.detail-info-row:last-child{border-bottom:0;padding-bottom:0}.detail-info-row:first-child{padding-top:0}
-.detail-info-label{color:#64748b;font-weight:800}.detail-info-value{color:#e2e8f0;font-weight:900;text-align:right}
-.detail-rarity-track{height:7px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}.detail-rarity-fill{height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#22d3ee,#8b5cf6,#fbbf24);box-shadow:0 0 14px rgba(139,92,246,.35);transition:width .6s ease}
-.detail-action{min-height:46px;border-radius:14px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s}.detail-action.primary{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#09090b;box-shadow:0 12px 30px rgba(245,158,11,.16)}.detail-action.primary:hover{transform:translateY(-2px);filter:brightness(1.05)}
-.detail-action.secondary{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);color:#cbd5e1}.detail-action.secondary:hover{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.25);color:#fff}
-@media(max-width:700px){.card-detail-shell{border-radius:22px}.card-detail-art{min-height:300px;padding:14px}.card-detail-art img{max-height:340px}.detail-stat-card{padding:10px}.card-detail-scroll{max-height:94vh}}
-</style>
-
-
-<style id="eugene-marketplace-v2">
-.catalog-market-intelligence{background:linear-gradient(145deg,rgba(12,18,40,.94),rgba(3,7,20,.96));border:1px solid rgba(99,102,241,.16);box-shadow:0 25px 80px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.025)}
-.market-refresh-label{display:flex;align-items:center;gap:7px;color:#64748b;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.1em}
-.market-refresh-label span{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 10px rgba(52,211,153,.7);animation:pulse 1.6s infinite}
-.market-stat{padding:13px;border-radius:15px;background:rgba(2,6,23,.5);border:1px solid rgba(255,255,255,.055);min-width:0}
-.market-stat .label{font-size:7px;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:.1em}
-.market-stat .value{font:900 14px ui-monospace,monospace;color:#f8fafc;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.market-stat .sub{font-size:8px;color:#64748b;margin-top:3px}
-.market-stat.positive .value{color:#34d399}.market-stat.gold .value{color:#fbbf24}.market-stat.purple .value{color:#c4b5fd}
-.market-chart-panel{padding:14px;border-radius:18px;background:rgba(2,6,23,.42);border:1px solid rgba(255,255,255,.05);min-height:170px}
-.market-sales-bars{height:105px;display:flex;align-items:end;gap:7px;padding:4px 0 0}
-.market-sale-bar{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:end;height:100%;gap:5px}
-.market-sale-bar .bar{width:100%;max-width:34px;min-height:5px;border-radius:6px 6px 3px 3px;background:linear-gradient(to top,#4f46e5,#a78bfa);box-shadow:0 0 18px rgba(99,102,241,.12)}
-.market-sale-bar span{font-size:7px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:45px}
-.market-context-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.market-context-row .meta{font-size:9px;color:#64748b}.market-context-row strong{font:900 10px ui-monospace,monospace;color:#e2e8f0}
-.market-context-track{height:7px;border-radius:999px;background:rgba(255,255,255,.055);overflow:hidden;margin-top:6px}
-.market-context-fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,#6366f1,#a78bfa,#fbbf24)}
-.collector-reputation-avatar{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;color:#c4b5fd;background:linear-gradient(145deg,rgba(99,102,241,.18),rgba(139,92,246,.06));border:1px solid rgba(139,92,246,.25);font-size:18px;box-shadow:0 0 30px rgba(99,102,241,.1)}
-.reputation-stat{padding:10px 12px;border-radius:13px;background:rgba(2,6,23,.5);border:1px solid rgba(255,255,255,.05)}
-.reputation-stat span{display:block;font-size:7px;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.reputation-stat strong{display:block;font:900 14px ui-monospace,monospace;color:#f8fafc;margin-top:4px}
-.achievement-chip{display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);font-size:8px;font-weight:900;color:#cbd5e1}.achievement-chip i{color:#fbbf24}.achievement-chip.locked{opacity:.38;filter:grayscale(1)}
-@media(max-width:640px){.market-stat .value{font-size:12px}.market-sales-bars{gap:4px}.reputation-stat{padding:9px}.reputation-stat strong{font-size:12px}}
-</style>
-
-<style id="eugene-profile-modal-fix">
-  #profile-manager-modal{
-    overscroll-behavior:contain;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-gutter:stable;
-  }
-  #profile-manager-modal .profile-manager-modal-panel{
-    flex:none;
-    scrollbar-width:thin;
-    scrollbar-color:rgba(139,92,246,.55) rgba(2,6,23,.35);
-  }
-  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar{width:8px}
-  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar-track{background:rgba(2,6,23,.35);border-radius:999px}
-  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar-thumb{
-    background:linear-gradient(180deg,rgba(129,140,248,.75),rgba(139,92,246,.55));
-    border-radius:999px;
-    border:2px solid rgba(15,23,42,.85);
-  }
-  #profile-manager-modal .profile-manager-modal-panel > .space-y-3{
-    padding-bottom:max(.5rem, env(safe-area-inset-bottom));
-  }
-  @media(max-width:640px){
-    #profile-manager-modal{padding:8px 10px}
-    #profile-manager-modal .profile-manager-modal-panel{
-      width:100%;
-      max-width:none;
-      margin:0;
-      max-height:calc(100dvh - 1rem);
-      border-radius:22px;
-    }
-  }
-</style>
-
-
-<style id="eugene-chat-viewport-fix">
-  body.chat-drawer-open{overflow:hidden !important;touch-action:none}
-  body.chat-drawer-open #chat-drawer{height:100dvh;max-height:100dvh}
-  #chat-drawer{
-    isolation:isolate;
-    contain:layout paint;
-  }
-  #chat-messages-container{
-    overscroll-behavior:contain;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-gutter:stable;
-  }
-  #chat-drawer footer{
-    margin-top:auto;
-    flex-shrink:0;
-    transform:translateZ(0);
-  }
-  @media(max-width:640px){
-    #chat-drawer{width:100%;max-width:none}
-  }
-</style>
-
-
-<style id="eugene-mobile-modal-safe-fix">
-/* =========================================================
-   EUGENE CARD — SAFE MOBILE MODAL FIX
-   CSS-only: preserves all existing modal JavaScript/features.
-   ========================================================= */
-
-/* Profile customisation */
-#profile-manager-modal{
-  box-sizing:border-box !important;
-  min-height:100vh !important;
-  min-height:100dvh !important;
-  max-height:100dvh !important;
-  padding:12px !important;
-  overflow:hidden !important;
-  overscroll-behavior:contain !important;
-  -webkit-overflow-scrolling:touch !important;
-}
-
-#profile-manager-modal .profile-manager-modal-panel{
-  box-sizing:border-box !important;
-  width:min(520px,100%) !important;
-  max-width:520px !important;
-  height:auto !important;
-  max-height:calc(100dvh - 24px) !important;
-  min-height:0 !important;
-  margin:0 !important;
-  overflow-x:hidden !important;
-  overflow-y:auto !important;
-  overscroll-behavior:contain !important;
-  -webkit-overflow-scrolling:touch !important;
-  scrollbar-gutter:stable;
-  flex:0 1 auto !important;
-}
-
-#profile-manager-modal .profile-manager-modal-panel > .space-y-3{
-  min-height:0 !important;
-  padding-bottom:max(20px,env(safe-area-inset-bottom)) !important;
-}
-
-#profile-manager-modal input,
-#profile-manager-modal textarea,
-#profile-manager-modal select,
-#profile-manager-modal button{
-  touch-action:manipulation;
-}
-
-#profile-manager-modal textarea{
-  max-height:180px;
-  overflow-y:auto;
-}
-
-/* Card details */
-#card-detail-modal{
-  box-sizing:border-box !important;
-  min-height:100vh !important;
-  min-height:100dvh !important;
-  max-height:100dvh !important;
-  padding:max(10px,env(safe-area-inset-top)) 10px
-          max(10px,env(safe-area-inset-bottom)) !important;
-  overflow:hidden !important;
-  overscroll-behavior:contain !important;
-}
-
-#card-detail-modal .card-detail-shell{
-  box-sizing:border-box !important;
-  width:min(980px,100%) !important;
-  max-width:980px !important;
-  height:auto !important;
-  max-height:calc(100dvh - 20px) !important;
-  min-height:0 !important;
-  overflow:hidden !important;
-}
-
-#card-detail-modal .card-detail-scroll{
-  box-sizing:border-box !important;
-  width:100% !important;
-  min-height:0 !important;
-  max-height:calc(100dvh - 20px) !important;
-  overflow-x:hidden !important;
-  overflow-y:auto !important;
-  overscroll-behavior:contain !important;
-  -webkit-overflow-scrolling:touch !important;
-  scrollbar-gutter:stable;
-}
-
-@media (max-width:640px){
-  /* Keep the profile sheet fully inside the phone viewport. */
-  #profile-manager-modal{
-    align-items:flex-start !important;
-    justify-content:center !important;
-    padding:8px !important;
-  }
-
-  #profile-manager-modal .profile-manager-modal-panel{
-    width:100% !important;
-    max-width:none !important;
-    height:auto !important;
-    max-height:calc(100dvh - 16px) !important;
-    border-radius:22px !important;
-    padding:18px 16px max(18px,env(safe-area-inset-bottom)) !important;
-    margin:0 !important;
-  }
-
-  /* Make the scroll area obvious without forcing a visible scrollbar. */
-  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar,
-  #card-detail-modal .card-detail-scroll::-webkit-scrollbar{
-    width:5px;
-  }
-  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar-thumb,
-  #card-detail-modal .card-detail-scroll::-webkit-scrollbar-thumb{
-    background:rgba(148,163,184,.35);
-    border-radius:999px;
-  }
-
-  /* Card details become a full-height mobile sheet. */
-  #card-detail-modal{
-    align-items:flex-end !important;
-    justify-content:center !important;
-    padding:6px !important;
-  }
-
-  #card-detail-modal .card-detail-shell{
-    width:100% !important;
-    max-width:none !important;
-    max-height:calc(100dvh - 12px) !important;
-    border-radius:24px 24px 16px 16px !important;
-  }
-
-  #card-detail-modal .card-detail-scroll{
-    max-height:calc(100dvh - 12px) !important;
-    padding:14px !important;
-    padding-bottom:max(22px,env(safe-area-inset-bottom)) !important;
-  }
-
-  #card-detail-modal .card-detail-art{
-    height:min(58vw,330px) !important;
-    min-height:0 !important;
-    max-height:330px !important;
-  }
-
-  #card-detail-modal .card-detail-art img{
-    max-height:100% !important;
-    object-fit:contain !important;
-  }
-
-  #card-detail-modal .card-detail-close{
-    position:sticky !important;
-    top:0 !important;
-    z-index:30 !important;
-    flex-shrink:0 !important;
-  }
-}
-
-@media (max-width:380px){
-  #profile-manager-modal{
-    padding:5px !important;
-  }
-
-  #profile-manager-modal .profile-manager-modal-panel{
-    max-height:calc(100dvh - 10px) !important;
-    padding-left:13px !important;
-    padding-right:13px !important;
-  }
-
-  #card-detail-modal .card-detail-shell{
-    max-height:calc(100dvh - 10px) !important;
-  }
-
-  #card-detail-modal .card-detail-scroll{
-    max-height:calc(100dvh - 10px) !important;
-    padding-left:11px !important;
-    padding-right:11px !important;
-  }
-
-  #card-detail-modal .card-detail-art{
-    height:240px !important;
-  }
-}
-
-/* Prevent accidental horizontal overflow on either modal. */
-#profile-manager-modal *,
-#card-detail-modal *{
-  max-width:100%;
-  box-sizing:border-box;
-}
-</style>
-
-
-
-<style id="eugene-mobile-overflow-hardening">
-/* =========================================================
-   EUGENE CARD — MOBILE VIEWPORT / MODAL HARDENING
-   Prevent page-level horizontal drift while keeping internal
-   controls usable.  Existing desktop layout is untouched.
-   ========================================================= */
-html, body {
-  width:100%;
-  max-width:100%;
-  overflow-x:hidden !important;
-}
-html { overscroll-behavior-x:none; }
-body { touch-action:pan-y; }
-body > * { max-width:100vw; }
-main, header, footer, section, article, aside, nav, form, .max-w-7xl {
-  min-width:0;
-  max-width:100%;
-}
-
-/* Keep the top navigation attached to the viewport on phones. */
-@media (max-width:640px){
-  header.sticky {
-    position:sticky !important;
-    top:0 !important;
-    z-index:1000 !important;
-    width:100% !important;
-    max-width:100vw !important;
-    overflow:hidden !important;
-  }
-
-  /* The navigation may scroll internally, but must never enlarge the page. */
-  header nav {
-    max-width:100% !important;
-    min-width:0 !important;
-    overscroll-behavior-x:contain;
-  }
-
-  /* Stop flex/grid children from creating a wider-than-phone layout. */
-  main > section,
-  main > section > *,
-  #view-home > *,
-  #view-catalog > *,
-  #view-trade > *,
-  #view-auction > * {
-    min-width:0 !important;
-    max-width:102% !important;
-  }
-
-  /* ---------------- Profile customisation ---------------- */
-  #profile-manager-modal {
-    width:100vw !important;
-    max-width:100vw !important;
-    min-width:0 !important;
-    padding:6px !important;
-    overflow:hidden !important;
-    overscroll-behavior-x:none !important;
-  }
-
-  #profile-manager-modal .profile-manager-modal-panel {
-    width:100% !important;
-    max-width:calc(100vw - 12px) !important;
-    min-width:0 !important;
-    margin:0 !important;
-    padding:16px 14px max(18px,env(safe-area-inset-bottom)) !important;
-    overflow-x:hidden !important;
-    overflow-y:auto !important;
-  }
-
-  #profile-manager-modal .profile-manager-modal-panel > *,
-  #profile-manager-modal .profile-manager-modal-panel .space-y-3,
-  #profile-manager-modal .profile-manager-modal-panel .relative {
-    min-width:0 !important;
-    max-width:100% !important;
-  }
-
-  #profile-manager-modal h3,
-  #profile-manager-modal p,
-  #profile-manager-modal label {
-    overflow-wrap:anywhere;
-    word-break:break-word;
-  }
-
-  #profile-manager-modal input,
-  #profile-manager-modal textarea,
-  #profile-manager-modal select {
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-  }
-
-  /* ---------------- Collection card details ---------------- */
-  #card-detail-modal {
-    width:100vw !important;
-    max-width:100vw !important;
-    min-width:0 !important;
-    padding:5px !important;
-    overflow:hidden !important;
-    overscroll-behavior-x:none !important;
-  }
-
-  #card-detail-modal .card-detail-shell {
-    width:100% !important;
-    max-width:calc(100vw - 10px) !important;
-    min-width:0 !important;
-    margin:0 !important;
-    overflow:hidden !important;
-  }
-
-  #card-detail-modal .card-detail-scroll {
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    overflow-x:hidden !important;
-  }
-
-  #card-detail-modal .card-detail-scroll > *,
-  #card-detail-modal .card-detail-scroll .grid,
-  #card-detail-modal .card-detail-scroll .flex,
-  #card-detail-modal .card-detail-scroll .min-w-0 {
-    min-width:0 !important;
-    max-width:100% !important;
-  }
-
-  #card-detail-modal .card-detail-scroll h3,
-  #card-detail-modal .card-detail-scroll p,
-  #card-detail-modal .card-detail-scroll span,
-  #card-detail-modal .card-detail-scroll strong {
-    overflow-wrap:anywhere;
-    word-break:break-word;
-  }
-
-  /* Three summary cards stay inside the phone instead of forcing a wider grid. */
-  #card-detail-modal .grid.grid-cols-3 {
-    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
-    width:100% !important;
-  }
-
-  #card-detail-modal .detail-stat-card {
-    min-width:0 !important;
-    width:100% !important;
-    padding:9px 7px !important;
-  }
-
-  #card-detail-modal .detail-stat-value {
-    min-width:0 !important;
-    max-width:100% !important;
-    white-space:normal !important;
-    overflow:hidden !important;
-    text-overflow:ellipsis !important;
-    overflow-wrap:anywhere !important;
-    font-size:10px !important;
-  }
-
-  #card-detail-modal .detail-info-row {
-    min-width:0 !important;
-    flex-wrap:wrap !important;
-  }
-
-  #card-detail-modal .detail-info-value {
-    min-width:0 !important;
-    max-width:65% !important;
-    overflow-wrap:anywhere !important;
-    word-break:break-word !important;
-  }
-
-  #card-detail-modal .card-detail-art {
-    width:100% !important;
-    max-width:100% !important;
-    overflow:hidden !important;
-  }
-
-  #card-detail-modal .card-detail-art img {
-    max-width:100% !important;
-    width:auto !important;
-    height:auto !important;
-  }
-
-  /* Buttons/action rows must wrap rather than widening the sheet. */
-  #card-detail-modal button,
-  #profile-manager-modal button {
-    max-width:100% !important;
-  }
-}
-
-@media (max-width:380px){
-  #profile-manager-modal .profile-manager-modal-panel {
-    max-width:calc(100vw - 10px) !important;
-    padding-left:12px !important;
-    padding-right:12px !important;
-  }
-  #card-detail-modal .card-detail-shell {
-    max-width:calc(100vw - 8px) !important;
-  }
-  #card-detail-modal .grid.grid-cols-3 {
-    gap:4px !important;
-  }
-  #card-detail-modal .detail-stat-card {
-    padding-left:5px !important;
-    padding-right:5px !important;
-  }
-  #card-detail-modal .detail-stat-label {
-    font-size:6px !important;
-    letter-spacing:.04em !important;
-  }
-}
-</style>
-
-</head>
-<body class="premium-global min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-black relative">
-
-  <!-- Embedded Logo SVG -->
-  <svg style="display: none;">
-    <defs>
-      <g id="eugene-logo-mark">
-        <circle cx="50" cy="50" r="42" fill="none" stroke="#4f46e5" stroke-width="5" stroke-dasharray="210 50" transform="rotate(-45 50 50)"/>
-        <polygon points="50,18 80,35 80,68 50,85 20,68 20,35" fill="#6366f1"/>
-        <path d="M 32 42 C 38 32, 52 32, 58 40 C 62 46, 48 54, 40 60 C 35 64, 45 70, 60 62" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
-      </g>
-    </defs>
-  </svg>
-
-  <!-- Header -->
-  <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-      
-      <!-- Brand Logo -->
-      <div class="flex items-center gap-3 cursor-pointer shrink-0" onclick="switchTab('home')">
-        <div class="w-10 h-10 rounded-xl overflow-hidden bg-slate-900 border border-indigo-500/30 p-1 flex items-center justify-center shadow-lg shadow-indigo-500/10">
-          <svg viewBox="0 0 100 100" class="w-full h-full"><use href="#eugene-logo-mark"/></svg>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="font-extrabold text-base tracking-wider text-white uppercase" data-i18n="brandTitle">EUGENE CARD</h1>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30" data-i18n="betaEdition">Beta Edition</span>
-          </div>
-          <p class="text-xs text-slate-400 hidden sm:block" data-i18n="brandSubtitle">Trading Card Marketplace & Exchange Hub</p>
-        </div>
-      </div>
-
-      <!-- Navigation Tabs & External Pages Navigation -->
-      <nav class="flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto max-w-full">
-        <button id="nav-home" onclick="switchTab('home')" class="relative px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 shadow-sm flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fa-solid fa-house text-emerald-400"></i> <span data-i18n="navHome">Home</span>
-          <span id="home-active-count-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-black flex items-center justify-center leading-none border border-slate-950">0</span>
-        </button>
-        <button id="nav-catalog" onclick="switchTab('catalog')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fa-solid fa-layer-group text-amber-400"></i> <span data-i18n="navCollection">Collection</span>
-        </button>
-        <button id="nav-trade" onclick="switchTab('trade')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fa-solid fa-right-left text-amber-400"></i> <span data-i18n="navTrade">Trade</span>
-        </button>
-        <button id="nav-auction" onclick="switchTab('auction')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fa-solid fa-gavel text-emerald-400"></i> <span data-i18n="navAuction">Auction</span>
-        </button>
-        <button id="nav-trade-req" onclick="switchTab('trade-req')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fa-solid fa-handshake text-purple-400"></i> <span data-i18n="navRequests">Trade Requests</span>
-        </button>
-        
-        <!-- Internal Tab + External Page Links for Analytics -->
-        <button id="nav-analytics" onclick="switchTab('analytics')" class="analytics-nav-btn hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-amber-950/30 border border-amber-500/30">
-          <i class="fa-solid fa-chart-line text-amber-400"></i> <span data-i18n="navAnalytics">Analytics</span>
-        </button>
-        <a href="analytics.html" class="admin-only-nav hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-amber-500/10 border border-amber-500/20">
-          <i class="fa-solid fa-chart-pie text-amber-400"></i> Analytics Hub
-        </a>
-
-        <!-- Internal Revenue Tab -->
-        <button id="nav-revenue" onclick="switchTab('revenue')" class="analytics-nav-btn hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-emerald-950/30 border border-emerald-500/30">
-          <i class="fa-solid fa-sack-dollar text-emerald-400"></i> <span data-i18n="navRevenueTab">Revenue</span>
-        </button>
-
-        <button id="nav-inbox" onclick="switchTab('inbox')" class="relative px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fa-solid fa-comments text-indigo-400"></i> <span data-i18n="navInbox">Inbox</span>
-          <span id="inbox-unread-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center leading-none border border-slate-950">0</span>
-        </button>
-        <button id="nav-holders" onclick="switchTab('holders')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fa-solid fa-users text-teal-400"></i> <span data-i18n="navHolders">Holders</span>
-        </button>
-        <button id="nav-history" onclick="switchTab('history')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> <span data-i18n="navHistory">History</span>
-        </button>
-
-        <div class="h-4 w-px bg-slate-800 mx-1 self-center hidden sm:block"></div>
-
-        <button id="nav-dashboard" onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fa-solid fa-vault text-amber-400"></i> <span data-i18n="navVault">My Vault</span>
-        </button>
-        <button id="nav-gifts" onclick="switchTab('gifts')" class="relative px-3 py-1.5 rounded-xl text-xs font-semibold text-pink-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-pink-950/30 border border-pink-500/30 shadow-sm shadow-pink-500/10">
-          <i class="fa-solid fa-gift text-pink-400"></i> <span data-i18n="navGifts">Client Gifts</span>
-          <span id="gift-active-count-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-pink-500 text-white text-[9px] font-black flex items-center justify-center leading-none border border-slate-950">0</span>
-        </button>
-        <button id="nav-wishlist" onclick="switchTab('wishlist')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fa-solid fa-heart text-rose-400"></i> <span data-i18n="navWishlist">Wishlist</span>
-        </button>
-
-        <div id="admin-nav-separator" class="h-4 w-px bg-slate-800 mx-1 self-center hidden"></div>
-
-        <!-- External Link to Admin Command Center -->
-        <a href="admin-command-center.html" class="admin-only-nav hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-violet-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-violet-950/40 border border-violet-500/30">
-          <i class="fa-solid fa-gauge-high text-violet-400"></i> Command Center
-        </a>
-
-        <!-- External Link to Revenue -->
-        <a href="revenue.html" class="admin-only-nav hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-emerald-950/40 border border-emerald-500/30">
-          <i class="fa-solid fa-sack-dollar text-emerald-400"></i> Revenue Hub
-        </a>
-
-        <button id="nav-inventory" onclick="switchTab('inventory')" class="admin-only-nav hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-rose-950/30 border border-rose-500/20">
-          <i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="navInventory">Inventory</span>
-        </button>
-        <button id="nav-admin" onclick="switchTab('admin')" class="admin-only-nav hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-rose-950/30 border border-rose-500/20">
-          <i class="fa-solid fa-shield-halved"></i> <span data-i18n="navAdmin">Admin Hub</span>
-        </button>
-      </nav>
-
-      <!-- Language Toggle, Cart, Notifications & Auth Header -->
-      <div class="flex items-center gap-2 shrink-0">
-        <button onclick="openOnboardingModal()" title="How Eugene Card Works" class="hidden sm:flex p-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-slate-800 items-center justify-center transition-all">
-          <i class="fa-solid fa-circle-question text-sm text-amber-400"></i>
-        </button>
-
-        <button onclick="toggleLanguage()" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 font-mono font-bold text-xs rounded-xl border border-slate-800 transition-all flex items-center gap-1" title="Switch Language / Ganti Bahasa">
-          <i class="fa-solid fa-globe text-[11px]"></i>
-          <span id="current-lang-label">ID</span>
-        </button>
-
-        <button id="notif-toggle-btn" onclick="toggleNotificationMenu()" class="relative p-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-slate-800 flex items-center justify-center transition-all">
-          <i class="fa-solid fa-bell text-sm text-amber-400"></i>
-          <span id="notification-badge" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-indigo-600 text-white font-black text-[10px] rounded-full items-center justify-center border-2 border-slate-950 hidden">0</span>
-        </button>
-
-        <button onclick="toggleCartDrawer()" class="relative p-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-slate-800 flex items-center justify-center transition-all">
-          <i class="fa-solid fa-cart-shopping text-sm text-amber-400"></i>
-          <span id="cart-badge-count" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-amber-500 text-slate-950 font-black text-[10px] rounded-full flex items-center justify-center border-2 border-slate-950">0</span>
-        </button>
-
-        <div id="auth-header-container"></div>
-      </div>
-
-    </div>
-  </header>
-
-  <!-- PREMIUM DIRECT CHAT DRAWER -->
-  <div id="chat-drawer-overlay" class="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[9990] hidden transition-opacity" onclick="closeChatDrawer()"></div>
-  <aside id="chat-drawer" class="fixed top-0 right-0 h-[100dvh] max-h-[100dvh] w-full max-w-[680px] bg-[#050817] border-l border-indigo-400/20 z-[9995] transform translate-x-full transition-transform duration-300 flex flex-col overflow-hidden shadow-[-24px_0_80px_rgba(0,0,0,.55)]">
-    <div class="pointer-events-none absolute -top-32 -right-32 w-80 h-80 rounded-full bg-violet-600/15 blur-3xl"></div>
-    <div class="pointer-events-none absolute bottom-20 -left-32 w-72 h-72 rounded-full bg-cyan-500/10 blur-3xl"></div>
-    <header class="relative shrink-0 px-5 py-4 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
-      <div class="flex items-center justify-between gap-4">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="relative shrink-0">
-            <div id="chat-target-avatar-container" class="w-12 h-12 rounded-2xl bg-slate-900 border border-white/10 overflow-hidden flex items-center justify-center shadow-lg"><i class="fa-solid fa-user text-sm text-slate-400"></i></div>
-            <span class="absolute -right-0.5 -bottom-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-[3px] border-[#050817]"></span>
-          </div>
-          <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <h3 id="chat-target-user-name" class="text-base font-black text-white truncate" data-i18n="chatDirectTitle">Direct Trade Chat</h3>
-              <span id="chat-target-admin-badge" class="hidden text-[9px] font-black px-2 py-1 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-400/25"><i class="fa-solid fa-shield-halved mr-1"></i> ADMIN</span>
-            </div>
-            <div class="flex items-center gap-2 mt-0.5">
-              <span class="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,.8)]"></span> Online</span>
-              <span class="text-slate-700">•</span>
-              <p id="chat-target-context" class="text-[10px] text-slate-400 truncate" data-i18n="chatDirectSub">Negotiate trade terms directly</p>
-            </div>
-          </div>
-        </div>
-        <div class="flex items-center gap-1.5 shrink-0">
-          <button type="button" onclick="showToast('Profile view coming soon.')" class="hidden sm:flex h-10 px-3 rounded-xl border border-white/10 bg-white/[.03] hover:bg-white/[.07] text-slate-300 hover:text-white text-[10px] font-bold items-center gap-2 transition-all"><i class="fa-solid fa-user"></i> Profile</button>
-          <button type="button" onclick="showToast('Chat pinned for this session.')" class="w-10 h-10 rounded-xl border border-white/10 bg-white/[.03] hover:bg-violet-500/15 text-slate-400 hover:text-violet-300 flex items-center justify-center transition-all"><i class="fa-solid fa-thumbtack text-xs"></i></button>
-          <button type="button" onclick="closeChatDrawer()" class="w-10 h-10 rounded-xl border border-white/10 bg-white/[.03] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 flex items-center justify-center transition-all"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-      </div>
-    </header>
-    <div class="relative shrink-0 px-5 py-2.5 border-b border-white/[.06] bg-slate-950/45 flex items-center justify-between">
-      <div class="flex items-center gap-2"><span class="text-[9px] uppercase tracking-[.18em] font-black text-slate-500" data-i18n="conversationLabel">Conversation</span><span class="w-1 h-1 rounded-full bg-violet-400"></span><span class="text-[9px] text-slate-500" data-i18n="privateEncrypted">Private &amp; encrypted</span></div>
-      <button type="button" onclick="document.getElementById('chat-messages-container').scrollTo({top:document.getElementById('chat-messages-container').scrollHeight,behavior:'smooth'})" class="text-[9px] font-bold text-slate-400 hover:text-white transition-colors"><i class="fa-solid fa-arrow-down mr-1"></i> <span data-i18n="latestLabel">Latest</span></button>
-    </div>
-    <div id="chat-messages-container" class="relative flex-1 min-h-0 h-0 px-5 py-5 space-y-4 overflow-y-auto overscroll-contain bg-[radial-gradient(circle_at_80%_15%,rgba(124,58,237,.08),transparent_30%),radial-gradient(circle_at_15%_70%,rgba(6,182,212,.05),transparent_28%)]" style="scrollbar-width:thin;scrollbar-color:rgba(139,92,246,.35) transparent;">
-      <div class="text-center py-16 text-slate-500 text-xs" data-i18n="noChatMessages">No chat messages yet. Start the conversation!</div>
-    </div>
-    <footer class="relative shrink-0 sticky bottom-0 p-4 border-t border-white/10 bg-slate-950/90 backdrop-blur-xl z-10" style="padding-bottom:max(1rem,env(safe-area-inset-bottom));">
-      <div id="chat-image-preview-box" class="hidden mb-3 p-2.5 bg-white/[.03] border border-violet-400/20 rounded-2xl relative">
-        <button onclick="clearChatImageAttachment()" class="absolute top-2 right-2 z-10 w-7 h-7 rounded-lg bg-slate-950/90 border border-white/10 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark text-[10px]"></i></button>
-        <img id="chat-image-preview-img" src="" class="h-28 max-w-full rounded-xl object-contain mx-auto border border-white/10">
-      </div>
-      <div class="rounded-2xl border border-white/10 bg-white/[.035] focus-within:border-violet-400/40 focus-within:ring-1 focus-within:ring-violet-400/20 transition-all overflow-hidden">
-        <div class="flex items-end gap-2 p-2">
-          <label class="shrink-0 w-10 h-10 rounded-xl hover:bg-white/[.06] text-slate-400 hover:text-violet-300 cursor-pointer flex items-center justify-center transition-all" title="Attach image"><i class="fa-solid fa-paperclip"></i><input type="file" id="chat-file-input" accept="image/*" onchange="handleChatImageUpload(event)" class="hidden"></label>
-          <div class="flex-1 min-w-0">
-            <input type="text" id="chat-text-input" placeholder="Write a message..." autocomplete="off" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendChatMessage();}" class="w-full h-10 bg-transparent px-1 text-sm text-white placeholder:text-slate-600 focus:outline-none" data-i18n-placeholder="chatInputPlaceholder">
-            <div class="px-1 pb-0.5 text-[8px] text-slate-600"><span data-i18n="enterToSend">Enter to send</span> • <span data-i18n="attachScreenshotsHint">Attach screenshots with the paperclip</span></div>
-          </div>
-          <button type="button" onclick="sendChatMessage()" class="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-400 hover:to-indigo-500 text-white flex items-center justify-center shadow-[0_8px_25px_rgba(124,58,237,.28)] transition-all active:scale-95" aria-label="Send message"><i class="fa-solid fa-paper-plane text-sm"></i></button>
-        </div>
-      </div>
-    </footer>
-  </aside>
-  <style>
-    #chat-messages-container > div:not(.text-center){animation:chatMessageIn .22s ease-out}
-    @keyframes chatMessageIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-    .eugene-chat-bubble{position:relative;max-width:min(82%,470px);padding:11px 14px;border-radius:18px;font-size:12px;line-height:1.55;box-shadow:0 8px 28px rgba(0,0,0,.18)}
-    .eugene-chat-bubble.mine{color:#fff;background:linear-gradient(135deg,rgba(124,58,237,.95),rgba(79,70,229,.92));border:1px solid rgba(167,139,250,.28);border-bottom-right-radius:5px}
-    .eugene-chat-bubble.theirs{color:#e5e7eb;background:linear-gradient(135deg,rgba(30,41,59,.88),rgba(15,23,42,.96));border:1px solid rgba(148,163,184,.12);border-bottom-left-radius:5px}
-    .eugene-chat-meta{display:flex;align-items:center;gap:6px;margin-bottom:5px}.eugene-chat-avatar{width:30px;height:30px;border-radius:11px;object-fit:cover;border:1px solid rgba(255,255,255,.12);box-shadow:0 4px 14px rgba(0,0,0,.25)}.eugene-chat-time{font-size:8px;color:rgba(148,163,184,.65)}
-    .eugene-chat-date{display:flex;align-items:center;gap:12px;margin:4px 0 2px;color:#64748b;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.16em}.eugene-chat-date:before,.eugene-chat-date:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,rgba(139,92,246,.25))}.eugene-chat-date:after{background:linear-gradient(90deg,rgba(139,92,246,.25),transparent)}
-    @media(max-width:640px){#chat-drawer{max-width:none}.eugene-chat-bubble{max-width:88%}}
-  </style>
-
-  <!-- FIXED FLOATING NOTIFICATION OVERLAY PANEL -->
-  <div id="notification-dropdown" class="fixed top-16 right-4 sm:right-8 w-80 sm:w-96 bg-slate-900/95 border border-amber-500/40 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[9999] hidden overflow-hidden backdrop-blur-xl">
-    <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-      <div class="flex items-center gap-2">
-        <i class="fa-solid fa-cookie-bite text-xs text-amber-400"></i>
-        <h4 class="text-xs font-extrabold text-white" data-i18n="notifHeader">Cookie & Activity Logs</h4>
-      </div>
-      <div class="flex items-center gap-3">
-        <button onclick="clearNotifications()" class="text-[10px] font-bold text-slate-400 hover:text-rose-400 transition-colors" data-i18n="clearAll">Clear All</button>
-        <button onclick="toggleNotificationMenu()" class="text-slate-400 hover:text-white text-xs p-1"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-    </div>
-    
-    <div class="px-3 py-2.5 border-b border-slate-800/80 bg-slate-950/70 flex items-center justify-between gap-3">
-      <div class="min-w-0"><p class="text-[10px] font-black text-white">Push Notification</p><p id="push-notification-status" class="text-[9px] text-amber-400 font-bold mt-0.5">Belum diaktifkan</p></div>
-      <button id="enable-push-notifications-btn" type="button" onclick="enablePushNotifications(true)" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] font-black flex items-center gap-1.5"><i class="fa-solid fa-bell"></i> Aktifkan Notifikasi</button>
-    </div>
-    <div id="notification-list" class="max-h-80 overflow-y-auto divide-y divide-slate-800/60 p-1">
-      <div class="p-6 text-center text-xs text-slate-500" data-i18n="noNotifications">No recent notifications.</div>
-    </div>
-  </div>
-
-  <!-- PWA INSTALL FALLBACK HINT -->
-  <div id="pwa-install-hint" class="bg-slate-900/95 border border-indigo-500/40 rounded-2xl shadow-2xl px-4 py-3 backdrop-blur-xl">
-    <div class="flex items-center gap-3">
-      <img src="./eugene-card-icon-192.png" class="w-10 h-10 rounded-xl border border-indigo-400/30" alt="Eugene Card">
-      <div class="min-w-0 flex-1">
-        <p class="text-xs font-black text-white">Install Eugene Card</p>
-        <p class="text-[10px] text-slate-400 mt-0.5">Pasang aplikasi untuk akses lebih cepat.</p>
-      </div>
-      <button id="pwa-install-fallback-btn" class="shrink-0 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black">Install</button>
-      <button id="pwa-install-dismiss-btn" class="shrink-0 w-8 h-8 rounded-xl text-slate-500 hover:text-white" aria-label="Tutup">×</button>
-    </div>
-  </div>
-
-  <!-- Main Body -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 space-y-8">
-
-    <!-- CATALOG VIEW -->
-    <!-- HOME VIEW: COMMUNITY FEED + ACTIVE/OFFLINE MEMBERS (DISCORD-STYLE) -->
-    <section id="view-home" class="space-y-6">
-      <!-- PREMIUM HERO -->
-      <div class="relative overflow-hidden bg-gradient-to-r from-indigo-950/70 via-slate-900 to-emerald-950/40 border border-emerald-500/30 rounded-3xl p-5 sm:p-6 shadow-xl">
-        <div class="pointer-events-none absolute -top-16 -right-16 w-56 h-56 rounded-full bg-emerald-500/10 blur-3xl"></div>
-        <div class="pointer-events-none absolute -bottom-20 -left-10 w-56 h-56 rounded-full bg-indigo-500/10 blur-3xl"></div>
-
-        <div class="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-950 border border-emerald-500/40 p-1 flex items-center justify-center shadow-md shrink-0">
-              <svg viewBox="0 0 100 100" class="w-full h-full"><use href="#eugene-logo-mark"/></svg>
-            </div>
-            <div>
-              <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 tracking-wider" data-i18n="homeHeroBadge">COMMUNITY HUB</span>
-              <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5 tracking-tight" data-i18n="homeTitle">Community Home</h2>
-              <p class="text-xs text-slate-400 mt-1 max-w-md" data-i18n="homeSubtitle">See who's online and share updates with the Eugene Card community.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="relative grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 mt-5 pt-4 border-t border-slate-800/60">
-          <div class="text-center sm:text-left">
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1"><i class="fa-solid fa-eye text-indigo-400"></i> <span data-i18n="statTotalVisitors">Total Visitors</span></p>
-            <p id="home-stat-visitors" class="text-base sm:text-lg font-black font-mono text-white mt-0.5">0</p>
-          </div>
-          <div class="text-center sm:text-left border-x border-slate-800/60 sm:border-x-0">
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> <span data-i18n="statOnlineNow">Online Now</span></p>
-            <p id="home-stat-online" class="text-base sm:text-lg font-black font-mono text-emerald-400 mt-0.5">0</p>
-          </div>
-          <div class="text-center sm:text-left">
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1"><i class="fa-solid fa-users text-amber-400"></i> <span data-i18n="statCollectors">Collectors</span></p>
-            <p id="home-stat-collectors" class="text-base sm:text-lg font-black font-mono text-white mt-0.5">0</p>
-          </div>
-          <div class="text-center sm:text-left border-l border-slate-800/60 sm:border-l-0">
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1"><i class="fa-solid fa-chart-line text-emerald-400"></i> <span data-i18n="statTradingVolume">Trading Volume</span></p>
-            <p id="home-stat-volume" class="text-base sm:text-lg font-black font-mono text-emerald-400 mt-0.5">Rp 0</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <!-- FEED COLUMN -->
-        <div class="lg:col-span-2 space-y-4">
-          <!-- COMPOSER -->
-          <div id="home-composer-card" class="premium-panel rounded-3xl p-5 space-y-3">
-            <div class="flex items-start gap-3">
-              <img id="home-composer-avatar" src="" class="w-10 h-10 rounded-full object-cover border border-emerald-500/30 shrink-0 hidden">
-              <div class="flex-1 space-y-2">
-                <textarea id="home-post-text-input" rows="2" placeholder="What's on your mind, collector?" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 resize-none" data-i18n-placeholder="whatsOnMindPlaceholder"></textarea>
-                <div id="home-post-image-preview-wrap" class="hidden relative w-fit">
-                  <img id="home-post-image-preview" src="" class="max-h-40 rounded-xl border border-slate-800">
-                  <button onclick="removePostImageDraft()" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-950 border border-slate-700 text-slate-300 text-[10px] flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="flex items-center justify-between">
-                  <label class="cursor-pointer text-[11px] font-bold text-slate-400 hover:text-emerald-400 flex items-center gap-1.5 transition-colors">
-                    <i class="fa-solid fa-image"></i> <span data-i18n="attachImageBtn">Attach Image</span>
-                    <input type="file" accept="image/*" class="hidden" onchange="attachPostImage(event)">
-                  </label>
-                  <button onclick="submitNewPost()" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition-all shadow-lg shadow-emerald-500/10" data-i18n="postBtn">Post</button>
-                </div>
-              </div>
-            </div>
-            <p id="home-composer-login-hint" class="hidden text-[11px] text-slate-500 text-center py-1" data-i18n="loginToPostHint">Log in to share a post with the community.</p>
-          </div>
-
-          <!-- FEED LIST -->
-          <div id="home-posts-feed" class="space-y-4">
-            <p class="text-xs text-slate-500 text-center py-10" data-i18n="loadingFeed">Loading feed...</p>
-          </div>
-        </div>
-
-        <!-- MEMBERS SIDEBAR -->
-        <div class="premium-panel rounded-3xl p-5 space-y-4 lg:sticky lg:top-24">
-          <div>
-            <h3 class="text-xs font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-2 mb-2">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span data-i18n="activeNowTitle">Active Now</span> — <span id="home-active-count">0</span>
-            </h3>
-            <div id="home-active-list" class="space-y-1.5">
-              <p class="text-[11px] text-slate-500" data-i18n="noActiveUsers">No one online right now.</p>
-            </div>
-          </div>
-          <div class="h-px bg-slate-800"></div>
-          <div>
-            <h3 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-2">
-              <span class="w-2 h-2 rounded-full bg-slate-600"></span>
-              <span data-i18n="offlineTitle">Offline</span> — <span id="home-offline-count">0</span>
-            </h3>
-            <div id="home-offline-list" class="space-y-1.5 max-h-72 overflow-y-auto"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    
-    <section id="view-catalog" class="hidden space-y-7 eugene-catalog-view">
-
-      <!-- PREMIUM CATALOG HERO -->
-      <div class="catalog-command-hero relative overflow-hidden rounded-[30px]">
-        <div class="catalog-hero-orb catalog-hero-orb-a"></div>
-        <div class="catalog-hero-orb catalog-hero-orb-b"></div>
-        <div class="catalog-hero-grid"></div>
-
-        <div class="relative z-10 p-5 sm:p-7 lg:p-8">
-          <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-7">
-            <div class="max-w-2xl">
-              <div class="flex items-center gap-3 mb-4">
-                <div class="catalog-logo-orb">
-                  <svg viewBox="0 0 100 100" class="w-8 h-8"><use href="#eugene-logo-mark"/></svg>
-                </div>
-                <div>
-                  <span class="catalog-eyebrow">EUGENE CARD • BETA EDITION</span>
-                  <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[.22em] mt-1">Digital Collector's Catalog</p>
-                </div>
-              </div>
-
-              <h2 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-[-.04em] text-white">
-                Collect. Trade. <span class="catalog-gradient-text">Invest.</span>
-              </h2>
-              <p class="text-sm text-slate-400 mt-3 max-w-xl leading-relaxed">
-                Explore every Eugene Card release, discover rare serials, compare values, and build your collection.
-              </p>
-
-              <div class="flex flex-wrap items-center gap-2.5 mt-6">
-                <button onclick="document.getElementById('card-grid').scrollIntoView({behavior:'smooth', block:'start'})" class="catalog-primary-btn">
-                  <i class="fa-solid fa-layer-group"></i>
-                  <span>Explore Catalog</span>
-                </button>
-                <button onclick="setFilter('PREMIUM'); document.getElementById('card-grid').scrollIntoView({behavior:'smooth', block:'start'})" class="catalog-secondary-btn">
-                  <i class="fa-solid fa-gem"></i>
-                  <span>View Premium</span>
-                </button>
-              </div>
-            </div>
-
-            <div class="catalog-supply-card">
-              <div class="flex items-center justify-between gap-8">
-                <div>
-                  <p class="text-[9px] uppercase tracking-[.18em] font-black text-slate-500">Collection Supply</p>
-                  <p class="text-3xl font-black font-mono text-white mt-1">
-                    <span id="remaining-cards-count">0</span><span class="text-slate-500 text-base font-normal"> / 50</span>
-                  </p>
-                  <p class="text-[10px] text-emerald-400 font-bold mt-1 flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Available to collect
-                  </p>
-                </div>
-                <div class="catalog-supply-ring">
-                  <svg viewBox="0 0 42 42">
-                    <circle cx="21" cy="21" r="17" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="3.5"/>
-                    <circle id="catalog-supply-progress" cx="21" cy="21" r="17" fill="none" stroke="url(#catalogRing)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="100 100" stroke-dashoffset="0" transform="rotate(-90 21 21)"/>
-                    <defs>
-                      <linearGradient id="catalogRing" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0" stop-color="#fbbf24"/>
-                        <stop offset="1" stop-color="#8b5cf6"/>
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <span>50</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Catalog metrics -->
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 mt-7">
-            <div class="catalog-metric">
-              <span class="catalog-metric-icon text-amber-400"><i class="fa-solid fa-boxes-stacked"></i></span>
-              <div><p>Total Supply</p><strong>50</strong></div>
-            </div>
-            <div class="catalog-metric">
-              <span class="catalog-metric-icon text-indigo-400"><i class="fa-solid fa-users"></i></span>
-              <div><p>Collectors</p><strong id="hero-stat-collectors">0</strong></div>
-            </div>
-            <div class="catalog-metric">
-              <span class="catalog-metric-icon text-emerald-400"><i class="fa-solid fa-chart-line"></i></span>
-              <div><p>Trading Volume</p><strong id="hero-stat-volume">Rp 0</strong></div>
-            </div>
-            <div class="catalog-metric">
-              <span class="catalog-metric-icon text-cyan-400"><i class="fa-solid fa-sparkles"></i></span>
-              <div><p>Edition</p><strong>Beta</strong></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- FEATURED + TRENDING -->
-      <div class="grid grid-cols-1 xl:grid-cols-[1.25fr_.75fr] gap-5">
-        <div id="featured-card-section" class="catalog-surface rounded-[26px] p-5 sm:p-6">
-          <div class="flex items-center justify-between mb-5">
-            <div>
-              <span class="catalog-section-chip"><i class="fa-solid fa-star"></i> Spotlight</span>
-              <h3 class="text-base sm:text-lg font-black text-white mt-2">Featured Card</h3>
-              <p class="text-[11px] text-slate-500 mt-1">A closer look at a card worth watching.</p>
-            </div>
-            <div class="catalog-icon-button text-amber-400"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
-          </div>
-          <div id="featured-card-content" class="grid grid-cols-1 sm:grid-cols-[170px_1fr] gap-5 items-center"></div>
-        </div>
-
-        <div class="catalog-surface rounded-[26px] p-5 sm:p-6 overflow-hidden">
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <span class="catalog-section-chip cyan"><i class="fa-solid fa-fire"></i> Live</span>
-              <h3 class="text-base font-black text-white mt-2">Trending Cards</h3>
-            </div>
-            <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Market Pulse</span>
-          </div>
-          <div id="trending-cards-row" class="flex flex-row gap-3 overflow-x-auto overflow-y-hidden pb-2 snap-x snap-mandatory"></div>
-        </div>
-      </div>
-
-
-      <!-- MARKET INTELLIGENCE -->
-      <div id="catalog-market-intelligence" class="catalog-market-intelligence rounded-[26px] p-5 sm:p-6">
-        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-          <div>
-            <span class="catalog-section-chip purple"><i class="fa-solid fa-chart-line"></i> <span data-i18n="marketIntelligenceChip">Market Intelligence</span></span>
-            <h3 class="text-lg sm:text-xl font-black text-white mt-2" data-i18n="marketIntelligenceTitle">Know the market before you collect.</h3>
-            <p class="text-[11px] text-slate-500 mt-1" data-i18n="marketIntelligenceSub">Live indicators calculated from the cards and approved marketplace transactions available to this app.</p>
-          </div>
-          <div class="market-refresh-label"><span></span> <span data-i18n="liveMarketplaceData">Live marketplace data</span></div>
-        </div>
-        <div id="market-stat-grid" class="grid grid-cols-2 lg:grid-cols-5 gap-2.5 mt-5"></div>
-        <div class="grid grid-cols-1 lg:grid-cols-[1.25fr_.75fr] gap-4 mt-4">
-          <div class="market-chart-panel">
-            <div class="flex items-center justify-between mb-3">
-              <div><p class="text-[9px] uppercase tracking-[.14em] font-black text-slate-500" data-i18n="recentSalesTitle">Recent Sales</p><p class="text-sm font-black text-white mt-1" data-i18n="transactionPulse">Transaction pulse</p></div>
-              <span id="market-sale-count" class="text-[9px] font-bold text-slate-500">0 sales</span>
-            </div>
-            <div id="market-sales-bars" class="market-sales-bars"></div>
-          </div>
-          <div class="market-chart-panel">
-            <div class="flex items-center justify-between mb-3">
-              <div><p class="text-[9px] uppercase tracking-[.14em] font-black text-slate-500" data-i18n="pricingContextTitle">Pricing Context</p><p class="text-sm font-black text-white mt-1" data-i18n="whereMarketSits">Where the market sits</p></div>
-              <i class="fa-solid fa-crosshairs text-indigo-400"></i>
-            </div>
-            <div id="market-price-context" class="space-y-3"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- LIVE ACTIVITY + MARKET INSIGHTS -->
-      <div class="grid grid-cols-1 lg:grid-cols-[1.15fr_.85fr] gap-5">
-        <div class="catalog-surface rounded-[26px] p-5">
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h3 class="text-sm font-black text-white uppercase tracking-wide flex items-center gap-2">
-                <i class="fa-solid fa-bolt text-amber-400"></i> <span data-i18n="liveMarketplaceActivityTitle">Live Marketplace Activity</span>
-              </h3>
-              <p class="text-[10px] text-slate-500 mt-1"><span data-i18n="recentMovementCollection">Recent movement across the collection.</span></p>
-            </div>
-            <span id="activity-live-badge" class="catalog-live-badge">
-              <span></span> Live
-            </span>
-          </div>
-          <div id="activity-feed-list" class="space-y-2"></div>
-        </div>
-
-        <div class="catalog-surface rounded-[26px] p-5">
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h3 class="text-sm font-black text-white uppercase tracking-wide" data-i18n="marketInsightsTitle">Market Insights</h3>
-              <p class="text-[10px] text-slate-500 mt-1"><span data-i18n="collectionComposition">Collection composition at a glance.</span></p>
-            </div>
-            <i class="fa-solid fa-chart-pie text-indigo-400"></i>
-          </div>
-          <div class="space-y-5">
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] font-black uppercase tracking-wider text-slate-500" data-i18n="rarityDistributionTitle">Rarity Distribution</span>
-              </div>
-              <div id="rarity-distribution-bars" class="space-y-2.5"></div>
-            </div>
-            <div class="pt-4 border-t border-white/[.06]">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] font-black uppercase tracking-wider text-slate-500">Collection Progress</span>
-              </div>
-              <div id="marketplace-progress-visual" class="space-y-2.5"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CATALOG COMMAND BAR -->
-      <div id="catalog-library" class="catalog-library rounded-[28px] p-4 sm:p-5">
-        <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="catalog-section-chip purple"><i class="fa-solid fa-layer-group"></i> Collection Library</span>
-              <span id="catalog-result-count" class="text-[10px] text-slate-500 font-bold">0 cards</span>
-            </div>
-            <h3 class="text-xl font-black text-white mt-2">Full Catalog</h3>
-            <p class="text-[11px] text-slate-500 mt-1">Search serials, compare editions, and discover your next card.</p>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button id="catalog-grid-view-btn" onclick="setCatalogViewMode('GRID')" class="catalog-view-btn active" title="Grid view">
-              <i class="fa-solid fa-grip"></i>
-            </button>
-            <button id="catalog-list-view-btn" onclick="setCatalogViewMode('LIST')" class="catalog-view-btn" title="List view">
-              <i class="fa-solid fa-list"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="catalog-toolbar mt-5">
-          <div class="catalog-search-wrap">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="search-input" oninput="debouncedRenderCardGrid()" placeholder="Search card name or serial..." data-i18n-placeholder="searchPlaceholder">
-            <kbd>⌘ K</kbd>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2">
-            <div class="catalog-filter-group">
-              <button onclick="setFilter('ALL')" id="filter-ALL" class="catalog-filter active" data-i18n="filterAll">All</button>
-              <button onclick="setFilter('PREMIUM')" id="filter-PREMIUM" class="catalog-filter" data-i18n="filterPremium"><i class="fa-solid fa-gem"></i> Premium</button>
-              <button onclick="setFilter('STANDARD')" id="filter-STANDARD" class="catalog-filter" data-i18n="filterStandard">Standard</button>
-            </div>
-            <select id="catalog-sort" onchange="setCatalogSort(this.value)" class="catalog-sort">
-              <option value="SERIAL">Sort: Serial</option>
-              <option value="PRICE_DESC">Price: High → Low</option>
-              <option value="PRICE_ASC">Price: Low → High</option>
-              <option value="NAME">Name</option>
-              <option value="STATUS">Availability</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- CARD CATALOG GRID -->
-      <div id="card-grid" class="catalog-card-grid"></div>
-
-    </section>
-
-<!-- TRADING ROOM VIEW -->
-    <section id="view-trade" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h2 class="text-2xl font-black text-white uppercase tracking-wide" data-i18n="tradeRoomTitle">TRADING ROOM</h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="tradeRoomSubtitle">Buy and sell directly with other collectors via QRIS / PayPal • 2% tax per trade</p>
-        </div>
-        <button onclick="openListCardForTradeModal()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg flex items-center gap-2">
-          <i class="fa-solid fa-plus"></i> <span data-i18n="listCardBtn">List a Card</span>
-        </button>
-      </div>
-
-      <div id="p2p-listings-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
-    </section>
-
-    <!-- AUCTION ROOM VIEW -->
-    <section id="view-auction" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex justify-between items-center">
-        <div>
-          <h2 class="text-2xl font-black text-white uppercase tracking-wide" data-i18n="auctionRoomTitle">AUCTION ROOM</h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="auctionRoomSubtitle">Place competitive bids on rare serial cards before timer expires.</p>
-        </div>
-        <div id="auction-header-action-container"></div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-            <div>
-              <span class="text-[10px] bg-amber-500/20 text-amber-400 font-extrabold px-2.5 py-1 rounded-md border border-amber-500/30" data-i18n="featuredAuction">FEATURED AUCTION</span>
-              <h3 id="auction-card-title" class="text-lg font-black text-white mt-1">Eugene Genesis Card #01</h3>
-            </div>
-            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-right">
-              <span class="text-[10px] text-slate-500 font-bold uppercase block" data-i18n="timeRemaining">Time Remaining</span>
-              <span id="auction-timer" class="text-lg font-black text-amber-400 font-mono">03h 14m 22s</span>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div class="bg-slate-950 rounded-2xl border border-amber-500/40 p-3 text-center flex flex-col items-center">
-              <div class="w-full aspect-[4/5] max-h-64 bg-slate-900 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center mb-2">
-                <img id="auction-card-img" src="https://placehold.co/1080x1350/1e1b4b/fbbf24?text=Serial+*01" loading="lazy" class="w-full h-full object-contain">
-              </div>
-              <p id="auction-card-serial" class="text-2xl font-black text-amber-400 font-mono">*01</p>
-              <p id="auction-card-owner-info" class="text-[10px] text-slate-400 mt-1"><span data-i18n="ownerLabel">Owner</span>: <strong class="text-white">Admin House</strong></p>
-            </div>
-
-            <div class="space-y-4">
-              <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-1">
-                <p class="text-xs text-slate-400" data-i18n="highestBid">Current Highest Bid</p>
-                <p id="auction-current-bid" class="text-3xl font-black text-emerald-400 font-mono">Rp 750.000</p>
-                <p class="text-[10px] text-slate-400"><span data-i18n="highBidderLabel">High Bidder</span>: <strong id="auction-high-bidder" class="text-white">Collector #104</strong></p>
-              </div>
-
-              <div class="space-y-2">
-                <label class="block text-xs font-bold text-slate-300" data-i18n="bidAmountLabel">Your Bid Amount (IDR) - QRIS / PayPal</label>
-                <div class="flex gap-2">
-                  <input type="number" id="bid-input-amount" placeholder="e.g. 775000" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
-                  <button id="place-bid-btn" onclick="placeAuctionBid()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed" data-i18n="placeBidBtn">Place Bid</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3">
-          <h4 class="text-xs font-extrabold text-slate-300 uppercase tracking-wider" data-i18n="liveBidHistory">Live Bid History</h4>
-          <div id="auction-bid-history" class="space-y-2 text-xs max-h-[280px] overflow-y-auto"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TRADE REQUEST ROOM VIEW -->
-    <section id="view-trade-req" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h2 class="text-2xl font-black text-white uppercase tracking-wide" data-i18n="tradeReqTitle">TRADE REQUESTS</h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="tradeReqSubtitle">Propose buy or trade offers on cards that already have an owner.</p>
-        </div>
-        <button onclick="openProposeTradeModal()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-2">
-          <i class="fa-solid fa-handshake"></i> <span data-i18n="proposeTradeBtn">Propose Card Trade</span>
-        </button>
-      </div>
-
-      <div id="trade-requests-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-    </section>
-
-    <!-- MARKET ANALYTICS VIEW (ADMIN ONLY) -->
-    <section id="view-analytics" class="hidden space-y-6">
-      <div class="bg-gradient-to-r from-amber-950/60 via-slate-900 to-indigo-950/60 border border-amber-500/40 rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 tracking-wider" data-i18n="exclusiveAccess">EXCLUSIVE ACCESS</span>
-          <h2 class="text-2xl font-black text-white uppercase tracking-wide mt-1"><i class="fa-solid fa-chart-line text-amber-400 mr-2"></i> <span data-i18n="analyticsTitle">Market Analytics & Valuation</span></h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="analyticsSubtitle">Real-time marketplace metrics, floor price trends, and volume statistics.</p>
-        </div>
-        <button onclick="renderMarketAnalytics()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-amber-400 rounded-xl border border-slate-700 flex items-center gap-2">
-          <i class="fa-solid fa-rotate"></i> <span data-i18n="refreshAnalytics">Refresh Analytics</span>
-        </button>
-      </div>
-
-      <!-- ANALYTICS METRIC CARDS -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
-          <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="totalVolume">Total Marketplace Volume</p>
-          <p id="analytics-total-volume" class="text-2xl font-black text-emerald-400 font-mono">Rp 0</p>
-          <p class="text-[10px] text-emerald-500"><i class="fa-solid fa-arrow-trend-up"></i> <span data-i18n="volumeTrend">+14.2% this week</span></p>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
-          <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="avgFloorPrice">Average Floor Price</p>
-          <p id="analytics-avg-floor" class="text-2xl font-black text-amber-400 font-mono">Rp 0</p>
-          <p class="text-[10px] text-slate-400" data-i18n="acrossCards">Across 50 edition cards</p>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
-          <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="collectedOwned">Collected / Owned</p>
-          <p id="analytics-collected-count" class="text-2xl font-black text-indigo-400 font-mono">0 / 50</p>
-          <p class="text-[10px] text-slate-400" data-i18n="holdersSub">Primary & Secondary holders</p>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
-          <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="activeTradeReqs">Active Trade Requests</p>
-          <p id="analytics-trade-reqs" class="text-2xl font-black text-purple-400 font-mono">0</p>
-          <p class="text-[10px] text-slate-400" data-i18n="pendingCountered">Pending & countered</p>
-        </div>
-      </div>
-
-      <!-- VISUAL ANALYTICS: CHARTS -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5">
-          <h3 class="text-xs font-extrabold text-white uppercase tracking-wider mb-3"><i class="fa-solid fa-chart-line text-emerald-400 mr-1.5"></i> Cumulative Trading Volume</h3>
-          <div class="h-56"><canvas id="chart-volume-history"></canvas></div>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5">
-          <h3 class="text-xs font-extrabold text-white uppercase tracking-wider mb-3"><i class="fa-solid fa-chart-column text-indigo-400 mr-1.5"></i> Sales Volume Over Time</h3>
-          <div class="h-56"><canvas id="chart-tx-volume"></canvas></div>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5">
-          <h3 class="text-xs font-extrabold text-white uppercase tracking-wider mb-3"><i class="fa-solid fa-chart-pie text-amber-400 mr-1.5"></i> Rarity Distribution</h3>
-          <div class="h-56"><canvas id="chart-rarity-dist"></canvas></div>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5">
-          <h3 class="text-xs font-extrabold text-white uppercase tracking-wider mb-3"><i class="fa-solid fa-layer-group text-blue-400 mr-1.5"></i> Floor Price by Tier</h3>
-          <div class="h-56"><canvas id="chart-floor-price"></canvas></div>
-        </div>
-      </div>
-
-      <!-- RECENT PRICE TRENDS TABLE -->
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-        <h3 class="text-xs font-extrabold text-white uppercase tracking-wider" data-i18n="topValuationIndex">Top Card Valuation Index</h3>
-        <div id="analytics-valuation-list" class="space-y-2"></div>
-      </div>
-    </section>
-
-    <!-- REVENUE VIEW (ADMIN ONLY) -->
-    <section id="view-revenue" class="hidden space-y-6">
-      <div class="bg-gradient-to-r from-emerald-950/60 via-slate-900 to-indigo-950/60 border border-emerald-500/40 rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 tracking-wider" data-i18n="exclusiveAccess">EXCLUSIVE ACCESS</span>
-          <h2 class="text-2xl font-black text-white uppercase tracking-wide mt-1"><i class="fa-solid fa-sack-dollar text-emerald-400 mr-2"></i> <span data-i18n="revenueTabTitle">Revenue Overview</span></h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="revenueTabSubtitle">Gross sales, platform tax, and per-card profitability from approved orders.</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button onclick="renderRevenueTab()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-emerald-400 rounded-xl border border-slate-700 flex items-center gap-2">
-            <i class="fa-solid fa-rotate"></i> <span data-i18n="refreshAnalytics">Refresh</span>
-          </button>
-          <a href="revenue.html" class="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-bold text-emerald-300 rounded-xl border border-emerald-500/30 flex items-center gap-2">
-            <i class="fa-solid fa-arrow-up-right-from-square"></i> <span data-i18n="openFullRevenueHub">Full Revenue Hub</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- REVENUE METRIC CARDS -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
-          <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="kpiGrossSales">GROSS SALES REVENUE</p>
-          <p id="rev-tab-gross-sales" class="text-2xl font-black text-emerald-400 font-mono">Rp 0</p>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
-          <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="kpiTax">PLATFORM TAX (2%)</p>
-          <p id="rev-tab-platform-tax" class="text-2xl font-black text-amber-400 font-mono">Rp 0</p>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
-          <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="kpiCompleted">COMPLETED SALES</p>
-          <p id="rev-tab-completed-sales" class="text-2xl font-black text-white font-mono">0</p>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
-          <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="kpiAov">AVERAGE ORDER VALUE</p>
-          <p id="rev-tab-avg-order" class="text-2xl font-black text-emerald-400 font-mono">Rp 0</p>
-        </div>
-      </div>
-
-      <!-- CARD-LEVEL PROFITABILITY -->
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-        <h3 class="text-xs font-extrabold text-white uppercase tracking-wider" data-i18n="breakdownTitle">CARD-LEVEL PROFITABILITY BREAKDOWN</h3>
-        <div id="rev-tab-card-list" class="space-y-2"></div>
-      </div>
-    </section>
-
-    <!-- INBOX / CHAT VIEW -->
-    <section id="view-inbox" class="hidden space-y-5 inbox-premium">
-      <div class="inbox-hero rounded-[28px] border border-indigo-500/20 overflow-hidden relative">
-        <div class="inbox-hero-glow"></div>
-        <div class="relative z-10 p-5 sm:p-7">
-          <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-5">
-            <div>
-              <div class="flex items-center gap-3">
-                <div class="inbox-icon-box"><i class="fa-solid fa-comments"></i></div>
-                <div>
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Inbox</h2>
-                    <span class="inbox-live-pill"><span></span> LIVE</span>
-                  </div>
-                  <p class="text-xs sm:text-sm text-slate-400 mt-1">Your collector conversations, trade discussions, and platform support — all in one place.</p>
-                </div>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button onclick="openNewChatModal()" class="inbox-primary-btn"><i class="fa-solid fa-pen"></i><span>New Message</span></button>
-              <button onclick="markAllInboxRead()" class="inbox-ghost-btn"><i class="fa-solid fa-check-double"></i><span>Mark all read</span></button>
-              <button onclick="loadUserInboxThreads()" class="inbox-icon-btn" title="Refresh Inbox"><i class="fa-solid fa-rotate"></i></button>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 mt-6">
-            <div class="inbox-stat"><span class="stat-icon text-indigo-300 bg-indigo-500/10"><i class="fa-solid fa-layer-group"></i></span><div><p>Conversations</p><strong id="inbox-stat-total">0</strong></div></div>
-            <div class="inbox-stat"><span class="stat-icon text-rose-300 bg-rose-500/10"><i class="fa-solid fa-envelope"></i></span><div><p>Unread</p><strong id="inbox-stat-unread">0</strong></div></div>
-            <div class="inbox-stat"><span class="stat-icon text-amber-300 bg-amber-500/10"><i class="fa-solid fa-thumbtack"></i></span><div><p>Pinned</p><strong id="inbox-stat-pinned">0</strong></div></div>
-            <div class="inbox-stat"><span class="stat-icon text-emerald-300 bg-emerald-500/10"><i class="fa-solid fa-shield-halved"></i></span><div><p>Support</p><strong id="inbox-stat-support">0</strong></div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="inbox-shell rounded-[28px] border border-slate-800/80 overflow-hidden">
-        <div class="grid lg:grid-cols-[390px_1fr] min-h-[560px]">
-          <aside class="inbox-sidebar border-b lg:border-b-0 lg:border-r border-slate-800/80">
-            <div class="p-4 sm:p-5 border-b border-slate-800/80">
-              <div class="flex items-center justify-between gap-3 mb-4">
-                <div>
-                  <p class="text-sm font-black text-white">Conversations</p>
-                  <p id="inbox-unread-summary" class="text-[10px] text-slate-500 mt-0.5">All caught up</p>
-                </div>
-                <span id="inbox-thread-count" class="inbox-count-pill">0</span>
-              </div>
-              <div class="inbox-search-wrap mb-3">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="inbox-thread-search-input" oninput="setInboxSearch(this.value)" placeholder="Search conversations..." autocomplete="off">
-                <kbd>⌘ K</kbd>
-              </div>
-              <div class="flex gap-1.5 overflow-x-auto pb-0.5">
-                <button id="inbox-filter-ALL" onclick="setInboxFilter('ALL')" class="inbox-filter active">All <b id="inbox-filter-all-count">0</b></button>
-                <button id="inbox-filter-UNREAD" onclick="setInboxFilter('UNREAD')" class="inbox-filter">Unread <b id="inbox-filter-unread-count">0</b></button>
-                <button id="inbox-filter-ADMIN" onclick="setInboxFilter('ADMIN')" class="inbox-filter">Support <b id="inbox-filter-admin-count">0</b></button>
-                <button id="inbox-filter-PINNED" onclick="setInboxFilter('PINNED')" class="inbox-filter">Pinned <b id="inbox-filter-pinned-count">0</b></button>
-              </div>
-            </div>
-            <div id="inbox-threads-list" class="inbox-thread-list p-2.5 sm:p-3">
-              <p class="text-xs text-slate-500 text-center py-10" data-i18n="loadingMessages">Loading messages...</p>
-            </div>
-          </aside>
-
-          <main class="inbox-empty-stage hidden lg:flex" id="inbox-preview-stage">
-            <div class="text-center max-w-sm px-6">
-              <div class="inbox-empty-orb"><i class="fa-solid fa-comments"></i></div>
-              <h3 class="text-xl font-black text-white mt-5">Select a conversation</h3>
-              <p class="text-xs text-slate-500 mt-2 leading-relaxed">Choose a collector from the list to open your conversation. New messages will appear here in real time.</p>
-              <button onclick="openNewChatModal()" class="inbox-secondary-btn mt-5"><i class="fa-solid fa-plus"></i> Start a new conversation</button>
-            </div>
-          </main>
-        </div>
-      </div>
-
-      <!-- Compact New Message Modal: keeps the collector search feature without taking over the Inbox UI. -->
-      <div id="new-chat-modal" class="hidden fixed inset-0 z-[9990] items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onclick="closeNewChatModal()"></div>
-        <div class="relative w-full max-w-lg inbox-modal rounded-[28px] border border-indigo-500/30 shadow-2xl overflow-hidden">
-          <div class="p-5 border-b border-slate-800/80 flex items-center justify-between">
-            <div><p class="text-lg font-black text-white">New Message</p><p class="text-[11px] text-slate-500 mt-0.5">Find a collector or platform support.</p></div>
-            <button onclick="closeNewChatModal()" class="inbox-icon-btn"><i class="fa-solid fa-xmark"></i></button>
-          </div>
-          <div class="p-5">
-            <div class="inbox-search-wrap">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" id="user-chat-search-input" oninput="searchUsersForChat()" placeholder="Search name, username, or email..." autocomplete="off" autofocus>
-            </div>
-            <div id="user-chat-search-results" class="space-y-2 mt-3 hidden max-h-72 overflow-y-auto"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TRANSACTION HISTORY VIEW -->
-    <section id="view-history" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-clock-rotate-left text-cyan-400 mr-2"></i> <span data-i18n="historyTitle">Transaction History</span></h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="historySubtitle">View completed QRIS & PayPal purchases, order statuses, and 2% platform tax records.</p>
-        </div>
-        
-        <div class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
-          <button onclick="setHistoryFilter('ALL')" id="history-filter-ALL" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition-all" data-i18n="histAll">All Activity</button>
-          <button onclick="setHistoryFilter('MINE')" id="history-filter-MINE" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 hover:text-white transition-all" data-i18n="histMine">My Purchases</button>
-          <button onclick="setHistoryFilter('APPROVED')" id="history-filter-APPROVED" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 hover:text-white transition-all" data-i18n="histApproved">Approved Only</button>
-        </div>
-      </div>
-
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
-        <div class="overflow-x-auto max-h-[550px]">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 sticky top-0 z-10">
-              <tr>
-                <th class="p-3.5" data-i18n="thOrderRef">Order Ref</th>
-                <th class="p-3.5" data-i18n="thBuyer">Buyer</th>
-                <th class="p-3.5" data-i18n="thItems">Items Acquired</th>
-                <th class="p-3.5" data-i18n="thAmount">Amount (IDR + 2% Tax)</th>
-                <th class="p-3.5" data-i18n="thProof">Payment Receipt</th>
-                <th class="p-3.5" data-i18n="thStatus">Status</th>
-                <th class="p-3.5 text-right" data-i18n="thDate">Date / Time</th>
-              </tr>
-            </thead>
-            <tbody id="history-table-body" class="divide-y divide-slate-800/80"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- DASHBOARD VIEW -->
-    <section id="view-dashboard" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex justify-between items-center">
-        <div>
-          <h2 id="dashboard-heading" class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-vault text-amber-400 mr-2"></i> <span data-i18n="vaultTitle">My Vault / Binder</span></h2>
-          <p id="dashboard-subheading" class="text-xs text-slate-400 mt-1" data-i18n="vaultSubtitle">Manage owned cards, sell back instantly to Admin, or place them into Auction/Trade.</p>
-        </div>
-        <button onclick="openProfileManagerModal()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 rounded-xl border border-slate-700 flex items-center gap-2">
-          <i class="fa-solid fa-user-gear text-amber-400"></i> <span data-i18n="profileSettingsBtn">Profile Settings</span>
-        </button>
-      </div>
-
-      <!-- COLLECTOR SOCIAL LINKS CARD (CLICKABLE) -->
-      <div id="collector-social-banner" class="hidden bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <img id="dashboard-banner-avatar" src="" class="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40 bg-slate-950">
-          <div>
-            <div class="flex items-center gap-2">
-              <h3 id="dashboard-banner-name" class="text-sm font-extrabold text-white">Collector Name</h3>
-              <span id="dashboard-banner-username" class="text-xs font-mono text-amber-400">@username</span>
-            </div>
-            <p id="dashboard-banner-bio" class="text-xs text-slate-400 mt-0.5">Collector Bio</p>
-          </div>
-        </div>
-
-        <div id="dashboard-banner-links" class="flex items-center gap-2"></div>
-      </div>
-
-      <!-- COLLECTOR LEVEL PANEL (item 3) -->
-      <div id="collector-level-panel" class="hidden bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div class="flex items-center gap-3">
-            <div id="collector-level-ring" class="level-ring" style="--pct:0;">
-              <div class="level-ring-inner">
-                <span id="collector-level-number" class="text-sm font-black text-amber-400 leading-none">1</span>
-              </div>
-            </div>
-            <div>
-              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider" data-i18n="collectorLevelTitle">Collector Level</p>
-              <h3 id="collector-level-title" class="text-base font-black text-white">Novice Collector</h3>
-            </div>
-          </div>
-          <div class="flex-1 min-w-[140px] max-w-xs">
-            <div class="progress-track"><div id="collector-level-progress-fill" class="progress-fill" style="width:0%"></div></div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2 text-center">
-          <div class="mp-stat">
-            <span class="mp-label" data-i18n="collectorLevelCardsOwned">Cards Owned</span>
-            <strong id="collector-stat-cards-owned" class="mp-value text-white text-sm block mt-0.5">0</strong>
-          </div>
-          <div class="mp-stat">
-            <span class="mp-label" data-i18n="collectorLevelTradesCompleted">Trades Completed</span>
-            <strong id="collector-stat-trades" class="mp-value text-white text-sm block mt-0.5">0</strong>
-          </div>
-          <div class="mp-stat">
-            <span class="mp-label" data-i18n="collectorLevelCollectionValue">Collection Value</span>
-            <strong id="collector-stat-value" class="mp-value text-emerald-400 text-sm block mt-0.5">Rp 0</strong>
-          </div>
-        </div>
-
-        <div>
-          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1.5" data-i18n="collectorLevelBadgesTitle">Badges</p>
-          <div id="collector-badges-row" class="flex flex-wrap gap-1.5"></div>
-        </div>
-      </div>
-
-      <!-- COLLECTION COMPLETION TRACKER (item 7) -->
-      <div id="collection-completion-panel" class="hidden bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="text-sm font-extrabold text-white flex items-center gap-1.5"><i class="fa-solid fa-layer-group text-amber-400"></i> <span data-i18n="collectionCompletionTitle">Genesis Collection</span></h3>
-          <span id="collection-completion-pct" class="text-sm font-black font-mono text-amber-400">0%</span>
-        </div>
-        <div class="progress-track"><div id="collection-completion-fill" class="progress-fill" style="width:0%"></div></div>
-        <p id="collection-completion-count" class="text-[11px] text-slate-400"><span data-i18n="collectionCompletionCollected">Cards Collected</span>: 0 / 50</p>
-        <div id="collection-completion-missing" class="text-[11px] text-slate-500"></div>
-        <div id="collection-completion-reward" class="text-[11px] font-bold text-amber-400/90 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2"></div>
-      </div>
-
-      <div id="owned-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
-    </section>
-
-    <!-- CLIENT GIFTS VIEW -->
-    <section id="view-gifts" class="hidden space-y-6">
-      <div class="relative overflow-hidden bg-gradient-to-r from-pink-950/60 via-slate-900 to-violet-950/50 border border-pink-500/30 rounded-3xl p-6">
-        <div class="pointer-events-none absolute -top-20 -right-16 w-64 h-64 rounded-full bg-pink-500/10 blur-3xl"></div>
-        <div class="pointer-events-none absolute -bottom-24 -left-10 w-64 h-64 rounded-full bg-violet-500/10 blur-3xl"></div>
-        <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-300 text-[9px] font-black uppercase tracking-widest"><i class="fa-solid fa-gift"></i> Yujin Client Edition</span>
-            <h2 class="text-2xl font-black text-white mt-2">Client Gifts & Assets</h2>
-            <p class="text-xs text-slate-400 mt-1 max-w-xl">Cards gifted by Yujin use the same IDR value as their catalog price and may be redeemed through QRIS.</p>
-          <div class="mt-4 rounded-2xl border border-pink-500/20 bg-pink-500/5 p-4">
-            <div class="flex items-center gap-2 mb-3">
-              <i class="fa-solid fa-crown text-pink-300"></i>
-              <h3 class="text-sm font-black text-white">Yujin Client Edition Privileges</h3>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
-              <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-3"><p class="text-slate-500 uppercase font-bold">Trading</p><p class="text-emerald-300 font-black mt-1">0% Tax</p></div>
-              <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-3"><p class="text-slate-500 uppercase font-bold">Auction</p><p class="text-amber-300 font-black mt-1">2% Tax</p></div>
-              <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-3"><p class="text-slate-500 uppercase font-bold">Catalog Purchase</p><p class="text-amber-300 font-black mt-1">2% Tax</p></div>
-              <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-3"><p class="text-slate-500 uppercase font-bold">Sell Back / Redeem</p><p class="text-amber-300 font-black mt-1">2% Tax</p></div>
-            </div>
-            <p class="text-[10px] text-slate-500 mt-3">Your Yujin Client Edition benefit gives you 0% tax on direct card trading. Auction, new catalog purchases, and asset redemption remain subject to the standard 2% platform tax.</p>
-          </div>
-          </div>
-          <div class="grid grid-cols-2 gap-2 min-w-[220px]">
-            <div class="bg-slate-950/70 border border-white/5 rounded-2xl p-3"><p class="text-[9px] uppercase tracking-wider text-slate-500 font-black">Active Gifts</p><strong id="gift-stat-active" class="text-lg text-pink-300 font-black">0</strong></div>
-            <div class="bg-slate-950/70 border border-white/5 rounded-2xl p-3"><p class="text-[9px] uppercase tracking-wider text-slate-500 font-black">Asset Value</p><strong id="gift-stat-value" class="text-lg text-emerald-400 font-black">Rp 0</strong></div>
-          </div>
-        </div>
-      </div>
-      <div id="client-gifts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </section>
-
-    <!-- WISHLIST VIEW -->
-
-    <!-- COLLECTOR IDENTITY + REPUTATION LAYER -->
-    <section id="collector-reputation-panel" class="hidden catalog-market-intelligence rounded-[26px] p-5 sm:p-6">
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-        <div class="flex items-center gap-4">
-          <div id="collector-reputation-avatar" class="collector-reputation-avatar"><i class="fa-solid fa-user-astronaut"></i></div>
-          <div>
-            <span class="catalog-section-chip"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="collectorIdentityTitle">Collector Identity</span></span>
-            <h3 id="collector-reputation-name" class="text-lg font-black text-white mt-2">Collector</h3>
-            <p id="collector-reputation-sub" class="text-[10px] text-slate-500 mt-1"><span data-i18n="publicReputation">Your public reputation across Eugene Card.</span></p>
-          </div>
-        </div>
-        <div class="grid grid-cols-3 gap-2.5 min-w-[280px]">
-          <div class="reputation-stat"><span data-i18n="reputationLabel">Reputation</span><strong id="collector-reputation-score">100</strong></div>
-          <div class="reputation-stat"><span data-i18n="tradesLabel">Trades</span><strong id="collector-reputation-trades">0</strong></div>
-          <div class="reputation-stat"><span data-i18n="badgesLabel">Badges</span><strong id="collector-reputation-badges">0</strong></div>
-        </div>
-      </div>
-      <div class="mt-5 pt-4 border-t border-white/[.06]">
-        <div class="flex items-center justify-between mb-2"><span class="text-[9px] uppercase tracking-[.14em] font-black text-slate-500" data-i18n="collectorAchievementsTitle">Collector Achievements</span><span class="text-[9px] text-slate-600" data-i18n="earnedFromActivity">Earned from your activity</span></div>
-        <div id="collector-achievements-row" class="flex flex-wrap gap-2"></div>
-      </div>
-    </section>
-
-    <section id="view-wishlist" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex items-center justify-between">
-        <h2 class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-heart text-rose-400 mr-2"></i> <span data-i18n="wishlistTitle">Saved Wishlist</span></h2>
-        <button onclick="clearWishlist()" class="px-3 py-1.5 bg-slate-800 text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-700" data-i18n="clearAll">Clear All</button>
-      </div>
-      <p class="text-xs text-slate-400 -mt-2" data-i18n="wishlistSubtitle">Click on any card to directly propose a trade offer to its owner!</p>
-      <div id="wishlist-page-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
-    </section>
-
-    <!-- HOLDERS VIEW -->
-    <section id="view-holders" class="hidden space-y-6">
-      <div class="relative overflow-hidden bg-gradient-to-r from-teal-950/60 via-slate-900 to-indigo-950/40 border border-teal-500/30 rounded-3xl p-5 sm:p-6 shadow-xl">
-        <div class="pointer-events-none absolute -top-16 -right-16 w-56 h-56 rounded-full bg-teal-500/10 blur-3xl"></div>
-        <div class="pointer-events-none absolute -bottom-20 -left-10 w-56 h-56 rounded-full bg-indigo-500/10 blur-3xl"></div>
-
-        <div class="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-950 border border-teal-500/40 p-1 flex items-center justify-center shadow-md shrink-0">
-              <i class="fa-solid fa-users text-teal-400 text-lg sm:text-xl"></i>
-            </div>
-            <div>
-              <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-400 border border-teal-500/30 tracking-wider" data-i18n="holdersHeroBadge">COLLECTOR DIRECTORY</span>
-              <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5 tracking-tight" data-i18n="holdersTitle">Holders Directory</h2>
-              <p class="text-xs text-slate-400 mt-1 max-w-md" data-i18n="holdersSubtitle">Click on any collector row or card serial to view their collection and send direct trade offers.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="relative grid grid-cols-2 gap-3 sm:gap-6 mt-5 pt-4 border-t border-slate-800/60">
-          <div class="text-center sm:text-left">
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1"><i class="fa-solid fa-users text-teal-400"></i> <span data-i18n="statTotalHolders">Total Holders</span></p>
-            <p id="holders-stat-count" class="text-base sm:text-lg font-black font-mono text-white mt-0.5">0</p>
-          </div>
-          <div class="text-center sm:text-left">
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1"><i class="fa-solid fa-layer-group text-amber-400"></i> <span data-i18n="statCardsDistributed">Cards Distributed</span></p>
-            <p id="holders-stat-cards" class="text-base sm:text-lg font-black font-mono text-amber-400 mt-0.5">0</p>
-          </div>
-        </div>
-      </div>
-
-      <div id="holders-directory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </section>
-
-
-    <!-- HOLDER VAULT VIEW (read-only, mirrors My Vault layout for the selected collector) -->
-    <section id="view-holder-vault" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex justify-between items-center flex-wrap gap-3">
-        <div>
-          <h2 class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-vault text-amber-400 mr-2"></i> <span id="holder-vault-page-heading">Collector Vault</span></h2>
-          <p id="holder-vault-page-subheading" class="text-xs text-slate-400 mt-1">Read-only view of this collector's binder.</p>
-        </div>
-        <button onclick="switchTab('holders')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 rounded-xl border border-slate-700 flex items-center gap-2">
-          <i class="fa-solid fa-arrow-left"></i> <span id="holder-vault-back-btn-label">Back to Holders</span>
-        </button>
-      </div>
-
-      <!-- COLLECTOR SOCIAL BANNER (read-only) -->
-      <div id="holder-vault-page-banner" class="hidden bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <img id="holder-vault-page-avatar" src="" class="w-12 h-12 rounded-full object-cover border-2 border-amber-500/40 bg-slate-950">
-          <div>
-            <div class="flex items-center gap-2">
-              <h3 id="holder-vault-page-name" class="text-sm font-extrabold text-white">Collector Name</h3>
-              <span id="holder-vault-page-username" class="text-xs font-mono text-amber-400"></span>
-            </div>
-            <p id="holder-vault-page-bio" class="text-xs text-slate-400 mt-0.5"></p>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <div id="holder-vault-page-links" class="flex items-center gap-2"></div>
-          <div id="holder-vault-page-admin-edit-wrap" class="hidden">
-            <button onclick="openAdminEditCollectorModal(viewingHolderName)" title="Admin: Edit collector profile" class="w-8 h-8 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/30 transition-all">
-              <i class="fa-solid fa-user-pen text-xs"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- COLLECTOR LEVEL PANEL (read-only) -->
-      <div id="holder-vault-level-panel" class="hidden bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div class="flex items-center gap-3">
-            <div id="holder-vault-level-ring" class="level-ring" style="--pct:0;">
-              <div class="level-ring-inner">
-                <span id="holder-vault-level-number" class="text-sm font-black text-amber-400 leading-none">1</span>
-              </div>
-            </div>
-            <div>
-              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider" data-i18n="collectorLevelTitle">Collector Level</p>
-              <h3 id="holder-vault-level-title" class="text-base font-black text-white">Novice Collector</h3>
-            </div>
-          </div>
-          <div class="flex-1 min-w-[140px] max-w-xs">
-            <div class="progress-track"><div id="holder-vault-level-progress-fill" class="progress-fill" style="width:0%"></div></div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2 text-center">
-          <div class="mp-stat">
-            <span class="mp-label" data-i18n="collectorLevelCardsOwned">Cards Owned</span>
-            <strong id="holder-vault-stat-cards-owned" class="mp-value text-white text-sm block mt-0.5">0</strong>
-          </div>
-          <div class="mp-stat">
-            <span class="mp-label" data-i18n="collectorLevelTradesCompleted">Trades Completed</span>
-            <strong id="holder-vault-stat-trades" class="mp-value text-white text-sm block mt-0.5">0</strong>
-          </div>
-          <div class="mp-stat">
-            <span class="mp-label" data-i18n="collectorLevelCollectionValue">Collection Value</span>
-            <strong id="holder-vault-stat-value" class="mp-value text-emerald-400 text-sm block mt-0.5">Rp 0</strong>
-          </div>
-        </div>
-
-        <div>
-          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1.5" data-i18n="collectorLevelBadgesTitle">Badges</p>
-          <div id="holder-vault-badges-row" class="flex flex-wrap gap-1.5"></div>
-        </div>
-      </div>
-
-      <!-- COLLECTION COMPLETION (read-only) -->
-      <div id="holder-vault-completion-panel" class="hidden bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="text-sm font-extrabold text-white flex items-center gap-1.5"><i class="fa-solid fa-layer-group text-amber-400"></i> <span data-i18n="collectionCompletionTitle">Genesis Collection</span></h3>
-          <span id="holder-vault-completion-pct" class="text-sm font-black font-mono text-amber-400">0%</span>
-        </div>
-        <div class="progress-track"><div id="holder-vault-completion-fill" class="progress-fill" style="width:0%"></div></div>
-        <p id="holder-vault-completion-count" class="text-[11px] text-slate-400"><span data-i18n="collectionCompletionCollected">Cards Collected</span>: 0 / 50</p>
-        <div id="holder-vault-completion-missing" class="text-[11px] text-slate-500"></div>
-      </div>
-
-      <div id="holder-vault-page-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
-    </section>
-
-    <!-- ADMIN HUB VIEW -->
-    <section id="view-admin" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex justify-between items-center">
-        <div>
-          <h2 class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-shield-halved text-rose-400 mr-2"></i> <span data-i18n="adminHubTitle">Admin Hub & Revenue Dashboard</span></h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="adminHubSubtitle">Review customer QRIS & PayPal payments and verify order requests.</p>
-        </div>
-        <button onclick="refreshAdminHub()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-amber-400 rounded-xl border border-slate-700 flex items-center gap-2">
-          <i class="fa-solid fa-rotate"></i> <span data-i18n="refreshHub">Refresh Hub</span>
-        </button>
-      </div>
-
-      <!-- PERSONA SWITCHER FOR ADMIN TESTING -->
-      <div class="bg-slate-950 p-4 rounded-3xl border border-rose-500/30 space-y-3">
-        <label class="block text-xs font-bold text-rose-400 uppercase tracking-wider"><i class="fa-solid fa-users-gear mr-1"></i> <span data-i18n="personaSwitcherTitle">Admin Persona Switcher (Test Accounts)</span></label>
-        <p class="text-[11px] text-slate-400" data-i18n="personaSwitcherSub">Switch active account persona to test standard collector views versus admin privileges.</p>
-        <div class="grid grid-cols-2 sm:grid-cols-2 gap-2 pt-1">
-          <button onclick="switchAccountPersona('eugene.aquila06')" class="py-2.5 bg-rose-950/40 hover:bg-rose-900/40 text-rose-300 font-extrabold text-xs rounded-xl border border-rose-500/30 flex items-center justify-center gap-1.5 transition-all">
-            <i class="fa-solid fa-shield-halved"></i> <span data-i18n="adminPersona">Admin Persona</span>
-          </button>
-          <button onclick="switchAccountPersona('Eugene')" class="py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 font-extrabold text-xs rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition-all">
-            <i class="fa-solid fa-user"></i> <span data-i18n="stdCollectorPersona">Standard Collector</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- CLIENT GIFT GENERATOR -->
-      <div class="bg-gradient-to-r from-pink-950/40 via-slate-900 to-violet-950/30 border border-pink-500/20 rounded-3xl p-6 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div><h4 class="text-sm font-black text-white uppercase tracking-wider"><i class="fa-solid fa-gift text-pink-400 mr-2"></i>Yujin Client Gift Generator</h4><p class="text-[10px] text-slate-500 mt-1">Gift an available card. Its IDR asset value automatically matches the card's catalog value.</p></div>
-          <span class="text-[9px] text-emerald-300 bg-emerald-500/5 border border-emerald-500/15 px-2 py-1 rounded-lg">0% GIFT FEE / 2% REDEMPTION TAX</span>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Client</label><select id="gift-admin-recipient" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white"></select></div>
-          <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Available Card</label><select id="gift-admin-card" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white"></select></div>
-        </div>
-        <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Gift Message</label><input id="gift-admin-message" placeholder="Thanks for working with me!" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white"></div>
-        <button onclick="adminCreateClientGift()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-pink-500 hover:bg-pink-400 text-slate-950 text-xs font-black"><i class="fa-solid fa-gift mr-1"></i> Create Client Gift</button>
-        <div class="pt-3 border-t border-white/5"><p class="text-[9px] uppercase tracking-widest font-black text-slate-500 mb-2">Gift History</p><div id="admin-client-gifts-list" class="space-y-2"></div></div>
-      </div>
-
-      <!-- PENDING ORDERS -->
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-        <h4 class="text-xs font-extrabold text-slate-200 uppercase tracking-wider" data-i18n="pendingOrdersTitle">Pending QRIS Orders Requiring Action</h4>
-        <div id="admin-pending-orders-list" class="space-y-3">
-          <p class="text-xs text-slate-500" data-i18n="noPendingOrders">No pending transactions requiring approval.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- INVENTORY MANAGEMENT VIEW (ADMIN) -->
-    <section id="view-inventory" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-boxes-stacked text-rose-400 mr-2"></i> <span data-i18n="inventoryTitle">Inventory Mgmt</span></h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="inventorySubtitle">Manage, edit, export, or import complete inventory backup state JSON.</p>
-        </div>
-        
-        <!-- BACKUP & IMPORT CONTROLS -->
-        <div class="flex items-center gap-2 w-full sm:w-auto">
-          <button onclick="exportInventoryBackup()" class="flex-1 sm:flex-initial px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm">
-            <i class="fa-solid fa-download"></i> <span data-i18n="backupJson">Backup JSON</span>
-          </button>
-          
-          <label class="flex-1 sm:flex-initial px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold rounded-xl cursor-pointer transition-all flex items-center justify-center gap-2 shadow-sm">
-            <i class="fa-solid fa-upload"></i> <span data-i18n="importBackup">Import Backup</span>
-            <input type="file" id="backup-file-input" accept=".json" onchange="importInventoryBackup(event)" class="hidden">
-          </label>
-        </div>
-      </div>
-
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden">
-        <div class="p-4 border-b border-slate-800 flex justify-between items-center">
-          <input type="text" id="inventory-search" oninput="renderInventoryTable()" placeholder="Search serial / name / owner..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white w-64" data-i18n-placeholder="searchInventoryPlaceholder">
-        </div>
-        <div class="overflow-x-auto max-h-[500px]">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 sticky top-0">
-              <tr>
-                <th class="p-3" data-i18n="thSerial">Serial</th>
-                <th class="p-3" data-i18n="thName">Name</th>
-                <th class="p-3" data-i18n="thEdition">Edition</th>
-                <th class="p-3" data-i18n="thPrice">Price</th>
-                <th class="p-3" data-i18n="thAssignedOwner">Assigned Owner</th>
-                <th class="p-3" data-i18n="thStatus">Status</th>
-                <th class="p-3 text-right" data-i18n="thActions">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="inventory-table-body" class="divide-y divide-slate-800"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- LIST CARD / AUCTION MODAL -->
-  <div id="list-card-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 space-y-4 relative shadow-2xl">
-      <button onclick="closeListCardModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      <h3 id="list-modal-title" class="text-base font-extrabold text-white" data-i18n="listCardTradeTitle">List Card for Trade</h3>
-      <input type="hidden" id="list-card-id-target">
-      <input type="hidden" id="list-modal-mode" value="trade">
-      
-      <div class="space-y-3 text-xs">
-        <div id="list-card-select-container" class="hidden">
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="selectVaultCard">Select Card from Your Vault</label>
-          <select id="list-card-select-input" onchange="document.getElementById('list-card-id-target').value = this.value" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"></select>
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" id="list-price-label" data-i18n="askingPrice">Asking Price (IDR)</label>
-          <input type="number" id="list-card-price-input" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
-        </div>
-
-        <button onclick="submitCardListingModal()" class="w-full py-3 bg-amber-500 text-slate-950 font-extrabold rounded-xl hover:bg-amber-400 transition-all" data-i18n="publishListingBtn">Publish Listing</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- PROPOSE DIRECT TRADE REQUEST MODAL -->
-  <div id="propose-trade-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl">
-      <button onclick="closeProposeTradeModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="text-base font-extrabold text-white"><i class="fa-solid fa-handshake text-purple-400 mr-2"></i> <span data-i18n="proposeModalTitle">Propose Trade Offer</span></h3>
-      
-      <div class="space-y-3 text-xs">
-        <div class="relative">
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="selectCardRequest">Select Card to Request (Search by Serial or Owner)</label>
-          <input type="hidden" id="trade-req-card-id" value="">
-          
-          <button type="button" id="trade-dropdown-trigger" onclick="toggleTradeCardDropdown()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-left text-white flex justify-between items-center focus:outline-none focus:border-purple-500">
-            <span id="trade-dropdown-label" data-i18n="selectCardPlaceholder">Select a card...</span>
-            <i class="fa-solid fa-chevron-down text-slate-400 text-[10px]"></i>
-          </button>
-
-          <div id="trade-dropdown-menu" class="absolute top-full left-0 w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl z-50 hidden overflow-hidden">
-            <div class="p-2 border-b border-slate-800">
-              <div class="relative">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-[10px]"></i>
-                <input type="text" id="trade-search-input" oninput="filterTradeCardOptions()" placeholder="Search serial (*01) or owner..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500" data-i18n-placeholder="tradeSearchPlaceholder">
-              </div>
-            </div>
-            <div id="trade-dropdown-list" class="max-h-48 overflow-y-auto divide-y divide-slate-900"></div>
-          </div>
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="offerTypeLabel">Offer Type</label>
-          <select id="trade-req-type-select" onchange="toggleTradeOfferTypeFields()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500">
-            <option value="BUY" data-i18n="optDirectBuy">Direct Buy Offer (QRIS / PayPal)</option>
-            <option value="TRADE" data-i18n="optCardTrade">Card-for-Card Trade</option>
-          </select>
-        </div>
-
-        <!-- DYNAMIC FIELD FOR OFFERED CARD (OWNED BY USER) -->
-        <div id="trade-my-card-container" class="hidden">
-          <label class="block font-bold text-purple-400 mb-1" data-i18n="selectMyCardOffer">Select Your Card to Offer in Trade</label>
-          <select id="trade-my-card-select" class="w-full bg-slate-950 border border-purple-500/50 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-400">
-          </select>
-        </div>
-
-        <!-- DYNAMIC FIELD FOR PLUS AMOUNT (TOP UP IDR) -->
-        <div id="trade-plus-amount-container" class="hidden">
-          <label class="block font-bold text-amber-400 mb-1" data-i18n="plusAmountLabel">Plus Cash / Top-up Amount (IDR - Optional)</label>
-          <input type="number" id="trade-plus-amount-input" placeholder="e.g. 50000" class="w-full bg-slate-950 border border-amber-500/40 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-400">
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="proposedNotesLabel">Proposed Offer Amount / Notes (IDR or Details)</label>
-          <input type="text" id="trade-req-notes-input" placeholder="e.g. Offering Rp 150.000 or trade with *02" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500" data-i18n-placeholder="tradeNotesPlaceholder">
-        </div>
-
-        <button onclick="submitTradeRequest()" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-extrabold rounded-xl transition-all shadow-lg" data-i18n="submitProposalBtn">Submit Proposal</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- COUNTER OFFER MODAL -->
-  <div id="counter-offer-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl">
-      <button onclick="closeCounterOfferModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="text-base font-extrabold text-white"><i class="fa-solid fa-pen-to-square text-amber-400 mr-2"></i> <span data-i18n="counterModalTitle">Send Counter Offer</span></h3>
-      <input type="hidden" id="counter-req-id-target">
-
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="counterNotesLabel">Your Counter Terms / Revised Offer Notes</label>
-          <input type="text" id="counter-notes-input" placeholder="e.g. Counter offer: I want Rp 250.000 or *05 instead." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500" data-i18n-placeholder="counterNotesPlaceholder">
-        </div>
-
-        <button onclick="submitCounterOffer()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl transition-all shadow-lg" data-i18n="submitCounterBtn">Submit Counter Offer</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- GENERIC CONFIRMATION MODAL -->
-  <div id="generic-confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9995] hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 space-y-4 relative shadow-2xl text-center">
-      <div class="w-14 h-14 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center mx-auto">
-        <i id="generic-confirm-icon" class="fa-solid fa-triangle-exclamation text-amber-400 text-xl"></i>
-      </div>
-      <div>
-        <h3 id="generic-confirm-title" class="text-base font-extrabold text-white">Are you sure?</h3>
-        <p id="generic-confirm-message" class="text-xs text-slate-400 mt-1.5 leading-relaxed"></p>
-      </div>
-      <div class="flex gap-2 pt-1">
-        <button onclick="closeConfirmModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all">Cancel</button>
-        <button id="generic-confirm-btn" onclick="handleConfirmModalAccept()" class="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl transition-all">Confirm</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SELL-BACK PAYOUT MODAL -->
-  <div id="sellback-qris-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[92vh] overflow-y-auto">
-      <button onclick="closeSellbackQrisModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="text-lg font-black text-white pr-8"><i class="fa-solid fa-wallet text-amber-400 mr-1"></i> Sell Back — Payout Details</h3>
-      <p class="text-[11px] text-slate-400">Selling back <strong id="sellback-modal-serial" class="text-amber-300"></strong> for <strong id="sellback-modal-price" class="text-emerald-400"></strong></p>
-      <input type="hidden" id="sellback-card-id-target">
-
-      <div class="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3">
-        <p class="text-[10px] font-black uppercase tracking-wider text-amber-300"><i class="fa-solid fa-circle-info mr-1"></i> Indonesian payout only</p>
-        <p class="text-[10px] text-slate-400 mt-1">Sell Back supports Indonesian payout methods. Upload your QRIS if you have one, or provide a DANA / GoPay / OVO / ShopeePay phone number.</p>
-      </div>
-
-      <div class="text-left space-y-4">
-        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
-          <label class="block font-bold text-slate-300 mb-1">QRIS Attachment <span class="text-slate-500 font-normal">(optional if using e-wallet)</span></label>
-          <input type="file" id="sellback-qris-file-input" accept="image/*" onchange="handleSellbackQrisUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
-          <input type="hidden" id="sellback-qris-img-data" value="">
-          <div id="sellback-qris-preview-container" class="hidden text-center pt-2">
-            <img id="sellback-qris-preview-img" src="" class="h-24 max-w-full mx-auto rounded border border-slate-700 object-contain">
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2 text-[10px] text-slate-500">
-          <span class="h-px flex-1 bg-slate-800"></span><span>OR</span><span class="h-px flex-1 bg-slate-800"></span>
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-300 mb-1">E-Wallet</label>
-          <select id="sellback-payout-provider" onchange="updateSellbackPayoutHint()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-amber-500">
-            <option value="">Select e-wallet</option>
-            <option value="DANA">DANA</option>
-            <option value="GOPAY">GoPay</option>
-            <option value="OVO">OVO</option>
-            <option value="SHOPEEPAY">ShopeePay</option>
-            <option value="OTHER">Other e-wallet</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-300 mb-1">Phone Number <span class="text-slate-500 font-normal">(required without QRIS)</span></label>
-          <input id="sellback-payout-phone" type="tel" inputmode="tel" autocomplete="tel" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white font-mono focus:outline-none focus:border-amber-500" placeholder="+62 81234567890">
-          <p id="sellback-payout-hint" class="text-[10px] text-slate-500 mt-1">Use international format with country code, e.g. +62. Phone is required when no QRIS attachment is provided.</p>
-        </div>
-      </div>
-
-      <p class="text-[10px] text-slate-500">Admin will process the payout using the details above and confirm it with a receipt once it's sent.</p>
-      <button onclick="submitSellBackRequest()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 transition-all"><i class="fa-solid fa-paper-plane mr-1"></i> Submit Sell-Back Request</button>
-    </div>
-  </div>
-
-  <!-- GENERIC IMAGE PREVIEW MODAL (receipts / QRIS screenshots) -->
-  <div id="image-preview-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[9998] hidden flex items-center justify-center p-4" onclick="closeImagePreviewModal()">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-5 space-y-3 relative shadow-2xl text-center" onclick="event.stopPropagation()">
-      <button onclick="closeImagePreviewModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      <h3 id="image-preview-title" class="text-sm font-black text-white pr-8 text-left"></h3>
-      <img id="image-preview-img" src="" class="w-full max-h-[70vh] object-contain rounded-2xl border border-slate-800 bg-white">
-      <a id="image-preview-download" href="" download="attachment.png" class="inline-flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition-all">
-        <i class="fa-solid fa-download"></i> Download / Save Image
-      </a>
-    </div>
-  </div>
-
-  <!-- ADMIN: SEND PAYOUT RECEIPT MODAL -->
-  <div id="send-receipt-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl text-center max-h-[90vh] overflow-y-auto">
-      <button onclick="closeSendReceiptModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="text-lg font-black text-white"><i class="fa-solid fa-receipt text-amber-400 mr-1"></i> Send Payout Receipt</h3>
-      <p class="text-[11px] text-slate-400">Confirm <strong id="receipt-modal-seller" class="text-amber-300"></strong> was paid for <strong id="receipt-modal-serial" class="text-emerald-400"></strong></p>
-      <input type="hidden" id="receipt-payout-id-target">
-
-      <div class="text-left space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
-        <label class="block font-bold text-slate-300">Upload Payment Confirmation / Receipt Screenshot</label>
-        <input type="file" id="receipt-file-input" accept="image/*" onchange="handleReceiptUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
-        <input type="hidden" id="receipt-img-data" value="">
-        <div id="receipt-preview-container" class="hidden text-center pt-2">
-          <img id="receipt-preview-img" src="" class="h-24 mx-auto rounded border border-slate-700">
-        </div>
-      </div>
-
-      <button onclick="submitPayoutReceipt()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 transition-all">Confirm &amp; Send Receipt</button>
-    </div>
-  </div>
-
-  <!-- AUCTION WINNER PAYMENT MODAL -->
-  <div id="auction-winner-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-emerald-500/40 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl text-center max-h-[90vh] overflow-y-auto">
-      <button onclick="closeAuctionWinnerModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="text-lg font-black text-white"><i class="fa-solid fa-trophy text-amber-400 mr-1"></i> You Won the Auction!</h3>
-      <p class="text-[11px] text-slate-400">Complete payment for <strong id="winner-modal-serial" class="text-amber-300"></strong></p>
-
-      <img id="winner-qris-img-element" src="" class="w-48 h-48 mx-auto bg-white p-2 rounded-2xl shadow-inner border border-slate-800">
-
-      <div>
-        <p class="text-[10px] text-slate-500 font-bold uppercase">Winning Bid Amount</p>
-        <p id="winner-amount-display" class="text-2xl font-black text-amber-400 font-mono">Rp 0</p>
-      </div>
-
-      <div class="text-left space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
-        <label class="block font-bold text-slate-300">Upload Transfer Receipt Screenshot (QRIS / PayPal)</label>
-        <input type="file" id="winner-proof-file-input" accept="image/*" onchange="handleWinnerProofUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
-        <input type="hidden" id="winner-proof-img-data" value="">
-        <div id="winner-proof-preview-container" class="hidden text-center pt-2">
-          <img id="winner-proof-preview-img" src="" class="h-24 mx-auto rounded border border-slate-700">
-        </div>
-      </div>
-
-      <button onclick="submitAuctionWinPayment()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 transition-all">Submit Payment for Admin Approval</button>
-    </div>
-  </div>
-
-  <!-- NON-BLOCKING FLOATING IMPORT PROGRESS WIDGET -->
-  <div id="loading-modal" class="fixed bottom-6 right-6 z-[9999] hidden pointer-events-auto">
-    <div class="bg-slate-900/95 border border-indigo-500/40 rounded-2xl max-w-xs w-80 p-4 space-y-3 shadow-2xl backdrop-blur-xl relative">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <i id="loading-modal-spinner" class="fa-solid fa-circle-notch fa-spin text-amber-400 text-base"></i>
-          <h3 id="loading-modal-title" class="text-xs font-extrabold text-white" data-i18n="processingData">Processing Data...</h3>
-        </div>
-        <button onclick="hideLoadingModal()" class="text-slate-500 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      
-      <p id="loading-modal-subtitle" class="text-[11px] text-slate-400 leading-tight" data-i18n="loadingWaitSub">Please wait while the inventory updates.</p>
-
-      <div id="import-progress-container" class="space-y-1.5 hidden">
-        <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-          <div id="import-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-amber-400 w-0 transition-all duration-150"></div>
-        </div>
-        <div class="flex justify-between items-center text-[9px] font-mono text-slate-400">
-          <span id="import-progress-status">0 / 0</span>
-          <span id="import-progress-percent">0%</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PROFILE MANAGER MODAL -->
-  <div id="profile-manager-modal" class="profile-manager-modal fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-start justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain">
-    <div class="profile-manager-modal-panel bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl my-2 sm:my-4 max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain">
-      <button onclick="closeProfileManagerModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <div class="text-center space-y-1">
-        <div class="text-[8px] font-black uppercase tracking-[.18em] text-violet-300/70 mb-2"><i class="fa-solid fa-sliders mr-1"></i> Profile</div>
-        <div class="relative w-20 h-20 mx-auto mb-2">
-          <img id="profile-modal-avatar-preview" src="" class="w-20 h-20 rounded-full object-cover border-2 border-amber-500/50 shadow-lg bg-slate-950">
-        </div>
-        <h3 class="text-lg font-black text-white" data-i18n="profileSettingsTitle">Collector Profile Settings</h3>
-        <p class="text-xs text-slate-400" data-i18n="profileSettingsSub">Customize how your profile, username, and socials appear on the marketplace</p>
-      </div>
-
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="displayNameLabel">Display Name</label>
-          <input type="text" id="profile-edit-name-input" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-amber-500 focus:outline-none">
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="usernameLabel">Username (@handle - Unique)</label>
-          <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-amber-400 font-bold">@</span>
-            <input type="text" id="profile-edit-username-input" placeholder="e.g. eugenecards" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-7 pr-3 py-2 text-white focus:border-amber-500 focus:outline-none">
-          </div>
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="emailLabel">Email (Account)</label>
-          <input type="text" id="profile-edit-email-input" disabled class="w-full bg-slate-950/50 border border-slate-800/80 rounded-xl px-3 py-2 text-slate-500 cursor-not-allowed font-mono">
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="uploadAvatarLabel">Upload Custom Avatar Picture</label>
-          <input type="file" id="profile-avatar-file-input" accept="image/*" onchange="handleProfileAvatarUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-950 border border-slate-800 rounded-xl p-2 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400">
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="avatarUrlLabel">Or Avatar Image URL</label>
-          <input type="text" id="profile-edit-avatar-input" oninput="document.getElementById('profile-modal-avatar-preview').src = this.value" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:border-amber-500 focus:outline-none" placeholder="https://example.com/avatar.png">
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="bioLabel">Collector Tagline / Bio</label>
-          <textarea id="profile-edit-bio-input" rows="3" placeholder="e.g. Genesis Card Enthusiast" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-amber-500 focus:outline-none resize-y" data-i18n-placeholder="bioPlaceholder"></textarea>
-        </div>
-
-        <!-- SOCIAL MEDIA LINKS (OPTIONAL) -->
-        <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-          <label class="block font-bold text-amber-400 uppercase text-[10px]"><i class="fa-solid fa-share-nodes mr-1"></i> <span data-i18n="socialsTitle">Social Media & Links (Optional)</span></label>
-          <div>
-            <label class="block text-[10px] text-slate-400 mb-0.5"><i class="fa-brands fa-instagram text-rose-400 mr-1"></i> <span data-i18n="igLabel">Instagram Handle / URL</span></label>
-            <input type="text" id="profile-edit-ig-input" placeholder="e.g. @eugene_cards or https://instagram.com/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-amber-500">
-          </div>
-          <div>
-            <label class="block text-[10px] text-slate-400 mb-0.5"><i class="fa-brands fa-x-twitter text-slate-300 mr-1"></i> <span data-i18n="twitterLabel">X/Twitter Handle / URL</span></label>
-            <input type="text" id="profile-edit-twitter-input" placeholder="e.g. @eugene_cards or https://twitter.com/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-amber-500">
-          </div>
-          <div>
-            <label class="block text-[10px] text-slate-400 mb-0.5"><i class="fa-brands fa-tiktok text-cyan-400 mr-1"></i> <span data-i18n="tiktokLabel">TikTok Handle / URL</span></label>
-            <input type="text" id="profile-edit-tiktok-input" placeholder="e.g. @eugene_cards or https://tiktok.com/@..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-amber-500">
-          </div>
-          <div>
-            <label class="block text-[10px] text-slate-400 mb-0.5"><i class="fa-solid fa-globe text-indigo-400 mr-1"></i> <span data-i18n="webLabel">Website URL (Clickable)</span></label>
-            <input type="text" id="profile-edit-web-input" placeholder="e.g. https://eugenecards.com" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-amber-500">
-          </div>
-        </div>
-
-        <button onclick="saveProfileChanges()" class="w-full py-3 bg-amber-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-amber-400 shadow-lg transition-all" data-i18n="saveProfileBtn">
-          Save Profile Updates
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- COMPLETE YOUR PROFILE POPUP (shown once, right after a collector's first Google login) -->
-  <div id="complete-profile-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9997] hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-emerald-500/30 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
-      <button onclick="skipCompleteProfile()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
-      <div class="text-center space-y-1">
-        <div class="relative w-20 h-20 mx-auto mb-2">
-          <img id="complete-profile-avatar-preview" src="" class="w-20 h-20 rounded-full object-cover border-2 border-emerald-500/50 shadow-lg bg-slate-950">
-        </div>
-        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider" data-i18n="welcomeBadge">Welcome!</span>
-        <h3 class="text-lg font-black text-white" data-i18n="completeProfileTitle">Complete Your Profile</h3>
-        <p class="text-xs text-slate-400" data-i18n="completeProfileSub">Just a couple of details so other collectors can recognize you on the marketplace.</p>
-      </div>
-
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="displayNameLabel">Display Name</label>
-          <input type="text" id="complete-profile-name-input" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="usernameLabel">Username (@handle - Unique)</label>
-          <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400 font-bold">@</span>
-            <input type="text" id="complete-profile-username-input" placeholder="e.g. eugenecards" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-7 pr-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
-          </div>
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="bioLabel">Collector Tagline / Bio</label>
-          <textarea id="complete-profile-bio-input" rows="2" placeholder="e.g. Genesis Card Enthusiast" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-emerald-500 focus:outline-none resize-y" data-i18n-placeholder="bioPlaceholder"></textarea>
-        </div>
-
-        <!-- SOCIAL MEDIA & WEBSITE (OPTIONAL) - captured up front so Holders can
-             start promoting their socials/site on their Vault right away,
-             instead of only discovering these fields later in Profile Settings. -->
-        <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-          <label class="block font-bold text-emerald-400 uppercase text-[10px]"><i class="fa-solid fa-share-nodes mr-1"></i> <span data-i18n="socialsTitle">Social Media & Links (Optional)</span></label>
-          <div>
-            <label class="block text-[10px] text-slate-400 mb-0.5"><i class="fa-brands fa-instagram text-rose-400 mr-1"></i> <span data-i18n="igLabel">Instagram Handle / URL</span></label>
-            <input type="text" id="complete-profile-ig-input" placeholder="e.g. @eugene_cards or https://instagram.com/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-emerald-500">
-          </div>
-          <div>
-            <label class="block text-[10px] text-slate-400 mb-0.5"><i class="fa-brands fa-x-twitter text-slate-300 mr-1"></i> <span data-i18n="twitterLabel">X/Twitter Handle / URL</span></label>
-            <input type="text" id="complete-profile-twitter-input" placeholder="e.g. @eugene_cards or https://twitter.com/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-emerald-500">
-          </div>
-          <div>
-            <label class="block text-[10px] text-slate-400 mb-0.5"><i class="fa-brands fa-tiktok text-cyan-400 mr-1"></i> <span data-i18n="tiktokLabel">TikTok Handle / URL</span></label>
-            <input type="text" id="complete-profile-tiktok-input" placeholder="e.g. @eugene_cards or https://tiktok.com/@..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-emerald-500">
-          </div>
-          <div>
-            <label class="block text-[10px] text-slate-400 mb-0.5"><i class="fa-solid fa-globe text-indigo-400 mr-1"></i> <span data-i18n="webLabel">Website URL (Clickable)</span></label>
-            <input type="text" id="complete-profile-web-input" placeholder="e.g. https://eugenecards.com" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-emerald-500">
-          </div>
-          <p class="text-[9px] text-slate-500">Holders: these links show up on your public Vault so other collectors can find and follow you.</p>
-        </div>
-
-        <button onclick="submitCompleteProfile()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 shadow-lg transition-all" data-i18n="saveContinueBtn">
-          Save &amp; Continue
-        </button>
-        <button onclick="skipCompleteProfile()" class="w-full py-2 text-slate-500 hover:text-slate-300 font-bold text-[11px] transition-all" data-i18n="maybeLaterBtn">
-          Maybe later
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ADMIN: EDIT COLLECTOR PROFILE MODAL -->
-  <div id="admin-edit-collector-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
-      <button onclick="closeAdminEditCollectorModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <div class="text-center space-y-1">
-        <div class="relative w-20 h-20 mx-auto mb-2">
-          <img id="admin-edit-collector-avatar-preview" src="" class="w-20 h-20 rounded-full object-cover border-2 border-rose-500/50 shadow-lg bg-slate-950">
-        </div>
-        <h3 class="text-lg font-black text-white"><i class="fa-solid fa-user-gear text-rose-400 mr-1"></i> Edit Collector Profile</h3>
-        <p class="text-xs text-slate-400">Admin override for display name and avatar. This does not change the collector's login or ownership records.</p>
-      </div>
-
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-bold text-slate-400 mb-1">Raw Owner ID (from card records)</label>
-          <div id="admin-edit-collector-raw-id" class="w-full bg-slate-950/50 border border-slate-800/80 rounded-xl px-3 py-2 text-slate-500 font-mono"></div>
-        </div>
-
-        <div class="p-3 bg-rose-500/5 rounded-2xl border border-rose-500/20 space-y-2">
-          <label class="block font-bold text-rose-400 uppercase text-[10px]"><i class="fa-solid fa-link mr-1"></i> Link to a Registered Account (Recommended)</label>
-          <p class="text-[10px] text-slate-500">Fixes the real ownership record, not just the display — the collector's own Vault will also show these cards correctly.</p>
-          <input type="text" id="admin-relink-search-input" oninput="filterRelinkAccountOptions()" placeholder="Search by name or @username..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:border-rose-500 focus:outline-none">
-          <div id="admin-relink-account-list" class="max-h-40 overflow-y-auto space-y-0.5"></div>
-        </div>
-
-        <div class="border-t border-slate-800 pt-3 space-y-3">
-          <p class="text-[10px] text-slate-500 uppercase font-bold">Or Manually Override Display Only (no real account, e.g. house-held cards)</p>
-
-          <div>
-            <label class="block font-bold text-slate-400 mb-1">Display Name</label>
-            <input type="text" id="admin-edit-collector-name-input" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-rose-500 focus:outline-none">
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-400 mb-1">Upload Custom Avatar Picture</label>
-            <input type="file" id="admin-edit-collector-avatar-file-input" accept="image/*" onchange="handleAdminEditCollectorAvatarUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-950 border border-slate-800 rounded-xl p-2 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-rose-500 file:text-slate-950 hover:file:bg-rose-400">
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-400 mb-1">Or Avatar Image URL</label>
-            <input type="text" id="admin-edit-collector-avatar-input" oninput="document.getElementById('admin-edit-collector-avatar-preview').src = this.value" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:border-rose-500 focus:outline-none" placeholder="https://example.com/avatar.png">
-          </div>
-
-          <button onclick="saveAdminCollectorProfile()" class="w-full py-3 bg-slate-800 text-white font-extrabold text-xs rounded-xl hover:bg-slate-700 shadow-lg transition-all">
-            Save Display Override
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- EDIT INVENTORY CARD MODAL -->
-  <div id="inventory-edit-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
-      <button onclick="closeInventoryModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <h3 class="text-base font-extrabold text-white text-center" data-i18n="customizeCardTitle">Customize Card Details</h3>
-
-      <div class="space-y-3 text-xs">
-        <input type="hidden" id="edit-card-id">
-
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="cardNameLabel">Card Name</label>
-          <input type="text" id="edit-card-name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-bold text-slate-400 mb-1" data-i18n="cardCodeLabel">Card Code (e.g. *01 / *001)</label>
-            <input type="text" id="edit-card-serial" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-400 mb-1" data-i18n="categoryLabel">Type / Category</label>
-            <select id="edit-card-type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none">
-              <option value="PREMIUM">PREMIUM</option>
-              <option value="STANDARD">STANDARD</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-3">
-          <p class="font-bold text-amber-400 uppercase text-[10px]" data-i18n="extendedDetails">Extended Details</p>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block font-bold text-slate-400 mb-1" data-i18n="editionLabel">Edition</label>
-              <input type="text" id="edit-card-edition" placeholder="e.g. Beta Edition: #0" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none">
-            </div>
-            <div>
-              <label class="block font-bold text-slate-400 mb-1" data-i18n="snLabel">SN (Serial No.)</label>
-              <input type="text" id="edit-card-sn" placeholder="e.g. 0001" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none">
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block font-bold text-slate-400 mb-1" data-i18n="tierLabel">Tier</label>
-              <input type="text" id="edit-card-tier" placeholder="e.g. 500" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none">
-            </div>
-            <div>
-              <label class="block font-bold text-slate-400 mb-1" data-i18n="printingLabel">Printing</label>
-              <input type="text" id="edit-card-printing" placeholder="e.g. 1x" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none">
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-bold text-slate-400 mb-1" data-i18n="priceLabel">Price (IDR)</label>
-            <input type="number" id="edit-card-price" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-400 mb-1" data-i18n="statusLabel">Status</label>
-            <select id="edit-card-status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none">
-              <option value="AVAILABLE" data-i18n="optAvailable">AVAILABLE</option>
-              <option value="SOLD" data-i18n="optSold">SOLD</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="relative">
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="assignOwnerLabel">Assign Owner</label>
-          <input type="hidden" id="edit-card-owner-select" value="">
-          
-          <button type="button" id="owner-dropdown-trigger" onclick="toggleOwnerDropdown()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-left text-white flex justify-between items-center focus:outline-none focus:border-amber-500">
-            <span id="owner-dropdown-label" data-i18n="unownedHouse">Unowned (House)</span>
-            <i class="fa-solid fa-chevron-down text-slate-400 text-[10px]"></i>
-          </button>
-
-          <div id="owner-dropdown-menu" class="absolute top-full left-0 w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl z-50 hidden overflow-hidden">
-            <div class="p-2 border-b border-slate-800">
-              <div class="relative">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-[10px]"></i>
-                <input type="text" id="owner-search-input" oninput="filterOwnerOptions()" placeholder="Search collector name..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500" data-i18n-placeholder="searchOwnerPlaceholder">
-              </div>
-            </div>
-            <div id="owner-dropdown-list" class="max-h-48 overflow-y-auto divide-y divide-slate-900"></div>
-          </div>
-        </div>
-
-        <div class="space-y-1">
-          <label class="block font-bold text-slate-400" data-i18n="uploadCardImgLabel">Upload Card Image File</label>
-          <input type="file" id="edit-card-file-input" accept="image/*" onchange="handleImageFileUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-950 border border-slate-800 rounded-xl p-2 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400">
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-400 mb-1" data-i18n="orImgUrlLabel">Or Image URL</label>
-          <input type="text" id="edit-card-img" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none">
-        </div>
-
-        <button onclick="saveInventoryCardChanges()" class="w-full py-3 bg-amber-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-amber-400 transition-all" data-i18n="saveCustomizationBtn">
-          Save Customization
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- PREMIUM CARD DETAIL MODAL -->
-  <div id="card-detail-modal" class="fixed inset-0 card-detail-backdrop backdrop-blur-md z-[9998] hidden flex items-center justify-center p-3 sm:p-5">
-    <div class="card-detail-shell">
-      <div class="card-detail-scroll p-4 sm:p-6 lg:p-7">
-        <div class="flex items-start justify-between gap-5 mb-5">
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="text-[8px] uppercase tracking-[.18em] font-black text-slate-500">EUGENE CARD • CARD DETAILS</span>
-              <span id="detail-card-live-state" class="catalog-live-badge"><span></span> <span data-i18n="liveWord">Live</span></span>
-            </div>
-            <h3 id="detail-card-title" class="text-2xl sm:text-3xl font-black tracking-tight text-white mt-1">Card Title</h3>
-            <p class="text-[10px] text-slate-500 mt-1">Inspect the card's edition, serial, ownership, scarcity and market activity.</p>
-          </div>
-          <button onclick="closeCardDetailModal()" class="card-detail-close shrink-0" aria-label="Close card details"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-[minmax(290px,.9fr)_minmax(0,1.1fr)] gap-6">
-          <div>
-            <div id="detail-card-art" class="card-detail-art">
-              <div class="card-detail-art-glow"></div>
-              <img id="detail-card-img" src="" loading="lazy" alt="Eugene Card">
-              <div id="detail-card-foil" class="card-detail-foil hidden"></div>
-              <span id="detail-card-edition-badge" class="card-detail-badge premium">PREMIUM</span>
-              <span id="detail-card-serial" class="card-detail-serial">*01</span>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2 mt-3">
-              <div class="detail-stat-card"><span class="detail-stat-label">Market Price</span><strong id="detail-card-price" class="detail-stat-value text-emerald-400 font-mono">Rp 0</strong></div>
-              <div class="detail-stat-card"><span class="detail-stat-label">Availability</span><strong id="detail-card-status" class="detail-stat-value text-amber-400">AVAILABLE</strong></div>
-              <div class="detail-stat-card"><span class="detail-stat-label">Holder</span><strong id="detail-card-owner" class="detail-stat-value">Unowned</strong></div>
-            </div>
-          </div>
-
-          <div class="min-w-0">
-            <div class="flex items-center justify-between gap-3 mb-3">
-              <div>
-                <p class="text-[8px] uppercase tracking-[.15em] font-black text-slate-500">Card specification</p>
-                <p class="text-xs text-slate-300 mt-1">Official catalog metadata</p>
-              </div>
-              <span id="detail-card-type-label" class="text-[9px] font-black uppercase tracking-wider text-indigo-300 bg-indigo-500/10 border border-indigo-500/15 rounded-lg px-2 py-1">STANDARD</span>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 mb-4">
-              <div class="detail-stat-card"><span class="detail-stat-label">Edition</span><strong id="detail-card-edition-text" class="detail-stat-value text-amber-300">Beta Edition: #0</strong></div>
-              <div class="detail-stat-card"><span class="detail-stat-label">Serial No.</span><strong id="detail-card-sn-text" class="detail-stat-value text-indigo-300 font-mono">0001</strong></div>
-              <div class="detail-stat-card"><span class="detail-stat-label">Tier</span><strong id="detail-card-tier-text" class="detail-stat-value text-emerald-300">500</strong></div>
-              <div class="detail-stat-card"><span class="detail-stat-label">Printing</span><strong id="detail-card-printing-text" class="detail-stat-value text-purple-300 font-mono">1x</strong></div>
-            </div>
-
-            <div class="rounded-2xl border border-white/[.06] bg-slate-950/55 p-4 mb-4">
-              <div class="flex items-center justify-between gap-3">
-                <div>
-                  <p class="text-[8px] uppercase tracking-[.14em] font-black text-slate-500">Rarity Index</p>
-                  <p id="detail-card-rarity-label" class="text-sm font-black text-white mt-1">—</p>
-                </div>
-                <strong id="detail-card-rarity" class="text-2xl font-black font-mono text-purple-300">0</strong>
-              </div>
-              <div class="detail-rarity-track mt-3"><div id="detail-card-rarity-bar" class="detail-rarity-fill"></div></div>
-              <div class="flex items-center justify-between mt-2 text-[8px] text-slate-500 font-bold">
-                <span id="detail-card-scarcity">Scarcity data</span><span id="detail-card-series-size">—</span>
-              </div>
-            </div>
-
-            <div class="rounded-2xl border border-white/[.06] bg-slate-950/45 p-4">
-              <div class="flex items-center justify-between mb-3">
-                <p class="text-[8px] uppercase tracking-[.14em] font-black text-slate-500">Collector activity</p>
-                <i class="fa-solid fa-chart-line text-indigo-400 text-xs"></i>
-              </div>
-              <div id="detail-card-view-stats" class="flex flex-wrap gap-x-5 gap-y-2 text-[9px] font-bold text-slate-400"></div>
-              <div class="detail-info-row mt-2"><span class="detail-info-label">Catalog ID</span><strong id="detail-card-id" class="detail-info-value font-mono text-slate-400">—</strong></div>
-              <div class="detail-info-row"><span class="detail-info-label">Current holder</span><strong id="detail-card-owner-info" class="detail-info-value">Unowned</strong></div>
-            </div>
-
-            <div id="detail-card-action-container" class="mt-4"></div>
-          </div>
-        </div>
-
-        <div class="mt-6 pt-5 border-t border-white/[.06]">
-          <button onclick="toggleCardMarketProfile()" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-white/[.025] hover:bg-white/[.045] border border-white/[.06] text-[10px] font-black text-amber-300 transition-all">
-            <span><i class="fa-solid fa-chart-line mr-2"></i><span data-i18n="marketProfileToggle">Market Profile & History</span></span>
-            <i id="market-profile-chevron" class="fa-solid fa-chevron-down text-[9px] transition-transform"></i>
-          </button>
-          <div id="card-market-profile-panel" class="hidden space-y-3 pt-3"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ONBOARDING / "HOW IT WORKS" MODAL -->
-  <div id="onboarding-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9996] hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-amber-500/25 rounded-3xl max-w-sm w-full p-6 space-y-5 relative shadow-2xl max-h-[90vh] overflow-y-auto">
-      <button onclick="closeOnboardingModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <div class="text-center space-y-2">
-        <div class="w-14 h-14 rounded-2xl mx-auto bg-slate-950 border border-amber-500/40 p-2 shadow-lg flex items-center justify-center">
-          <svg viewBox="0 0 100 100" class="w-full h-full"><use href="#eugene-logo-mark"/></svg>
-        </div>
-        <h3 class="text-lg font-black text-white">Welcome to Eugene Card</h3>
-        <p class="text-xs text-slate-400">Four steps from new visitor to collector.</p>
-      </div>
-
-      <div class="space-y-3">
-        <div class="flex items-start gap-3 bg-slate-950 border border-slate-800 rounded-2xl p-3">
-          <span class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">1</span>
-          <div>
-            <p class="text-xs font-extrabold text-white">Collect your first card</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Browse the catalog and add a limited-edition serial card to your cart.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3 bg-slate-950 border border-slate-800 rounded-2xl p-3">
-          <span class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">2</span>
-          <div>
-            <p class="text-xs font-extrabold text-white">Build your vault</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Owned cards live in your Vault / Binder, tracked with your collector level.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3 bg-slate-950 border border-slate-800 rounded-2xl p-3">
-          <span class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">3</span>
-          <div>
-            <p class="text-xs font-extrabold text-white">Trade with collectors</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">List cards in the Trading Room, propose direct trades, or bid in Auctions.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3 bg-slate-950 border border-slate-800 rounded-2xl p-3">
-          <span class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">4</span>
-          <div>
-            <p class="text-xs font-extrabold text-white">Complete collections</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Track your completion % and unlock rewards as your binder fills up.</p>
-          </div>
-        </div>
-      </div>
-
-      <button onclick="closeOnboardingModal()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all">Get Started</button>
-    </div>
-  </div>
-
-  <!-- AUTH MODAL -->
-  <div id="auth-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 space-y-4 relative shadow-2xl">
-      <button onclick="closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <div class="text-center space-y-2">
-        <div class="w-16 h-16 rounded-2xl mx-auto bg-slate-950 border border-indigo-500/40 p-2 shadow-lg flex items-center justify-center">
-          <svg viewBox="0 0 100 100" class="w-full h-full"><use href="#eugene-logo-mark"/></svg>
-        </div>
-        <h3 class="text-lg font-black text-white" data-i18n="loginTitle">Log In to Eugene Card</h3>
-        <p class="text-xs text-slate-400" data-i18n="loginSub">Sign in to customize your collector profile and trade cards.</p>
-      </div>
-
-      <button onclick="loginWithGoogle()" class="w-full py-3 bg-white hover:bg-slate-100 text-slate-950 font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow transition-all">
-        <i class="fa-brands fa-google text-red-500 text-sm"></i> <span data-i18n="continueGoogle">Continue with Google</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- CART DRAWER & CHECKOUT -->
-  <div id="cart-drawer-overlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden" onclick="toggleCartDrawer()"></div>
-  <div id="cart-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-800 z-50 transform translate-x-full transition-transform duration-300 flex flex-col justify-between p-6">
-    <div>
-      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-        <h3 class="text-base font-extrabold text-white"><i class="fa-solid fa-cart-shopping text-amber-400 mr-2"></i> <span data-i18n="cartTitle">Cart Checkout</span></h3>
-        <button onclick="toggleCartDrawer()" class="w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div id="cart-items-container" class="py-4 space-y-3 overflow-y-auto max-h-[50vh]"></div>
-    </div>
-    <div class="space-y-4 pt-4 border-t border-slate-800">
-      <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-2 text-xs">
-        <div class="flex justify-between text-slate-400"><span data-i18n="subtotal">Subtotal</span><span id="cart-subtotal" class="font-mono text-white">Rp 0</span></div>
-        <div class="flex justify-between text-slate-400"><span data-i18n="platformTax">Platform Tax (2%)</span><span id="cart-tax" class="font-mono text-amber-400">Rp 0</span></div>
-        <div class="flex justify-between font-extrabold text-sm text-white pt-2 border-t border-slate-800"><span data-i18n="totalIncTax">Total (Inc. 2% Tax)</span><span id="cart-grand-total" class="font-mono text-amber-400">Rp 0</span></div>
-      </div>
-      <button onclick="proceedToCheckout()" class="w-full py-3.5 bg-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg hover:bg-amber-400 transition-all" data-i18n="proceedQrisBtn">Proceed to Payment</button>
-    </div>
-  </div>
-
-  <!-- CHECKOUT MODAL — QRIS (MANUAL) & PAYPAL (AUTOMATED) -->
-  <div id="checkout-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl text-center max-h-[90vh] overflow-y-auto">
-      <button onclick="closeCheckoutModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      
-      <!-- PAYMENT METHOD SELECTION TABS -->
-      <div class="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 gap-1 mb-2">
-        <button id="pay-tab-qris" onclick="switchCheckoutMethod('QRIS')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition-all flex items-center justify-center gap-1.5">
-          <i class="fa-solid fa-qrcode"></i> QRIS (Local)
-        </button>
-        <button id="pay-tab-paypal" onclick="switchCheckoutMethod('PAYPAL')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white transition-all flex items-center justify-center gap-1.5">
-          <i class="fa-brands fa-paypal text-sky-400"></i> PayPal (Global)
-        </button>
-      </div>
-
-      <!-- QRIS METHOD VIEW -->
-      <div id="checkout-qris-container" class="space-y-3">
-        <h3 class="text-lg font-black text-white" data-i18n="scanPayQris">Scan & Pay via Official QRIS</h3>
-        <p class="text-[10px] text-slate-400"><span data-i18n="merchantLabel">Merchant</span>: <strong class="text-white">Eugene Card, Toko Kartu</strong></p>
-        
-        <img id="qris-img-element" src="" class="w-48 h-48 mx-auto bg-white p-2 rounded-2xl shadow-inner border border-slate-800">
-      </div>
-
-      <!-- PAYPAL METHOD VIEW -->
-      <div id="checkout-paypal-container" class="hidden space-y-3">
-        <div class="p-3 bg-sky-950/30 border border-sky-500/30 rounded-2xl text-left space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-extrabold text-sky-400"><i class="fa-brands fa-paypal mr-1"></i> Pay via PayPal</span>
-            <span class="text-[9px] bg-sky-500/20 text-sky-300 font-bold px-2 py-0.5 rounded border border-sky-500/30">Instant & Automatic</span>
-          </div>
-          <p class="text-[11px] text-slate-300 leading-relaxed">PayPal doesn't settle in Indonesian Rupiah, so your total is converted to USD at today's rate. Your order confirms automatically the moment PayPal approves the payment — no receipt upload needed.</p>
-
-          <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center font-mono text-[11px]">
-            <span class="text-slate-500">Charged via PayPal:</span>
-            <span id="paypal-usd-amount" class="text-emerald-400 font-bold">Calculating…</span>
-          </div>
-          <p id="paypal-rate-note" class="text-[10px] text-slate-500 italic"></p>
-
-          <div id="paypal-button-container" class="pt-1"></div>
-          <p id="paypal-status-msg" class="text-[10px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 py-1.5 leading-relaxed hidden"></p>
-        </div>
-      </div>
-
-      <div>
-        <p class="text-[10px] text-slate-500 font-bold uppercase" data-i18n="totalPayAmount">Total Payment Amount (Inc. 2% Platform Tax)</p>
-        <p id="qris-amount-display" class="text-2xl font-black text-amber-400 font-mono">Rp 0</p>
-      </div>
-
-      <div id="checkout-manual-submit-section" class="space-y-3">
-        <div class="text-left space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
-          <label id="receipt-upload-label" class="block font-bold text-slate-300" data-i18n="uploadReceiptLabel">Upload QRIS Transfer Receipt Screenshot</label>
-          <input type="file" id="qris-proof-file-input" accept="image/*" onchange="handleQrisScreenshotUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
-          <input type="hidden" id="qris-proof-img-data" value="">
-          <div id="qris-proof-preview-container" class="hidden text-center pt-2">
-            <img id="qris-proof-preview-img" src="" class="h-24 mx-auto rounded border border-slate-700">
-          </div>
-        </div>
-
-        <button id="submit-payment-btn" onclick="submitOrderWithProof()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 transition-all" data-i18n="submitQrisOrderBtn">Submit Order for Admin Approval</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- QUOTE REPOST MODAL -->
-  <div id="quote-repost-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
-      <button onclick="closeQuoteRepostComposer()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="text-base font-extrabold text-white"><i class="fa-solid fa-retweet text-emerald-400 mr-2"></i> <span data-i18n="quoteRepostModalTitle">Quote Repost</span></h3>
-
-      <div class="space-y-3 text-xs">
-        <div class="flex items-start gap-3">
-          <img id="quote-repost-avatar" src="" class="w-9 h-9 rounded-full object-cover border border-emerald-500/30 shrink-0">
-          <div class="flex-1 space-y-2">
-            <textarea id="quote-repost-text-input" rows="3" placeholder="Add a comment..." data-i18n-placeholder="quoteRepostPlaceholder" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 resize-none"></textarea>
-            <div id="quote-repost-image-preview-wrap" class="hidden relative w-fit">
-              <img id="quote-repost-image-preview" src="" class="max-h-32 rounded-xl border border-slate-800">
-              <button onclick="removeQuoteRepostImageDraft()" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-950 border border-slate-700 text-slate-300 text-[10px] flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-          </div>
-        </div>
-
-        <div id="quote-repost-original-preview"></div>
-
-        <div class="flex items-center justify-between pt-1">
-          <label class="cursor-pointer text-[11px] font-bold text-slate-400 hover:text-emerald-400 flex items-center gap-1.5 transition-colors">
-            <i class="fa-solid fa-image"></i> <span data-i18n="attachImageBtn">Attach Image</span>
-            <input type="file" accept="image/*" class="hidden" onchange="attachQuoteRepostImage(event)">
-          </label>
-          <button onclick="submitQuoteRepost()" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition-all shadow-lg shadow-emerald-500/10" data-i18n="postBtn">Post</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TOAST NOTIFICATION -->
-  <!-- CLIENT GIFT REDEMPTION MODAL -->
-  <div id="gift-redeem-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9998] hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-pink-500/25 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl">
-      <button onclick="closeGiftRedeemModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      <div><span class="text-[9px] uppercase tracking-widest font-black text-pink-300">Asset Redemption</span><h3 id="gift-redeem-title" class="text-lg font-black text-white mt-1">Redeem Client Gift</h3><p id="gift-redeem-sub" class="text-[11px] text-slate-400 mt-1"></p></div>
-      <input type="hidden" id="gift-redeem-id">
-      <input type="hidden" id="gift-redeem-card-id">
-      <div class="bg-slate-950 rounded-2xl border border-slate-800 p-4"><p class="text-[9px] text-slate-500 uppercase font-black">Redeemable Asset</p><p id="gift-redeem-amount" class="text-2xl font-black text-emerald-400 font-mono mt-1">Rp 0</p><p class="text-[10px] text-slate-500 mt-1">Client Gift issuance is free. Redeeming the asset is subject to the standard 2% redemption tax.</p></div>
-      <div class="space-y-3 text-xs">
-        <div><label class="block font-bold text-slate-300 mb-1">QRIS / Payment ID</label><input id="gift-redeem-qris" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-pink-500" placeholder="e.g. QRIS name / merchant ID"></div>
-        <div><label class="block font-bold text-slate-300 mb-1">Recipient Name</label><input id="gift-redeem-recipient" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-pink-500"></div>
-        <button onclick="submitGiftRedemption()" class="w-full py-3 bg-pink-500 hover:bg-pink-400 text-slate-950 font-black rounded-xl transition-all"><i class="fa-solid fa-qrcode mr-1"></i> Request QRIS Redemption</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="toast" class="fixed bottom-6 right-6 z-[10000] bg-slate-900 border border-amber-500/40 text-amber-300 text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl transform translate-y-20 opacity-0 transition-all pointer-events-none">
-    <span id="toast-msg">Action completed.</span>
-  </div>
-
-  <!-- JAVASCRIPT LOGIC WITH FIREBASE CONFIG -->
-  <script>
-    // Supabase is the only authentication/database backend.
-    const db = window.db;
-    const auth = window.auth;
-    const analytics = null;
-    if (!db || !auth || !window.supabaseClient) {
-      throw new Error('Supabase failed to initialize. Check js/supabase-init.js and Supabase configuration.');
-    }
-
-    // ================================================================
-    // EUGENE CARD — PUSH NOTIFICATIONS / FCM
-    // ================================================================
-    let fcmMessaging = null;
-    let fcmServiceWorkerRegistration = null;
-    let fcmPushReady = false;
-    let notificationPermissionState = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
-    let inboxNotificationInitialized = false;
-    let knownChatNotificationTimes = new Map();
-    let knownPendingTransactionIds = new Set();
-
-    function updatePushPermissionUI() {
-      const btn = document.getElementById('enable-push-notifications-btn');
-      const status = document.getElementById('push-notification-status');
-      if (!btn && !status) return;
-      const permission = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
-      notificationPermissionState = permission;
-      if (status) {
-        status.textContent = permission === 'granted'
-          ? 'Aktif'
-          : permission === 'denied'
-            ? 'Diblokir browser'
-            : permission === 'unsupported'
-              ? 'Tidak didukung browser'
-              : 'Belum diaktifkan';
-        status.className = 'text-[9px] font-bold ' + (permission === 'granted' ? 'text-emerald-400' : permission === 'denied' ? 'text-rose-400' : 'text-amber-400');
-      }
-      if (btn) {
-        btn.disabled = permission === 'unsupported' || permission === 'denied';
-        btn.classList.toggle('opacity-50', btn.disabled);
-        btn.innerHTML = permission === 'granted'
-          ? '<i class="fa-solid fa-check"></i> Notifikasi Aktif'
-          : '<i class="fa-solid fa-bell"></i> Aktifkan Notifikasi';
-      }
-    }
-
-    async function enablePushNotifications(showFeedback = true) {
-      if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-        if (showFeedback) showToast('Browser ini belum mendukung push notification.');
-        updatePushPermissionUI();
-        return null;
-      }
-      if (!window.isSecureContext) {
-        if (showFeedback) showToast('Push notification membutuhkan HTTPS.');
-        return null;
-      }
-      try {
-        const permission = Notification.permission === 'granted'
-          ? 'granted'
-          : await Notification.requestPermission();
-        notificationPermissionState = permission;
-        updatePushPermissionUI();
-        if (permission !== 'granted') {
-          if (showFeedback) showToast(permission === 'denied' ? 'Notifikasi diblokir browser.' : 'Izin notifikasi belum diberikan.');
-          return null;
-        }
-
-        if (!firebase.messaging || !(await firebase.messaging.isSupported())) {
-          if (showFeedback) showToast('FCM tidak didukung di browser ini.');
-          return null;
-        }
-
-        fcmServiceWorkerRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
-        await navigator.serviceWorker.ready;
-        fcmMessaging = firebase.messaging();
-
-        // Firebase supports a default VAPID key, but a project-specific key is
-        // recommended for production. Set FCM_VAPID_KEY when you generate one.
-        const tokenOptions = { serviceWorkerRegistration: fcmServiceWorkerRegistration };
-        if (window.EUGENE_FCM_VAPID_KEY) tokenOptions.vapidKey = window.EUGENE_FCM_VAPID_KEY;
-        const token = await fcmMessaging.getToken(tokenOptions);
-        if (!token) throw new Error('FCM registration token tidak tersedia.');
-
-        localStorage.setItem('eugene_fcm_token', token);
-        fcmPushReady = true;
-        updatePushPermissionUI();
-
-        // Best-effort token registration. Firestore rules may intentionally
-        // reject this; the browser token is still kept locally for testing.
-        if (currentUser?.uid) {
-          try {
-            const tokenKey = btoa(token).replace(/[^a-zA-Z0-9]/g, '').slice(0, 80) || 'device';
-            await db.collection('notificationTokens').doc(currentUser.uid).collection('tokens').doc(tokenKey).set({
-              token,
-              uid: currentUser.uid,
-              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-              userAgent: navigator.userAgent.slice(0, 240)
-            }, { merge: true });
-          } catch (e) {
-            console.info('FCM token Firestore registration skipped by rules:', e.message);
-          }
-        }
-
-        if (!fcmMessaging.__eugeneOnMessageBound) {
-          fcmMessaging.onMessage((payload) => {
-            const data = payload?.data || {};
-            const title = payload?.notification?.title || data.title || 'Eugene Card';
-            const message = payload?.notification?.body || data.body || 'Ada aktivitas baru di Eugene Card.';
-            addNotification(title, message, data.iconClass || 'fa-bell text-amber-400', { browser: false });
-            if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
-              showBrowserNotification(title, message, data.url || '/');
-            }
-          });
-          fcmMessaging.__eugeneOnMessageBound = true;
-        }
-
-        if (showFeedback) showToast('Push notification Eugene Card sudah aktif.');
-        return token;
-      } catch (e) {
-        console.warn('FCM setup failed:', e);
-        fcmPushReady = false;
-        if (showFeedback) showToast('Push notification gagal diaktifkan: ' + (e.message || 'Unknown error'));
-        return null;
-      }
-    }
-
-    function showBrowserNotification(title, message, url = '/') {
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
-      try {
-        const n = new Notification(String(title || 'Eugene Card'), {
-          body: String(message || ''),
-          icon: '/favicon.ico',
-          badge: '/favicon.ico',
-          tag: 'eugene-card-' + Date.now()
-        });
-        n.onclick = () => {
-          try { window.focus(); } catch (e) {}
-          if (url && url !== '/') window.location.href = url;
-          n.close();
-        };
-      } catch (e) { console.warn('Browser notification failed:', e); }
-    }
-
-    function notifyUser(title, message, iconClass = 'fa-bell text-amber-400', url = '/') {
-      addNotification(title, message, iconClass, { browser: true, url });
-    }
-
-    function setupPushNotificationSystem() {
-      updatePushPermissionUI();
-      if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-      // Do not request permission automatically. Browsers expect notification
-      // permission to be triggered by a user gesture; the Bell menu provides it.
-      if (Notification.permission === 'granted') enablePushNotifications(false);
-    }
+    const firebaseConfig = {
+      apiKey: "AIzaSyCm13Nh6k6W9wsL0_OPpjKZNrbSg-pFsuA",
+      authDomain: "eugene-card-marketplace.firebaseapp.com",
+      projectId: "eugene-card-marketplace",
+      storageBucket: "eugene-card-marketplace.firebasestorage.app",
+      messagingSenderId: "789014481646",
+      appId: "1:789014481646:web:3858909b429985005a41ff",
+      measurementId: "G-MRPT21P9M1"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const analytics = firebase.analytics();
 
     // ---------------------------------------------------------------------
     // EmailJS — sends the admin (Eugene Card) a notification email every
@@ -4119,9 +137,8 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
     let activePaymentMethod = 'QRIS';
 
-    let currentLanguage = 'ID';
+    let currentLanguage = 'EN';
     let currentUser = null;
-    let currentActiveTab = 'home';
     let cart = [];
     let wishlist = new Set();
     let currentFilter = 'ALL';
@@ -4136,7 +153,6 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     let activeAuction = null;
     let tradeRequestsList = [];
     let payoutRequestsList = [];
-    let clientGiftsList = [];
     let viewedCollectorFilter = null;
     let globalCollectorProfiles = {};
     // ===== PROFILES <-> USERS SYNC STATE =====
@@ -5312,7 +1328,15 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         console.warn('Error loading collector profiles:', e);
         profilesFetchFailed = true;
       }
-      // Firebase's legacy users collection is no longer used; Supabase profiles are keyed by auth UUID.
+      try {
+        const usersSnapshot = await db.collection("users").get();
+        globalRawUsersData = {};
+        usersSnapshot.forEach(doc => {
+          globalRawUsersData[doc.id] = doc.data();
+        });
+      } catch (e) {
+        console.warn('Error loading legacy user profiles:', e);
+      }
       rebuildGlobalCollectorProfiles();
     }
 
@@ -5455,31 +1479,28 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       renderNotifications();
     }
 
-    function addNotification(title, message, iconClass = 'fa-info-circle text-indigo-400', options = {}) {
+    function addNotification(title, message, iconClass = 'fa-info-circle text-indigo-400') {
       const newNotif = {
-        id: options.id || ('notif-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)),
-        title: String(title || 'Eugene Card'),
-        message: String(message || ''),
+        id: 'notif-' + Date.now(),
+        title,
+        message,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         iconClass
       };
       systemNotifications.unshift(newNotif);
-      if (systemNotifications.length > 30) systemNotifications.pop();
+      if (systemNotifications.length > 20) systemNotifications.pop();
       try {
         localStorage.setItem('eugene_notifications', JSON.stringify(systemNotifications));
         setCookie('eugene_notifications', systemNotifications, 7);
       } catch (e) {}
       renderNotifications();
-      if (options.browser && document.visibilityState !== 'visible') {
-        showBrowserNotification(newNotif.title, newNotif.message, options.url || '/');
-      }
     }
 
     function renderNotifications() {
       const badge = document.getElementById('notification-badge');
       const list = document.getElementById('notification-list');
       
-      if (badge) { badge.innerText = systemNotifications.length > 99 ? '99+' : String(systemNotifications.length); badge.classList.toggle('hidden', systemNotifications.length === 0); badge.classList.toggle('flex', systemNotifications.length > 0); }
+      if (badge) badge.innerText = systemNotifications.length;
       if (!list) return;
 
       if (systemNotifications.length === 0) {
@@ -5816,10 +1837,18 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       const thread = inboxThreadsCache.find(t => t.id === threadId);
       if (!thread) return;
       await markInboxThreadRead(thread);
-      return openDirectChat(thread.otherUser, 'Direct Chat', getChatIdentityProfile({ uid: thread.otherUid, username: thread.otherUsername, name: thread.otherUser }));
+      // IMPORTANT: open the exact thread selected from the inbox.
+      // Do not re-resolve it by participant identity because legacy username chats
+      // and newer UID chats can coexist and contain different message histories.
+      return openDirectChat(
+        thread.otherUser,
+        'Direct Chat',
+        getChatIdentityProfile({ uid: thread.otherUid, username: thread.otherUsername, name: thread.otherUser }),
+        thread.id
+      );
     }
 
-    async function openDirectChat(targetUserName, contextInfo = 'Trade Chat', resolvedProfile = null) {
+    async function openDirectChat(targetUserName, contextInfo = 'Trade Chat', resolvedProfile = null, forcedThreadId = null) {
       if (!currentUser) return showToast('Please log in to start a chat.');
       const targetProfile = resolvedProfile || getChatIdentityProfile(targetUserName);
       const targetDisplay = getChatDisplayName(targetProfile || targetUserName);
@@ -5829,7 +1858,10 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
       currentChatTargetUser = targetDisplay;
       const cachedMatch = inboxThreadsCache.find(t => t.otherKey === targetKey);
-      const existingId = cachedMatch?.id || await findExistingChatIdForParticipants(currentUser, targetProfile || targetUserName);
+      // A thread selected from Inbox must always win over identity-based lookup.
+      // This prevents opening a different/empty legacy chat when multiple chat IDs
+      // exist for the same collector.
+      const existingId = forcedThreadId || cachedMatch?.id || await findExistingChatIdForParticipants(currentUser, targetProfile || targetUserName);
       if (existingId) {
         currentChatContextId = existingId;
       } else {
@@ -5906,15 +1938,38 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
     function listenToChatMessages(chatId) {
       const container = document.getElementById('chat-messages-container');
-      if (!container) return;
+      if (!container || !chatId) return;
       if (chatUnsubscribe) chatUnsubscribe();
-      chatUnsubscribe = db.collection('chats').doc(chatId).collection('messages').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
+
+      // Do NOT use Firestore orderBy(timestamp) here. Legacy messages can have a
+      // missing/different timestamp field, and Firestore excludes those documents
+      // from an ordered query. That was the main cause of missing chat history.
+      chatUnsubscribe = db.collection('chats').doc(chatId).collection('messages').onSnapshot(snapshot => {
         if (snapshot.empty) {
           container.innerHTML = `<div class="flex flex-col items-center justify-center h-full min-h-[300px] text-center"><div class="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-400/15 flex items-center justify-center mb-4"><i class="fa-regular fa-comments text-xl text-violet-300"></i></div><p class="text-sm font-black text-slate-300">${tr("startConversation","Start the conversation")}</p><p class="text-[10px] text-slate-600 mt-1">${tr("sendMessageOrScreenshot","Send a message or share a card screenshot.")}</p></div>`;
           return;
         }
+
+        const docs = [...snapshot.docs].sort((a, b) => {
+          const ma = a.data() || {};
+          const mb = b.data() || {};
+          const toMs = value => {
+            try {
+              if (!value) return 0;
+              if (typeof value.toMillis === 'function') return value.toMillis();
+              if (typeof value.toDate === 'function') return value.toDate().getTime();
+              const parsed = new Date(value).getTime();
+              return Number.isFinite(parsed) ? parsed : 0;
+            } catch (_) { return 0; }
+          };
+          const ta = toMs(ma.timestamp || ma.createdAt || ma.sentAt);
+          const tb = toMs(mb.timestamp || mb.createdAt || mb.sentAt);
+          if (ta !== tb) return ta - tb;
+          return String(a.id).localeCompare(String(b.id));
+        });
+
         let lastDateKey=null;
-        container.innerHTML=snapshot.docs.map(doc=>{
+        container.innerHTML=docs.map(doc=>{
           const msg=doc.data()||{};
           const senderProfile=getChatIdentityProfile({uid:msg.senderUid,username:msg.senderUsername,name:msg.senderName||msg.sender});
           const senderKey=getChatCanonicalKey(senderProfile||msg.sender);
@@ -5922,7 +1977,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           const senderName=senderProfile?.name||senderProfile?.username||msg.sender||'Collector';
           const isSenderAdmin=isUserAdmin(senderProfile?.username||senderName||msg.sender);
           const senderAvatar=senderProfile?.avatarUrl||getCollectorAvatar(senderName);
-          const ts=msg.timestamp?.toDate?msg.timestamp.toDate():(msg.timestamp?new Date(msg.timestamp):null);
+          const rawTs=msg.timestamp||msg.createdAt||msg.sentAt||null; const ts=rawTs?.toDate?rawTs.toDate():(rawTs?new Date(rawTs):null);
           const timestamp=ts&&!isNaN(ts)?ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
           const dateKey=ts&&!isNaN(ts)?ts.toLocaleDateString([], {year:'numeric',month:'short',day:'numeric'}):'Today';
           let dateDivider=''; if(dateKey!==lastDateKey){lastDateKey=dateKey;dateDivider=`<div class="eugene-chat-date">${escapeHtml(dateKey)}</div>`;}
@@ -5955,6 +2010,12 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           participantUids: [currentUser.uid || null, targetProfile?.uid || null].filter(Boolean),
           participantKeys: [myKey, targetKey],
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+          participantKeys: [myKey, targetKey],
+          participantProfiles: {
+            [myKey]: { uid: currentUser.uid || null, name: currentUser.name || currentUser.username || '', username: currentUser.username || '', avatarUrl: currentUser.avatarUrl || '' },
+            [targetKey]: { uid: targetProfile?.uid || null, name: targetProfile?.name || targetProfile?.username || currentChatTargetUser || '', username: targetProfile?.username || '', avatarUrl: targetProfile?.avatarUrl || '' }
+          },
           readBy: myTokens
         }, { merge: true });
 
@@ -5987,79 +2048,84 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       }
       if (inboxUnsubscribe) inboxUnsubscribe();
 
-      inboxUnsubscribe = db.collection('chats').onSnapshot(snapshot => {
+      inboxUnsubscribe = db.collection('chats').onSnapshot(async snapshot => {
         const myKey = getChatCanonicalKey(currentUser);
         const myTokens = getChatIdentityTokens(currentUser);
         const candidates = [];
 
         snapshot.forEach(doc => {
           const data = doc.data() || {};
-          const participants = Array.isArray(data.participants) && data.participants.length >= 2
-            ? data.participants
+          const rawParticipants = Array.isArray(data.participants) ? data.participants : [];
+          const rawKeys = Array.isArray(data.participantKeys) ? data.participantKeys : [];
+          const rawUids = Array.isArray(data.participantUids) ? data.participantUids : [];
+
+          // Prefer canonical participantKeys/Uids written by the newer chat system.
+          // Fall back to legacy participants or the chat id for older conversations.
+          const participantKeys = rawKeys.length >= 2
+            ? rawKeys.map(getChatCanonicalKey)
+            : rawParticipants.map(getChatCanonicalKey);
+          const fallbackParticipants = rawParticipants.length >= 2
+            ? rawParticipants
             : doc.id.replace(/^chat-/, '').split('-vs-');
-          if (participants.length < 2) return;
+          const fallbackKeys = fallbackParticipants.map(getChatCanonicalKey);
 
-          const participantKeys = participants.map(getChatCanonicalKey);
-          const isMine = participantKeys.includes(myKey) || myTokens.some(t =>
-            participantKeys.includes(`username:${t}`) ||
-            participantKeys.includes(`name:${t}`) ||
-            participantKeys.includes(`raw:${t}`)
-          );
-          if (!currentUser.isAdmin && !isMine) return;
+          const allKeys = [...participantKeys, ...fallbackKeys];
+          const isMine = allKeys.includes(myKey) || myTokens.some(t => allKeys.includes(`username:${t}`) || allKeys.includes(`name:${t}`) || allKeys.includes(`raw:${t}`));
+          const isAdminVisible = !!currentUser.isAdmin;
+          if (!isAdminVisible && !isMine) return;
 
-          let otherIndex = participantKeys.findIndex(k => k !== myKey);
-          if (otherIndex < 0) otherIndex = 0;
-          const otherRaw = participants[otherIndex] || 'Collector';
-          const otherKeyFromData = participantKeys[otherIndex];
-          const storedOther = data.participantProfiles?.[otherKeyFromData] || {};
-          const otherUid = Array.isArray(data.participantUids) ? data.participantUids[otherIndex] : null;
+          // Determine the other participant from the best available source.
+          let otherKey = null, otherIndex = -1;
+          if (participantKeys.length >= 2) {
+            otherIndex = participantKeys.findIndex(k => k !== myKey);
+            if (otherIndex >= 0) otherKey = participantKeys[otherIndex];
+          }
+          if (otherIndex < 0) {
+            otherIndex = fallbackKeys.findIndex(k => k !== myKey);
+            if (otherIndex >= 0) otherKey = fallbackKeys[otherIndex];
+          }
+          if (!otherKey) return;
+
+          const storedOther = data.participantProfiles?.[otherKey] || {};
+          const otherUid = rawUids[otherIndex] || storedOther.uid || null;
+          const otherRaw = fallbackParticipants[otherIndex] || storedOther.name || storedOther.username || 'Collector';
           const otherProfile = getChatIdentityProfile({
             uid: otherUid,
             username: storedOther.username,
             name: storedOther.name || otherRaw
           }) || getChatIdentityProfile(otherRaw);
-          const otherKey = getChatCanonicalKey(otherProfile || otherRaw);
+
+          const updatedMs = data.updatedAt?.toMillis ? data.updatedAt.toMillis() : (Date.parse(data.updatedAt || '') || 0);
+          const lastMessageAtMs = data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : (Date.parse(data.lastMessageAt || '') || 0);
+          const sortMs = Math.max(updatedMs, lastMessageAtMs);
 
           candidates.push({
             id: doc.id,
             ...data,
-            otherKey,
+            otherKey: getChatCanonicalKey(otherProfile || otherRaw),
             otherUid: otherProfile?.uid || otherUid || null,
-            otherUser: otherProfile?.name || otherProfile?.username || otherRaw,
-            otherUsername: otherProfile?.username || '',
-            otherAvatar: otherProfile?.avatarUrl || getCollectorAvatar(otherRaw),
-            isOtherAdmin: isUserAdmin(otherProfile?.username || otherProfile?.name || otherRaw)
+            otherUser: otherProfile?.name || otherProfile?.username || storedOther.name || storedOther.username || otherRaw,
+            otherUsername: otherProfile?.username || storedOther.username || '',
+            otherAvatar: otherProfile?.avatarUrl || storedOther.avatarUrl || getCollectorAvatar(otherProfile?.username || otherProfile?.name || otherRaw),
+            isOtherAdmin: isUserAdmin(otherProfile?.username || otherProfile?.name || otherRaw),
+            __sortMs: sortMs,
+            __hasPreview: !!String(data.lastMessage || '').trim()
           });
         });
 
-        // Canonical deduplication: one inbox row per real collector. This is
-        // deliberately UID-first, so legacy username chat IDs and newer UID
-        // chat IDs cannot create duplicate conversations for the same person.
+        // Merge duplicate legacy/UID threads without allowing an empty/newer-looking
+        // document to hide the conversation that actually contains the message history.
         const deduped = new Map();
         candidates.forEach(thread => {
           const key = thread.otherKey;
           const current = deduped.get(key);
-          const threadTime = thread.updatedAt?.toMillis ? thread.updatedAt.toMillis() : 0;
-          const currentTime = current?.updatedAt?.toMillis ? current.updatedAt.toMillis() : 0;
-          if (!current || threadTime >= currentTime) deduped.set(key, thread);
+          if (!current) { deduped.set(key, thread); return; }
+          const currentScore = (current.__hasPreview ? 1000000000000 : 0) + current.__sortMs;
+          const threadScore = (thread.__hasPreview ? 1000000000000 : 0) + thread.__sortMs;
+          if (threadScore > currentScore) deduped.set(key, thread);
         });
 
         inboxThreadsCache = [...deduped.values()];
-
-        // Notify for new incoming chats without requiring the Inbox tab to be open.
-        const nextChatTimes = new Map();
-        inboxThreadsCache.forEach(thread => {
-          const ts = thread.updatedAt?.toMillis ? thread.updatedAt.toMillis() : 0;
-          nextChatTimes.set(thread.id, ts);
-          const previousTs = knownChatNotificationTimes.get(thread.id) || 0;
-          if (inboxNotificationInitialized && ts > previousTs && isChatThreadUnread(thread) && thread.id !== currentChatContextId) {
-            const sender = thread.otherUser || 'Collector';
-            notifyUser('Pesan baru', `${sender} mengirim pesan baru.`, 'fa-comments text-violet-400', '#');
-          }
-        });
-        knownChatNotificationTimes = nextChatTimes;
-        inboxNotificationInitialized = true;
-
         updateInboxUnreadBadge(inboxThreadsCache.filter(isChatThreadUnread).length);
         renderInboxThreads();
       }, err => {
@@ -6448,24 +2514,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       db.collection("transactions").onSnapshot((snapshot) => {
         fetchTransactionHistory();
         if (currentUser?.isAdmin) {
-          const pendingNow = new Set();
-          snapshot.forEach(doc => {
-            const tx = doc.data() || {};
-            if (tx.status === 'PENDING') pendingNow.add(doc.id);
-          });
-          if (currentUser.isAdmin && knownPendingTransactionIds.size && pendingNow.size) {
-            pendingNow.forEach(id => {
-              if (!knownPendingTransactionIds.has(id)) {
-                const tx = snapshot.docs.find(d => d.id === id)?.data() || {};
-                const typeLabel = tx.type === 'SELLBACK' ? 'permintaan sell-back' : 'pesanan pembelian';
-                notifyUser('Admin Hub: tindakan baru', `Ada ${typeLabel} baru dari ${tx.user_name || 'collector'} yang menunggu persetujuan.`, 'fa-shield-halved text-rose-400', '#');
-              }
-            });
-          }
-          knownPendingTransactionIds = pendingNow;
           loadPendingTransactions();
-        } else {
-          knownPendingTransactionIds = new Set();
         }
       });
 
@@ -6514,7 +2563,6 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     function updateAllViews() {
-      if (currentUser) loadClientGifts();
       applyTranslations();
       renderCardGrid();
       renderOwnedCards();
@@ -7293,11 +3341,14 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           <p class="text-[11px] font-black text-white">${escapeHtml(q.authorName || 'Collector')} <span class="text-slate-600 font-normal ml-1">${escapeHtml(timeAgoShort(createdAt))}</span></p>
         </div>
         ${q.text ? `<p class="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed">${escapeHtml(q.text)}</p>` : ''}
-        ${q.imageUrl ? `
-          <button type="button" class="home-post-image-button group relative block w-full rounded-2xl border border-slate-800/90 bg-slate-950/80 overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-indigo-500/60" onclick="openImagePreviewModal(this.querySelector('img').src, 'Community Post Image')" aria-label="Open post image">
-            <img src="${escapeHtml(q.imageUrl)}" class="home-post-image w-full max-h-[560px] object-contain rounded-2xl" alt="Community post image" loading="lazy">
-            <span class="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950/80 border border-white/10 text-[9px] font-black text-white opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity backdrop-blur-md"><i class="fa-solid fa-expand"></i> View</span>
-          </button>` : ''}
+        ${q.imageUrl ? `<button type="button" class="block w-full text-left group cursor-zoom-in" onclick="event.stopPropagation(); openImagePreviewModal('${escapeHtml(q.imageUrl)}', 'Image — ${escapeHtml(q.authorName || 'Collector')}')">
+          <span class="relative block w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950/80">
+            <img src="${escapeHtml(q.imageUrl)}" loading="lazy" class="block w-full max-h-[520px] object-contain mx-auto rounded-xl transition-transform duration-200 group-hover:scale-[1.01]" alt="Post image">
+            <span class="absolute right-2 bottom-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-950/80 border border-white/10 text-[9px] font-black text-white opacity-80 group-hover:opacity-100">
+              <i class="fa-solid fa-expand"></i> View
+            </span>
+          </span>
+        </button>` : ''}
       </div>`;
     }
 
@@ -7322,11 +3373,14 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         </div>
 
         ${post.text ? `<p class="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">${escapeHtml(post.text)}</p>` : ''}
-        ${post.imageUrl ? `
-          <button type="button" class="home-post-image-button group relative block w-full rounded-2xl border border-slate-800/90 bg-slate-950/80 overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-indigo-500/60" onclick="openImagePreviewModal(this.querySelector('img').src, 'Community Post Image')" aria-label="Open post image">
-            <img src="${escapeHtml(post.imageUrl)}" class="home-post-image w-full max-h-[560px] object-contain rounded-2xl" alt="Community post image" loading="lazy">
-            <span class="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950/80 border border-white/10 text-[9px] font-black text-white opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity backdrop-blur-md"><i class="fa-solid fa-expand"></i> View</span>
-          </button>` : ''}
+        ${post.imageUrl ? `<button type="button" class="block w-full text-left group cursor-zoom-in" onclick="event.stopPropagation(); openImagePreviewModal('${escapeHtml(post.imageUrl)}', 'Post Image — ${escapeHtml(post.authorName || 'Collector')}')">
+          <span class="relative block w-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/80">
+            <img src="${escapeHtml(post.imageUrl)}" loading="lazy" class="block w-full max-h-[560px] object-contain mx-auto rounded-2xl transition-transform duration-200 group-hover:scale-[1.01]" alt="Post image">
+            <span class="absolute right-3 bottom-3 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950/85 border border-white/10 text-[9px] font-black text-white opacity-80 group-hover:opacity-100 shadow-lg">
+              <i class="fa-solid fa-expand"></i> View / Download
+            </span>
+          </span>
+        </button>` : ''}
         ${post.type === 'quote' && post.quotedPostId ? renderEmbeddedPostSnippet(post.quotedPostId, dict) : ''}
 
         ${renderPostActionsRow(post, dict)}
@@ -7759,7 +3813,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         const watching = watcherCountsByCard[card.id] || 0;
         const views = viewCountsMap[card.id] || 0;
         return `
-          <div class="${isPremium ? 'card-holo-premium' : 'card-holo-standard'} rounded-xl p-2 relative shrink-0 w-32 snap-start cursor-pointer" onclick="openCardDetailModal('${card.id}')">
+          <div class="${isPremium ? 'card-holo-premium' : 'card-holo-standard'} rounded-xl p-2 relative shrink-0 w-32 cursor-pointer" onclick="openCardDetailModal('${card.id}')">
             ${isPremium ? '<div class="foil-sweep"></div>' : ''}
             ${hits > 0 ? `<span class="absolute top-1.5 left-1.5 z-[3] text-[8px] font-black px-1.5 py-0.5 rounded-full bg-orange-500/90 text-white flex items-center gap-1"><i class="fa-solid fa-fire"></i> Hot</span>` : ''}
             <div class="w-full aspect-[4/5] bg-slate-950/80 rounded-lg border border-slate-800 overflow-hidden relative z-[2]">
@@ -8016,19 +4070,9 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       renderAuthHeader();
       startAuctionTimer();
       setupCardTiltEffect();
-
-      // If we just landed back here after a Google login redirect, restore
-      // the tab the user was on instead of resetting to Home.
-      const pendingTab = sessionStorage.getItem('eugene_pending_tab');
-      if (pendingTab) {
-        sessionStorage.removeItem('eugene_pending_tab');
-        switchTab(pendingTab);
-      } else {
-        switchTab('home'); // Home is the main landing page on first open
-      }
+      switchTab('home'); // Home is the main landing page on first open
       trackSiteVisit();
       showOnboardingIfFirstVisit();
-      setupPushNotificationSystem();
 
       auth.onAuthStateChanged((user) => {
         if (user) {
@@ -8036,9 +4080,6 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         } else {
           currentUser = null;
           if (inboxUnsubscribe) { inboxUnsubscribe(); inboxUnsubscribe = null; }
-          knownChatNotificationTimes = new Map();
-          knownPendingTransactionIds = new Set();
-          inboxNotificationInitialized = false;
           updateInboxUnreadBadge(0);
           renderAuthHeader();
           updateAllViews();
@@ -8129,7 +4170,9 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       if (!imgUrl) return showToast('No proof image available for this transaction.');
       document.getElementById('image-preview-title').innerText = title;
       document.getElementById('image-preview-img').src = imgUrl;
-      document.getElementById('image-preview-download').href = imgUrl;
+      const downloadEl = document.getElementById('image-preview-download');
+      downloadEl.href = imgUrl;
+      downloadEl.download = `eugene-card-${String(title || 'image').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'image'}.png`;
       document.getElementById('image-preview-modal').classList.remove('hidden');
     }
 
@@ -8145,15 +4188,10 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     async function loginWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
       try {
-        // Google OAuth here is a full-page redirect (not an actual popup), so
-        // the whole app reloads when the user comes back from Google. Stash
-        // the tab they were on so we can restore it instead of always
-        // snapping back to Home after login.
-        sessionStorage.setItem('eugene_pending_tab', currentActiveTab || 'home');
-        await auth.signInWithPopup();
+        await auth.signInWithPopup(provider);
       } catch (error) {
-        sessionStorage.removeItem('eugene_pending_tab');
         showToast('Google Login Error: ' + error.message);
       }
     }
@@ -8162,7 +4200,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       const email = user.email ? user.email.toLowerCase() : '';
 
       await loadCollectorProfiles();
-      const firestoreProfile = globalRawProfilesData[email] || globalRawProfilesData[user.id] || globalRawProfilesData[user.uid];
+      const firestoreProfile = globalRawProfilesData[email];
       const savedCustomProfile = firestoreProfile || localStorage.getItem(`profile_${email}`) || getCookie(`profile_${email}`);
       let customData = {};
       if (savedCustomProfile) {
@@ -8263,8 +4301,6 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       renderAuthHeader();
       updateAllViews();
       loadUserInboxThreads();
-      updatePushPermissionUI();
-      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') enablePushNotifications(false);
 
       // First-ever login (or one where the popup was never completed/skipped
       // yet): ask the collector to confirm their display name, username, and
@@ -9498,9 +5534,6 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       document.getElementById('sellback-qris-file-input').value = '';
       document.getElementById('sellback-qris-preview-container').classList.add('hidden');
       document.getElementById('sellback-qris-preview-img').src = '';
-      document.getElementById('sellback-payout-provider').value = '';
-      document.getElementById('sellback-payout-phone').value = '';
-      updateSellbackPayoutHint();
 
       document.getElementById('sellback-qris-modal').classList.remove('hidden');
     }
@@ -9509,31 +5542,9 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       document.getElementById('sellback-qris-modal').classList.add('hidden');
     }
 
-    function updateSellbackPayoutHint() {
-      const provider = document.getElementById('sellback-payout-provider')?.value || '';
-      const hint = document.getElementById('sellback-payout-hint');
-      if (!hint) return;
-      const names = { DANA:'DANA', GOPAY:'GoPay', OVO:'OVO', SHOPEEPAY:'ShopeePay', OTHER:'your e-wallet' };
-      hint.textContent = provider
-        ? `Enter the ${names[provider] || 'e-wallet'} phone number in international format, e.g. +62 81234567890.`
-        : 'Use international format with country code, e.g. +62. Phone is required when no QRIS attachment is provided.';
-    }
-
-    function normalizePayoutPhone(value) {
-      return String(value || '').trim().replace(/[\s()-]/g, '');
-    }
-
-    function isValidInternationalPhone(value) {
-      return /^\+[1-9]\d{7,14}$/.test(value);
-    }
-
     function handleSellbackQrisUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
-      if (!file.type.startsWith('image/')) {
-        event.target.value = '';
-        return showToast('Please upload an image for your QRIS attachment.');
-      }
       const reader = new FileReader();
       reader.onload = function(e) {
         document.getElementById('sellback-qris-img-data').value = e.target.result;
@@ -9549,45 +5560,21 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       const cardId = document.getElementById('sellback-card-id-target').value;
       const card = inventory.find(c => c.id === cardId);
       if (!card) return showToast('Card not found.');
-      if (card.owner !== currentUser.name && card.owner !== currentUser.username) return showToast('You do not own this card.');
+      if (!card || (card.owner !== currentUser.name && card.owner !== currentUser.username)) return showToast('You do not own this card.');
 
-      // Sell Back is local-IDR payout only. PayPal is intentionally excluded.
       const payoutQrisData = document.getElementById('sellback-qris-img-data').value;
-      const payoutProvider = document.getElementById('sellback-payout-provider').value;
-      const payoutPhone = normalizePayoutPhone(document.getElementById('sellback-payout-phone').value);
+      if (!payoutQrisData) return showToast('Please upload your QRIS / PayPal payout code screenshot to receive payout.');
 
-      // QRIS is preferred. Without a QRIS attachment, e-wallet + phone is mandatory.
-      if (!payoutQrisData) {
-        if (!payoutProvider) return showToast('Choose DANA, GoPay, OVO, ShopeePay, or another e-wallet when you do not have a QRIS attachment.');
-        if (!payoutPhone) return showToast('Enter your phone number with country code, e.g. +62 81234567890.');
-      }
-
-      if (payoutPhone && !isValidInternationalPhone(payoutPhone)) {
-        return showToast('Phone number must use an international country code, e.g. +62 81234567890.');
-      }
-
-      const activeUserIdent = currentUser.username || currentUser.name || currentUser.email;
-      const orderRef = `SB-${Date.now().toString(36).toUpperCase()}`;
-      const payoutMethod = payoutQrisData ? 'QRIS' : payoutProvider;
-      const grossAmount = Number(card.price || 0);
-      const sellBackTax = Math.round(grossAmount * 0.02);
-      const payoutAmount = Math.max(0, grossAmount - sellBackTax);
+      const activeUserIdent = currentUser.username || currentUser.name;
+      const orderRef = `SB-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const sellbackOrder = {
         id: orderRef,
         type: 'SELLBACK',
-        order_type: 'SELLBACK',
         user_name: activeUserIdent,
-        user_uid: currentUser.uid,
         items: [{ id: card.id, serial: card.serial, name: card.name, price: card.price }],
-        total_amount: grossAmount,
-        fee: sellBackTax,
-        tax_rate: 0.02,
-        payoutAmount,
-        payoutMethod,
-        payoutProvider: payoutProvider || null,
-        payoutPhone: payoutPhone || null,
-        payoutQrisUrl: payoutQrisData || null,
+        total_amount: card.price,
+        payoutQrisUrl: payoutQrisData,
         status: 'PENDING',
         created_at: new Date().toISOString()
       };
@@ -9601,7 +5588,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           order_type: 'SELLBACK',
           user_name: activeUserIdent,
           amount: formatIDR(card.price),
-          detail: `Sell-back request for ${card.serial} (${card.name}) • ${payoutMethod}${payoutPhone ? ` • ${payoutPhone}` : ''}`
+          detail: `Sell-back request for ${card.serial} (${card.name})`
         });
         closeSellbackQrisModal();
       } catch (e) {
@@ -10924,14 +6911,9 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         container.innerHTML = pendingList.map(tx => {
           const isSellback = tx.type === 'SELLBACK';
           if (tx.qrisProofUrl) proofUrlById[tx.id] = tx.qrisProofUrl;
-          const proofButton = tx.type === 'SELLBACK' && tx.payoutQrisUrl
-            ? `<button type="button" onclick="openGenericImagePreview('${escapeHtml(tx.payoutQrisUrl)}', 'Sell-back QRIS')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-bold rounded-lg border border-slate-700 inline-flex items-center gap-1"><i class="fa-solid fa-qrcode"></i> View QRIS</button>`
-            : (tx.qrisProofUrl
-              ? `<button type="button" onclick="viewTransactionProof('${tx.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-bold rounded-lg border border-slate-700 inline-flex items-center gap-1"><i class="fa-solid fa-image"></i> View Payment Proof</button>`
-              : `<span class="text-slate-500 text-[10px]">No Proof File Attached</span>`);
-          const payoutDetails = tx.type === 'SELLBACK'
-            ? `<div class="text-[10px] text-slate-400 bg-slate-900/70 border border-slate-800 rounded-xl p-2"><div><span class="font-black text-amber-300">Payout:</span> ${escapeHtml(tx.payoutMethod || 'QRIS')}${tx.payoutProvider ? ` • ${escapeHtml(tx.payoutProvider)}` : ''}${tx.payoutPhone ? ` • <span class="font-mono text-white">${escapeHtml(tx.payoutPhone)}</span>` : ''}</div><div class="mt-1"><span class="text-slate-500">2% Sell Back tax:</span> <span class="text-rose-300 font-mono">${formatIDR(tx.fee || 0)}</span> <span class="text-slate-500">→ payout ${formatIDR(tx.payoutAmount ?? Math.max(0, Number(tx.total_amount || 0) - Number(tx.fee || 0)))}</span></div></div>`
-            : '';
+          const proofButton = tx.qrisProofUrl
+            ? `<button type="button" onclick="viewTransactionProof('${tx.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-bold rounded-lg border border-slate-700 inline-flex items-center gap-1"><i class="fa-solid fa-image"></i> View Payment Proof</button>`
+            : `<span class="text-slate-500 text-[10px]">No Proof File Attached</span>`;
 
           return `
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
@@ -10943,7 +6925,6 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
                 <span class="font-mono text-emerald-400 font-black text-sm">${formatIDR(tx.total_amount)}</span>
               </div>
 
-              ${payoutDetails}
               <div class="flex items-center justify-between text-xs">
                 <div>${proofButton}</div>
                 <div class="flex gap-2">
@@ -10969,12 +6950,9 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
         const batch = db.batch();
         const txRef = db.collection("transactions").doc(txId);
-        batch.update(txRef, { status: 'APPROVED', approvedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        batch.update(txRef, { status: 'APPROVED' });
 
-        if (tx.type === 'REDEMPTION') {
-          if (tx.giftId) batch.update(db.collection('clientGifts').doc(tx.giftId), { status:'REDEEMED', redeemedAt:firebase.firestore.FieldValue.serverTimestamp(), redeemedAmount:Number(tx.assetValue||0) });
-          if (tx.cardId) batch.update(db.collection('cards').doc(tx.cardId), { assetStatus:'REDEEMED', assetValue:0, redeemedAt:firebase.firestore.FieldValue.serverTimestamp() });
-        } else if (Array.isArray(tx.items)) {
+        if (Array.isArray(tx.items)) {
           tx.items.forEach(item => {
             const cardRef = db.collection("cards").doc(item.id);
             if (tx.type === 'SELLBACK') {
@@ -10988,7 +6966,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         await batch.commit();
 
         showToast(`Transaction ${txId} approved! Ownership updated.`);
-        notifyUser('Transaksi disetujui', `Transaksi ${txId} untuk ${tx.user_name || 'collector'} telah disetujui.`, 'fa-circle-check text-emerald-400', '#');
+        addNotification('Transaction Approved', `Approved ${txId} for ${tx.user_name}.`, 'fa-circle-check text-emerald-400');
 
         await loadAppState();
       } catch (e) {
@@ -11002,7 +6980,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       try {
         await db.collection("transactions").doc(txId).update({ status: 'REJECTED' });
         showToast(`Transaction ${txId} rejected.`);
-        notifyUser('Transaksi ditolak', `Transaksi ${txId} telah ditolak.`, 'fa-xmark text-rose-400', '#');
+        addNotification('Transaction Rejected', `Rejected transaction ${txId}.`, 'fa-xmark text-rose-400');
         await loadAppState();
       } catch (e) {
         showToast('Rejection error: ' + e.message);
@@ -11011,20 +6989,8 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
     function refreshAdminHub() {
       loadPendingTransactions();
-      loadClientGifts().then(() => { renderAdminGiftSelectors(); renderAdminClientGifts(); });
       showToast('Admin Hub refreshed.');
     }
-
-    function renderAdminGiftSelectors() {
-      const recipientEl = document.getElementById('gift-admin-recipient');
-      const cardEl = document.getElementById('gift-admin-card');
-      if (!recipientEl || !cardEl) return;
-      const profiles = Object.values(globalCollectorProfiles || {}).filter(p => p && (p.uid || p.username || p.name)).sort((a,b)=>String(a.name||a.username).localeCompare(String(b.name||b.username)));
-      recipientEl.innerHTML = '<option value="">Select client...</option>' + profiles.map(p => `<option value="${escapeHtml(p.username || p.name || p.uid)}">${escapeHtml(p.name || p.username || 'Collector')}${p.username ? ` (@${escapeHtml(p.username)})` : ''}</option>`).join('');
-      const available = inventory.filter(c => String(c.status || 'AVAILABLE').toUpperCase() !== 'SOLD' && !c.gifted);
-      cardEl.innerHTML = '<option value="">Select available card...</option>' + available.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name || 'Eugene Card')} • ${escapeHtml(c.serial || c.id)} • ${formatIDR(c.price || 0)}</option>`).join('');
-    }
-
 
     function addToCart(cardId) {
       const card = inventory.find(c => c.id === cardId);
@@ -11177,128 +7143,10 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       }
     }
 
-    // ===== YUJIN CLIENT GIFTS / IDR ASSET LAYER =====
-    async function loadClientGifts() {
-      if (!currentUser) {
-        clientGiftsList = [];
-        renderClientGifts();
-        return;
-      }
-      try {
-        const candidates = [];
-        const keys = [currentUser.uid, currentUser.username, currentUser.name, currentUser.email].filter(Boolean).map(normalizeCollectorValue);
-        const snap = await db.collection('clientGifts').get();
-        snap.forEach(doc => {
-          const g = { id: doc.id, ...doc.data() };
-          const recipientKeys = [g.recipientUid, g.recipientUsername, g.recipientName, g.recipientEmail].filter(Boolean).map(normalizeCollectorValue);
-          if (recipientKeys.some(k => keys.includes(k)) || g.createdByUid === currentUser.uid || currentUser.isAdmin) candidates.push(g);
-        });
-        clientGiftsList = candidates.sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
-        renderClientGifts();
-      } catch (e) {
-        console.warn('Client gifts load error:', e);
-        showToast('Could not load client gifts: ' + e.message);
-      }
-    }
-
-    function giftStatusClass(status) {
-      const s = String(status || 'ACTIVE').toUpperCase();
-      return s === 'REDEEMED' ? 'redeemed' : (s === 'PENDING_REDEMPTION' ? 'pending' : 'active');
-    }
-
-    function renderClientGifts() {
-      const grid = document.getElementById('client-gifts-grid');
-      if (!grid) return;
-      const gifts = clientGiftsList || [];
-      const active = gifts.filter(g => !['REDEEMED','REVOKED'].includes(String(g.status || '').toUpperCase()));
-      const value = active.reduce((sum,g) => sum + Number(g.assetValue || 0), 0);
-      document.getElementById('gift-stat-active')?.replaceChildren(document.createTextNode(String(active.length)));
-      document.getElementById('gift-stat-value')?.replaceChildren(document.createTextNode(formatIDR(value)));
-      const badge = document.getElementById('gift-active-count-badge');
-      if (badge) { badge.textContent = active.length; badge.classList.toggle('hidden', active.length === 0); }
-      if (!currentUser) { grid.innerHTML = '<div class="col-span-full text-center py-16 text-slate-500 text-xs">Log in to view your client gifts.</div>'; return; }
-      if (!gifts.length) { grid.innerHTML = '<div class="col-span-full text-center py-16 bg-slate-900 border border-slate-800 rounded-3xl"><i class="fa-solid fa-gift text-pink-400 text-2xl"></i><p class="text-sm font-bold text-white mt-3">No client gifts yet</p><p class="text-[11px] text-slate-500 mt-1">Cards gifted to you by Yujin will appear here.</p></div>'; return; }
-      grid.innerHTML = gifts.map(g => {
-        const status = String(g.status || 'ACTIVE').toUpperCase();
-        const card = inventory.find(c => c.id === g.cardId) || {};
-        const canRedeem = status === 'ACTIVE' && Number(g.assetValue || 0) > 0 && currentUser && (g.recipientUid === currentUser.uid || normalizeCollectorValue(g.recipientUsername) === normalizeCollectorValue(currentUser.username) || normalizeCollectorValue(g.recipientName) === normalizeCollectorValue(currentUser.name));
-        const safeId = String(g.id).replace(/'/g,"\\'");
-        return `<article class="client-gift-card"><div class="gift-orb"></div><div class="relative z-10 space-y-3"><div class="flex items-start justify-between gap-3"><div><span class="gift-label">Yujin Client Edition</span><h3 class="text-base font-black text-white mt-1">${escapeHtml(g.cardName || card.name || 'Eugene Card')}</h3><p class="text-[10px] text-slate-500 font-mono mt-0.5">${escapeHtml(g.cardSerial || card.serial || g.cardId || '')}</p></div><span class="gift-status ${giftStatusClass(status)}">${escapeHtml(status.replaceAll('_',' '))}</span></div><div class="bg-slate-950/80 border border-white/5 rounded-2xl p-4"><p class="gift-label">Redeemable Asset Value</p><p class="gift-value mt-1">${formatIDR(g.assetValue)}</p></div><div class="flex items-center justify-between text-[10px]"><span class="text-slate-500">Gifted by <b class="text-slate-300">${escapeHtml(g.giftedByName || 'Yujin')}</b></span><span class="text-pink-300 font-bold">QRIS Eligible</span></div>${g.message ? `<p class="text-[11px] text-slate-400 italic border-l-2 border-pink-500/30 pl-3">“${escapeHtml(g.message)}”</p>` : ''}${canRedeem ? `<button onclick="openGiftRedeemModal('${safeId}')" class="w-full py-2.5 rounded-xl bg-pink-500 hover:bg-pink-400 text-slate-950 font-black text-xs"><i class="fa-solid fa-qrcode mr-1"></i> Redeem via QRIS</button>` : status === 'PENDING_REDEMPTION' ? `<div class="text-center py-2 text-[10px] text-amber-300 bg-amber-500/5 rounded-xl border border-amber-500/15">Redemption request is waiting for Admin.</div>` : status === 'REDEEMED' ? `<div class="text-center py-2 text-[10px] text-slate-500 bg-slate-950 rounded-xl">Asset already redeemed.</div>` : ''}</div></article>`;
-      }).join('');
-    }
-
-    function openGiftRedeemModal(giftId) {
-      const g = clientGiftsList.find(x => x.id === giftId);
-      if (!g) return showToast('Gift not found.');
-      if (String(g.status || 'ACTIVE').toUpperCase() !== 'ACTIVE') return showToast('This gift is not available for redemption.');
-      document.getElementById('gift-redeem-id').value = g.id;
-      document.getElementById('gift-redeem-card-id').value = g.cardId || '';
-      document.getElementById('gift-redeem-title').textContent = g.cardName || 'Redeem Client Gift';
-      document.getElementById('gift-redeem-sub').textContent = `${g.cardSerial || ''} • Gifted by ${g.giftedByName || 'Yujin'}`;
-      document.getElementById('gift-redeem-amount').textContent = formatIDR(g.assetValue);
-      document.getElementById('gift-redeem-qris').value = g.qrisId || '';
-      document.getElementById('gift-redeem-recipient').value = currentUser?.name || '';
-      document.getElementById('gift-redeem-modal').classList.remove('hidden');
-    }
-    function closeGiftRedeemModal() { document.getElementById('gift-redeem-modal')?.classList.add('hidden'); }
-
-    async function submitGiftRedemption() {
-      if (!currentUser) return showToast('Please log in first.');
-      const giftId = document.getElementById('gift-redeem-id').value;
-      const gift = clientGiftsList.find(x => x.id === giftId);
-      const qrisId = document.getElementById('gift-redeem-qris').value.trim();
-      const recipientName = document.getElementById('gift-redeem-recipient').value.trim();
-      if (!gift || String(gift.status || '').toUpperCase() !== 'ACTIVE') return showToast('Gift is no longer redeemable.');
-      if (!qrisId || !recipientName) return showToast('Please enter your QRIS/payment ID and recipient name.');
-      const ref = 'REDEEM-' + Date.now().toString(36).toUpperCase();
-      const batch = db.batch();
-      batch.update(db.collection('clientGifts').doc(giftId), { status:'PENDING_REDEMPTION', redemptionRequestedAt:firebase.firestore.FieldValue.serverTimestamp(), redemptionQrisId:qrisId, redemptionRecipientName:recipientName, redemptionRequestedByUid:currentUser.uid });
-      batch.set(db.collection('transactions').doc(ref), { id:ref, type:'REDEMPTION', order_type:'REDEMPTION', user_name:currentUser.username || currentUser.name || currentUser.email, user_uid:currentUser.uid, giftId, cardId:gift.cardId || null, items:[], assetValue:Number(gift.assetValue||0), total_amount:Number(gift.assetValue||0), payoutMethod:'QRIS', qrisId, recipientName, status:'PENDING', created_at:new Date().toISOString(), createdBy:'CLIENT_GIFT' });
-      try { await batch.commit(); closeGiftRedeemModal(); await loadClientGifts(); showToast(`Redemption request ${ref} submitted.`); notifyUser('Gift redemption submitted', `Your ${formatIDR(gift.assetValue)} QRIS redemption is waiting for Admin approval.`, 'fa-qrcode text-pink-400', '#'); } catch(e) { showToast('Redemption error: ' + e.message); }
-    }
-
-    async function adminCreateClientGift() {
-      if (!currentUser?.isAdmin) return showToast('Admin access required.');
-      const recipient = document.getElementById('gift-admin-recipient')?.value;
-      const cardId = document.getElementById('gift-admin-card')?.value;
-      const message = document.getElementById('gift-admin-message')?.value.trim() || '';
-      if (!recipient || !cardId) return showToast('Choose a client and available card.');
-      const profile = getCollectorProfile(recipient);
-      const card = inventory.find(c => c.id === cardId);
-      if (!profile || !card) return showToast('Client or card could not be resolved.');
-      if (String(card.status || 'AVAILABLE').toUpperCase() === 'SOLD') return showToast('That card is already owned.');
-      const value = Number(card.price || 0);
-      if (value <= 0) return showToast('This card does not have a valid catalog value.');
-      const giftId = 'YC-GIFT-' + Math.random().toString(36).slice(2,8).toUpperCase();
-      const owner = profile.username || profile.name;
-      const gift = { id:giftId, cardId:card.id, cardSerial:card.serial || '', cardName:card.name || '', recipientUid:profile.uid || '', recipientEmail:profile.email || '', recipientUsername:profile.username || '', recipientName:profile.name || '', giftedByUid:currentUser.uid, giftedByName:currentUser.name || currentUser.username || 'Yujin', assetValue:value, message, status:'ACTIVE', createdAt:new Date().toISOString(), assetCurrency:'IDR', redemptionMethod:'QRIS' };
-      try {
-        const batch = db.batch();
-        batch.set(db.collection('clientGifts').doc(giftId), gift);
-        batch.update(db.collection('cards').doc(card.id), { owner, status:'SOLD', gifted:true, giftId, giftAssetValue:value, assetCurrency:'IDR', assetStatus:'ACTIVE', giftedBy:gift.giftedByName, giftedAt:new Date().toISOString() });
-        batch.set(db.collection('transactions').doc(giftId), { id:giftId, type:'GIFT', order_type:'GIFT', user_name:owner, user_uid:profile.uid || null, giftId, cardId:card.id, items:[{id:card.id,serial:card.serial,name:card.name,price:Number(card.price||0)}], assetValue:value, total_amount:0, fee:0, status:'APPROVED', paymentMethod:'GIFT', created_at:new Date().toISOString(), giftedBy:gift.giftedByName });
-        await batch.commit();
-        showToast(`Gift ${giftId} created for ${profile.name || owner}.`);
-        document.getElementById('gift-admin-message').value='';
-        await loadAppState();
-        await loadClientGifts();
-        renderAdminClientGifts();
-      } catch(e) { showToast('Could not create gift: ' + e.message); }
-    }
-
-    function renderAdminClientGifts() {
-      const list = document.getElementById('admin-client-gifts-list');
-      if (!list) return;
-      const gifts = clientGiftsList.filter(g => g.createdByUid === currentUser?.uid || currentUser?.isAdmin);
-      if (!gifts.length) { list.innerHTML='<p class="text-xs text-slate-500">No client gifts created yet.</p>'; return; }
-      list.innerHTML = gifts.slice(0,30).map(g => `<div class="bg-slate-950 rounded-2xl border border-slate-800 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><div class="flex items-center gap-2"><span class="text-[8px] uppercase tracking-widest font-black text-pink-300">${escapeHtml(g.status || 'ACTIVE')}</span><span class="font-mono text-[10px] text-slate-500">${escapeHtml(g.id)}</span></div><p class="text-xs font-black text-white mt-1">${escapeHtml(g.cardName || 'Eugene Card')} • ${escapeHtml(g.cardSerial || '')}</p><p class="text-[10px] text-slate-500">To ${escapeHtml(g.recipientName || g.recipientUsername || 'Client')} • ${formatIDR(g.assetValue)}</p></div><span class="text-[10px] text-pink-300 font-bold">${g.status === 'REDEEMED' ? 'Redeemed' : 'QRIS Eligible'}</span></div>`).join('');
-    }
-
     function switchTab(tabName) {
-      currentActiveTab = tabName;
       if (tabName === 'dashboard') setTimeout(renderCollectorReputationPanel, 50);
       if (tabName === 'catalog') setTimeout(renderMarketIntelligence, 50);
-      ['home', 'catalog', 'trade', 'auction', 'trade-req', 'analytics', 'revenue', 'inbox', 'holders', 'holder-vault', 'history', 'dashboard', 'gifts', 'wishlist', 'inventory', 'admin'].forEach(t => {
+      ['home', 'catalog', 'trade', 'auction', 'trade-req', 'analytics', 'revenue', 'inbox', 'holders', 'holder-vault', 'history', 'dashboard', 'wishlist', 'inventory', 'admin'].forEach(t => {
         const view = document.getElementById(`view-${t}`);
         const navBtn = document.getElementById(`nav-${t}`);
 
@@ -11328,10 +7176,9 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       if (tabName === 'holder-vault') renderHolderVaultPage(viewingHolderName);
       if (tabName === 'history') fetchTransactionHistory();
       if (tabName === 'dashboard') renderOwnedCards();
-      if (tabName === 'gifts') loadClientGifts();
       if (tabName === 'wishlist') renderWishlistPage();
       if (tabName === 'inventory') renderInventoryTable();
-      if (tabName === 'admin') { loadPendingTransactions(); setTimeout(() => { renderAdminGiftSelectors(); renderAdminClientGifts(); }, 80); }
+      if (tabName === 'admin') loadPendingTransactions();
     }
 
     function formatIDR(num) {
@@ -11350,9 +7197,8 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
       }, 3000);
     }
-  </script>
+  
 
-<script id="eugeneCatalogKeyboardShortcut">
 (function eugeneCatalogKeyboardShortcut(){
   document.addEventListener('keydown', function(e){
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -11365,78 +7211,3 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
   });
 })();
-</script>
-
-<script id="eugeneDefaultLanguageInit">
-(function(){
-  // Bahasa utama Eugene Card: Bahasa Indonesia.
-  // Tombol EN/ID tetap tersedia agar pengguna dapat beralih ke English.
-  document.documentElement.lang = 'id';
-  const label = document.getElementById('current-lang-label');
-  if (label) label.textContent = 'ID';
-  if (typeof currentLanguage !== 'undefined') currentLanguage = 'ID';
-  if (typeof applyTranslations === 'function') applyTranslations();
-})();
-</script>
-
-
-<script>
-(function(){
-  let deferredInstallPrompt = null;
-  const KEY = 'eugene_card_install_prompt_last';
-  const COOLDOWN = 7 * 24 * 60 * 60 * 1000;
-  const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-
-  function hideFallback(){ document.getElementById('pwa-install-hint')?.classList.remove('show'); }
-  function showFallback(){ document.getElementById('pwa-install-hint')?.classList.add('show'); }
-  function markPromptHandled(){ try{ localStorage.setItem(KEY, String(Date.now())); }catch(e){} }
-  function canPrompt(){ try{ return Date.now() - Number(localStorage.getItem(KEY)||0) > COOLDOWN; }catch(e){ return true; } }
-
-  window.addEventListener('beforeinstallprompt', (event) => {
-    event.preventDefault();
-    deferredInstallPrompt = event;
-
-    // Let Chrome's install UI appear shortly after the app opens.
-    // The native prompt is used instead of a fake browser dialog.
-    if (!isStandalone() && canPrompt()) {
-      setTimeout(async () => {
-        if (!deferredInstallPrompt || isStandalone()) return;
-        try {
-          deferredInstallPrompt.prompt();
-          const choice = await deferredInstallPrompt.userChoice;
-          if (choice?.outcome === 'accepted' || choice?.outcome === 'dismissed') markPromptHandled();
-        } catch (err) {
-          // If Chrome refuses the automatic prompt, show our small fallback hint.
-          showFallback();
-        }
-        deferredInstallPrompt = null;
-      }, 1800);
-    }
-  });
-
-  window.addEventListener('appinstalled', () => {
-    deferredInstallPrompt = null;
-    markPromptHandled();
-    hideFallback();
-    try { if (typeof showToast === 'function') showToast('Eugene Card berhasil dipasang sebagai aplikasi.'); } catch(e){}
-  });
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const installBtn = document.getElementById('pwa-install-fallback-btn');
-    const dismissBtn = document.getElementById('pwa-install-dismiss-btn');
-    installBtn?.addEventListener('click', async () => {
-      if (!deferredInstallPrompt) { hideFallback(); return; }
-      try {
-        deferredInstallPrompt.prompt();
-        await deferredInstallPrompt.userChoice;
-      } catch(e){}
-      deferredInstallPrompt = null;
-      markPromptHandled();
-      hideFallback();
-    });
-    dismissBtn?.addEventListener('click', () => { markPromptHandled(); hideFallback(); });
-  });
-})();
-</script>
-</body>
-</html>
