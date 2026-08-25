@@ -323,6 +323,24 @@ body{background:radial-gradient(circle at 12% 0%,rgba(99,102,241,.12),transparen
       }
     };
 
+// Add to protected feature pages or page-specific scripts
+async function initializeProtectedFeature() {
+  const client = window.supabaseClient;
+  const { data: { session } } = await client.auth.getSession();
+
+  if (!session) {
+    alert('Session expired or not logged in.');
+    window.location.href = 'index.html';
+    return;
+  }
+
+  // Load page feature data using active session token
+  console.log('Authenticated as:', session.user.email);
+}
+
+// Run guard check when page finishes loading
+document.addEventListener('DOMContentLoaded', initializeProtectedFeature);
+
     const map={users:'profiles',profiles:'profiles',cards:'cards',transactions:'transactions',listings:'listings',tradeRequests:'trades',posts:'posts',clientGifts:'client_gifts',notifications:'notifications',cardViews:'card_views'};
     const ts=()=>new Date().toISOString();
     const norm=x=>map[x]||x;
