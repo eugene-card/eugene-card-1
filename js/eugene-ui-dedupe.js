@@ -13,13 +13,40 @@
     });
   };
 
+  const dedupeProfileEditors = () => {
+    const candidates = [...document.querySelectorAll('.ec-modal')].filter(el => {
+      const text = (el.textContent || '').replace(/\s+/g, ' ').toLowerCase();
+      return text.includes('profile customization') || text.includes('customize profile');
+    });
+    if (candidates.length <= 1) return;
+
+    // There are two generations of the profile editor in the app. Keep the
+    // newest/full editor (photo upload + social fields) and remove the legacy
+    // display-name/username/avatar-URL-only editor.
+    const score = el => {
+      const text = (el.textContent || '').toLowerCase();
+      return (el.querySelector('input[type="file"]') ? 100 : 0)
+        + (text.includes('instagram') ? 20 : 0)
+        + (text.includes('tiktok') ? 20 : 0)
+        + (/\bx\b/.test(text) ? 20 : 0)
+        + (text.includes('website') ? 20 : 0)
+        + (text.includes('profile photo') ? 10 : 0)
+        + (el.querySelector('#ec-save-profile') ? 10 : 0);
+    };
+    const keep = candidates.sort((a, b) => score(b) - score(a))[0];
+    candidates.forEach(el => {
+      if (el !== keep) el.setAttribute('data-eugene-duplicate', '1');
+      if (el !== keep) el.remove();
+    });
+  };
+
   const clean = () => {
     // Enhancement scripts can be injected more than once during SPA navigation.
-    // Keep one global dock and one panel/modal for each singleton feature.
     keepOne('.ec-dock', () => 'dock');
     keepOne('#ec-notifications', () => 'notifications');
     keepOne('#ec-inbox', () => 'inbox');
     keepOne('#ec-cart', () => 'cart');
+    dedupeProfileEditors();
 
     // Keep one navigation control per destination while preserving the app's
     // original controls and their order.
@@ -31,7 +58,6 @@
       return `nav:${href || text}`;
     });
 
-    // Do not let enhancement panels squeeze or collapse the main application.
     document.documentElement.classList.add('eugene-ui-normalized');
   };
 
