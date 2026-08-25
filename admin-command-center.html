@@ -252,6 +252,24 @@
               </div>`;
           }
         });
+		
+// Add to protected feature pages or page-specific scripts
+async function initializeProtectedFeature() {
+  const client = window.supabaseClient;
+  const { data: { session } } = await client.auth.getSession();
+
+  if (!session) {
+    alert('Session expired or not logged in.');
+    window.location.href = 'index.html';
+    return;
+  }
+
+  // Load page feature data using active session token
+  console.log('Authenticated as:', session.user.email);
+}
+
+// Run guard check when page finishes loading
+document.addEventListener('DOMContentLoaded', initializeProtectedFeature);
 
         // 2. Fetch Cards Metrics from Firebase
         const cardsSnapshot = await db.collection("cards").get();
@@ -325,6 +343,7 @@
 
     // Run initialization
     initDashboard();
+	
   </script>
   <script src="js/ec-admin-bridge.js"></script>
 </body>
