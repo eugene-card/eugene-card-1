@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const URL='https://tsjgvzpzfjyecnginipt.supabase.co';
-  const KEY='sb_publishable_o3oWlPh_EPj5xd0GBYQ_UhVicSH3';
+  const KEY='sb_publishable_o3oWlPh_EPj5xd0GBjDWYQ_UhVicSH3';
   const sb=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'eugene-card-supabase-auth'}});
   const QRIS_PAYLOAD='00020101021126610014COM.GO-JEK.WWW01189360091430419400360210G0419400360303UMI51440014ID.CO.QRIS.WWW0215ID10265490344800303UMI5204594453033605802ID5925Eugene Card, Toko Kartu &6012TORAJA UTARA61059183162070703A0163048BD9';
   const money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n||0));
@@ -45,6 +45,7 @@
     const mo=new MutationObserver(()=>{patchNav();formatIDR(document);patchHolderEditors()});mo.observe(document.body,{subtree:true,childList:true});
     patchNav();formatIDR(document);patchHolderEditors();
     const trade=document.createElement('script');trade.src='./trade-ui.js';trade.async=true;document.head.appendChild(trade);
+    const unified=document.createElement('script');unified.src='./unified-ui-fixes.js';unified.async=true;document.head.appendChild(unified);
     window.addEventListener('popstate',()=>{const v=new URLSearchParams(location.search).get('view');if(v==='auction')renderAuction();else if(v==='trade')renderTrade();else location.reload()});
     const v=new URLSearchParams(location.search).get('view');if(v==='auction')setTimeout(renderAuction,50);else if(v==='trade')setTimeout(renderTrade,50);
   }
