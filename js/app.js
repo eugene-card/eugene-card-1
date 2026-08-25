@@ -1,8 +1,14 @@
-(() => {
-  const { createClient } = window.supabase;
+document.addEventListener("DOMContentLoaded", () => {
+  const { createClient } = window.supabase || {};
   const cfg = window.SUPABASE_CONFIG || {};
-  if (!cfg.url || cfg.url.startsWith("YOUR_") || !cfg.anonKey || cfg.anonKey.startsWith("YOUR_")) {
-    console.warn("Configure js/supabase-config.js before using authentication.");
+  const loginButton = document.getElementById("loginButton");
+  const loginError = document.getElementById("loginError");
+
+  if (!createClient || !cfg.url || cfg.url.startsWith("YOUR_") || !cfg.anonKey || cfg.anonKey.startsWith("YOUR_")) {
+    if (loginButton) loginButton.disabled = true;
+    if (loginError) loginError.textContent = "Supabase is not configured. Add your Supabase URL and anon/publishable key to js/supabase-config.js.";
+    console.error("Supabase configuration missing.");
+    return;
   }
 
   const client = createClient(cfg.url, cfg.anonKey);
@@ -77,19 +83,32 @@
     render();
   }
 
-  $("loginButton").addEventListener("click", async () => {
-    $("loginButton").disabled = true;
-    $("loginError").textContent = "";
+  if (!loginButton) {
+    console.error("Google login button not found.");
+  } else {
+    loginButton.addEventListener("click", async () => {
+      loginButton.disabled = true;
+      if (loginError) loginError.textContent = "Opening Google…";
 
-    const redirectTo = window.location.origin + window.location.pathname;
-    const { error } = await client.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo }
+      try {
+        const redirectTo = window.location.origin + window.location.pathname;
+        const { data, error } = await client.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo,
+            queryParams: { access_type: "offline", prompt: "select_account" }
+          }
+        });
+
+        if (error) throw error;
+        if (data?.url) window.location.assign(data.url);
+      } catch (error) {
+        console.error("Google login failed:", error);
+        if (loginError) loginError.textContent = error?.message || "Google login could not be started.";
+        loginButton.disabled = false;
+      }
     });
-
-    if (error) $("loginError").textContent = error.message;
-    $("loginButton").disabled = false;
-  });
+  }
 
   $("logoutButton").addEventListener("click", async () => {
     await client.auth.signOut();
@@ -116,4 +135,4 @@
   };
 
   refreshSession();
-})();
+}});

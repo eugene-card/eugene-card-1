@@ -21,3 +21,14 @@ In Supabase:
 2. Add your Google OAuth client ID/secret.
 3. Add your deployed site URL to the Supabase Auth redirect URLs.
 4. Add the same URL to the Google OAuth authorized redirect configuration as the Supabase callback URL.
+
+## If the Google button appears to do nothing
+
+Make sure `js/supabase-config.js` contains your real public Supabase URL and anon/publishable key.
+
+Then in Supabase:
+- Authentication → Providers → Google → Enable
+- Configure Google Client ID and Client Secret
+- Authentication → URL Configuration → add your site URL to Redirect URLs
+
+The browser must be served from HTTP(S); do not test OAuth from a `file://` URL.
