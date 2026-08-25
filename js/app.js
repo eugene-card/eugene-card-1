@@ -77,18 +77,18 @@
     render();
   }
 
-  $("loginForm").addEventListener("submit", async (event) => {
-    event.preventDefault();
+  $("loginButton").addEventListener("click", async () => {
+    $("loginButton").disabled = true;
     $("loginError").textContent = "";
-    $("loginSubmit").disabled = true;
 
-    const email = $("email").value.trim();
-    const password = $("password").value;
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await client.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo }
+    });
 
-    const { error } = await client.auth.signInWithPassword({ email, password });
     if (error) $("loginError").textContent = error.message;
-
-    $("loginSubmit").disabled = false;
+    $("loginButton").disabled = false;
   });
 
   $("logoutButton").addEventListener("click", async () => {

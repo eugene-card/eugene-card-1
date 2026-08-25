@@ -54,3 +54,6 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
+
+-- Google OAuth is configured in Supabase Auth settings, not in SQL.
+-- Email/password UI is intentionally not exposed by this application.

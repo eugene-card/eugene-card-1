@@ -31,7 +31,7 @@
       <div class="ec-brand"><img src="./eugene-card-icon.svg" alt=""> Eugene Card</div>
       <div class="ec-actions">
         <span id="authStatus" class="status"></span>
-        <button id="loginButton" class="primary">Login</button>
+        
         <button id="logoutButton" class="secondary" hidden>Logout</button>
       </div>
     </nav>
@@ -43,13 +43,10 @@
       </section>
 
       <section id="loginPanel" class="card auth">
-        <h2>Login</h2>
-        <form id="loginForm">
-          <label class="field"><span>Email</span><input id="email" type="email" autocomplete="email" required></label>
-          <label class="field"><span>Password</span><input id="password" type="password" autocomplete="current-password" required></label>
-          <button id="loginSubmit" class="primary" type="submit">Login</button>
-          <div id="loginError" class="error"></div>
-        </form>
+        <h2>Welcome back</h2>
+        <p class="muted">Sign in securely with your Google account.</p>
+        <button id="loginButton" class="primary" type="button">Continue with Google</button>
+        <div id="loginError" class="error"></div>
       </section>
 
       <section id="accountPanel" class="card auth" hidden>
