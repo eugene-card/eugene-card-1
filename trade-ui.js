@@ -2,6 +2,7 @@
   'use strict';
   const URL='https://tsjgvzpzfjyecnginipt.supabase.co',KEY='sb_publishable_o3oWlPh_EPj5xd0GBYQ_UhVicSH3';
   const sb=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'eugene-card-supabase-auth'}});
+  window.supabaseClient = window.supabaseClient || sb;
   const money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n||0));
   const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
   async function user(){return (await sb.auth.getUser()).data.user||null}
@@ -21,8 +22,6 @@
   document.addEventListener('click',e=>{const listing=e.target.closest('#new-trade');const offer=e.target.closest('[data-offer]');if(!listing&&!offer)return;e.preventDefault();e.stopImmediatePropagation();openTradeModal(listing?'listing':'offer',offer?.dataset.offer||null)},true);
 })();
 
-// Shared enhancements are loaded after the existing market/trade modules so the current
-// application remains intact while the new profile, cart, inbox, home and auction layers are added.
 (() => {
   if (window.__eugeneEnhancementsLoader) return;
   window.__eugeneEnhancementsLoader = true;
