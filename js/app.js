@@ -135,4 +135,4 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   refreshSession();
-}});
+});
