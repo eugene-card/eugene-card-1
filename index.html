@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="id" class="dark">
 <head>
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#6366f1">
@@ -11,50 +10,6 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./eugene-card-icon-192.png">
   <title>Eugene Card Marketplace | Premium Beta Edition</title>
-
-<!-- Google Identity Services SDK -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-</head>
-<body>
-  <div class="card-container">
-    <div class="profile-header">
-      <img src="eugene-card-icon-192.png" alt="Profile Avatar" class="avatar" />
-      <h2>Eugene Card</h2>
-      <p class="title">Software Developer</p>
-    </div>
-
-    <!-- Google Sign-In Container -->
-    <div class="google-auth-container">
-      <div id="g_id_onload"
-           data-client_id="487246501117-jb53setjqkcva9lglgj4tj5cee4nh15u.apps.googleusercontent.com"
-           data-context="signin"
-           data-ux_mode="popup"
-           data-callback="handleCredentialResponse"
-           data-auto_prompt="false">
-      </div>
-      <div class="g_id_signin"
-           data-type="standard"
-           data-shape="rectangular"
-           data-theme="outline"
-           data-text="signin_with"
-           data-size="large"
-           data-logo_alignment="left">
-      </div>
-    </div>
-
-    <div class="links-section">
-      <a href="#" class="link-btn">Portfolio</a>
-      <a href="#" class="link-btn">GitHub</a>
-      <a href="#" class="link-btn">Contact Me</a>
-    </div>
-  </div>
-
-  <script>
-    function handleCredentialResponse(response) {
-      // Decode JWT token response from Google
-      console.log("Encoded JWT ID token: " + response.credential);
-    }
-  </script>
 
   <!-- Browser Tab Favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='none' stroke='%234f46e5' stroke-width='5' stroke-dasharray='210 50' transform='rotate(-45 50 50)'/><polygon points='50,18 80,35 80,68 50,85 20,68 20,35' fill='%236366f1'/><path d='M 32 42 C 38 32, 52 32, 58 40 C 62 46, 48 54, 40 60 C 35 64, 45 70, 60 62' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linecap='round'/></svg>">
