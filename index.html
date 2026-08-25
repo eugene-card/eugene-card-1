@@ -6404,27 +6404,35 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
     function setupRealtimeSync() {
       db.collection("cards").onSnapshot((snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === "modified" || change.type === "added") {
-            const c = change.doc.data();
-            const existingCard = inventory.find(i => i.id === change.doc.id);
-            if (existingCard) {
-              Object.assign(existingCard, {
-                name: c.name,
-                serial: c.serial,
-                type: c.type,
-                price: parseFloat(c.price || 0),
-                owner: c.owner || null,
-                status: c.status || 'AVAILABLE',
-                imgUrl: c.imgUrl,
-                edition: c.edition,
-                sn: c.sn,
-                tier: c.tier,
-                printing: c.printing
-              });
-            }
+        // NOTE: the Supabase compat layer's snapshot object doesn't implement
+        // Firestore's docChanges() — it only gives us the current full set of
+        // docs each time. So instead of diffing change types, we just
+        // reconcile the whole inventory array against what's in the snapshot.
+        const seenIds = new Set();
+        snapshot.forEach((doc) => {
+          const c = doc.data();
+          seenIds.add(doc.id);
+          const patch = {
+            name: c.name,
+            serial: c.serial,
+            type: c.type,
+            price: parseFloat(c.price || 0),
+            owner: c.owner || null,
+            status: c.status || 'AVAILABLE',
+            imgUrl: c.imgUrl,
+            edition: c.edition,
+            sn: c.sn,
+            tier: c.tier,
+            printing: c.printing
+          };
+          const existingCard = inventory.find(i => i.id === doc.id);
+          if (existingCard) {
+            Object.assign(existingCard, patch);
+          } else {
+            inventory.push({ id: doc.id, ...patch });
           }
         });
+        inventory = inventory.filter(i => seenIds.has(i.id));
         updateAllViews();
       });
 
@@ -8020,9 +8028,14 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       // If we just landed back here after a Google login redirect, restore
       // the tab the user was on instead of resetting to Home.
       const pendingTab = sessionStorage.getItem('eugene_pending_tab');
+      const requestedTab = new URLSearchParams(window.location.search).get('tab');
+      const validTabs = ['home', 'catalog', 'trade', 'auction', 'trade-req', 'analytics', 'revenue', 'inbox', 'holders', 'holder-vault', 'history', 'dashboard', 'gifts', 'wishlist', 'inventory', 'admin'];
       if (pendingTab) {
         sessionStorage.removeItem('eugene_pending_tab');
         switchTab(pendingTab);
+      } else if (requestedTab && validTabs.includes(requestedTab)) {
+        // Deep-link support, e.g. index.html?tab=inventory from the Admin Command Center.
+        switchTab(requestedTab);
       } else {
         switchTab('home'); // Home is the main landing page on first open
       }
