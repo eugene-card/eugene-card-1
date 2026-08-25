@@ -92,7 +92,7 @@
   function renderLoggedInUI(u){
     const buttons=findLoginButtons();
     buttons.forEach(el=>{
-      if(!u){el.style.removeProperty('display');el.textContent='Log In';el.onclick=null;return;}
+      if(!u){return;}
       const host=el.parentElement; if(!host)return;
       const replacement=document.createElement('div'); replacement.className='ec-auth-profile-control'; replacement.style.cssText='display:flex;align-items:center;gap:8px;position:relative';
       const img=document.createElement('img');img.src=u.profile?.avatarUrl||u.photoURL||`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.email)}`;img.alt='Profile';img.style.cssText='width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid #6366f1';
