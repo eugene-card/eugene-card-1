@@ -32,3 +32,6 @@ Then in Supabase:
 - Authentication → URL Configuration → add your site URL to Redirect URLs
 
 The browser must be served from HTTP(S); do not test OAuth from a `file://` URL.
+
+
+Google login is available to all authenticated users. Missing profiles/roles default to user; only the two configured admin emails are admin.

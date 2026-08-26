@@ -79,7 +79,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const { data, error } = await client.auth.getSession();
     if (error) console.error(error);
     state.session = data?.session || null;
-    state.profile = await loadProfile(state.session?.user);
+    try {
+      state.profile = await loadProfile(state.session?.user);
+    } catch (e) {
+      console.warn("Profile load skipped:", e);
+      state.profile = state.session?.user ? {
+        id: state.session.user.id,
+        email: state.session.user.email,
+        role: "user",
+        display_name: state.session.user.user_metadata?.full_name || state.session.user.email?.split("@")[0] || "User"
+      } : null;
+    }
+    if (state.profile && !state.profile.role) state.profile.role = "user";
     render();
   }
 
@@ -116,7 +127,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   client.auth.onAuthStateChange(async (_event, session) => {
     state.session = session;
-    state.profile = await loadProfile(session?.user);
+    try {
+      state.profile = await loadProfile(session?.user);
+    } catch (e) {
+      console.warn("Profile load skipped:", e);
+      state.profile = session?.user ? {
+        id: session.user.id,
+        email: session.user.email,
+        role: "user",
+        display_name: session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "User"
+      } : null;
+    }
+    if (state.profile && !state.profile.role) state.profile.role = "user";
     render();
   });
 

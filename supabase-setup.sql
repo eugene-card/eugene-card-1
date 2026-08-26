@@ -107,3 +107,50 @@ using (true);
 
 -- Enables db.collection(...).onSnapshot(...) realtime listeners.
 alter publication supabase_realtime add table public.documents;
+
+
+-- Google users: default everyone to user; only designated accounts are admins.
+alter table if exists public.profiles add column if not exists role text;
+alter table if exists public.profiles alter column role set default 'user';
+update public.profiles set role='user' where role is null or role='';
+
+alter table if exists public.profiles enable row level security;
+drop policy if exists "profiles are readable" on public.profiles;
+drop policy if exists "users insert own profile" on public.profiles;
+drop policy if exists "users update own profile" on public.profiles;
+
+create policy "profiles are readable" on public.profiles
+for select to anon, authenticated using (true);
+
+create policy "users insert own profile" on public.profiles
+for insert to authenticated with check (auth.uid() = id);
+
+create policy "users update own profile" on public.profiles
+for update to authenticated using (auth.uid() = id) with check (auth.uid() = id);
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id,email,username,display_name,role)
+  values (
+    new.id,
+    new.email,
+    lower(regexp_replace(split_part(coalesce(new.email,''),'@',1),'[^a-zA-Z0-9_]','','g')),
+    coalesce(new.raw_user_meta_data->>'full_name',new.raw_user_meta_data->>'name',split_part(coalesce(new.email,''),'@',1)),
+    'user'
+  )
+  on conflict (id) do update set email=excluded.email;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users
+for each row execute function public.handle_new_user();
+
+update public.profiles set role='admin'
+where lower(email) in ('eugene.aquila06@gmail.com','eugenecard.market@gmail.com');
