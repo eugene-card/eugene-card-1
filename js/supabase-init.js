@@ -16,4 +16,12 @@
   }
 
   window.supabaseClient = createClient(cfg.url, cfg.anonKey);
+
+  // Notification UX loads as a separate module so the large legacy index.html
+  // does not need to be rewritten. It waits for DOMContentLoaded and then wraps
+  // the existing notification functions.
+  const script = document.createElement('script');
+  script.src = './js/notifications-enhancement.js';
+  script.defer = true;
+  document.head.appendChild(script);
 })();
