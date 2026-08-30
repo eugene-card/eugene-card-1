@@ -20,6 +20,40 @@
   <script src="./js/supabase-firebase-compat.js"></script>
   <script src="./js/supabase-supabase-compat.js"></script>
   <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
+  <script src="./js/supabase-supabase-compat.js"></script>
   <script src="./js/inventory-supabase.js"></script>
   <!-- PAYPAL JS SDK — uses the PUBLIC Client ID only. This is safe to expose in the
        browser by design (that's how PayPal's own JS SDK works). The Secret Key is
@@ -3564,6 +3598,9 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
             </div>
             <div id="owner-dropdown-list" class="max-h-48 overflow-y-auto divide-y divide-slate-900"></div>
           </div>
+
+          <input type="text" id="edit-card-owner-manual" oninput="handleOwnerManualInput()" placeholder="Or type a username manually" autocomplete="off" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 mt-2 text-xs text-white focus:outline-none focus:border-amber-500">
+          <p class="text-[10px] text-slate-500 mt-1">Pick a collector above, or type any username directly — the manual field always wins when it's filled in.</p>
         </div>
 
         <div class="space-y-1">
@@ -9052,10 +9089,25 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       `).join('');
     }
 
+    function setOwnerValue(value, label) {
+      const trimmedValue = String(value || '').trim();
+      document.getElementById('edit-card-owner-select').value = trimmedValue;
+      const manual = document.getElementById('edit-card-owner-manual');
+      if (manual && manual.value !== trimmedValue) manual.value = trimmedValue;
+      document.getElementById('owner-dropdown-label').innerText = label || trimmedValue || i18nDict[currentLanguage].unownedHouse;
+    }
+
     function selectOwnerOption(value, label) {
-      document.getElementById('edit-card-owner-select').value = value;
-      document.getElementById('owner-dropdown-label').innerText = label;
+      setOwnerValue(value, label);
       document.getElementById('owner-dropdown-menu').classList.add('hidden');
+    }
+
+    function handleOwnerManualInput() {
+      const manual = document.getElementById('edit-card-owner-manual');
+      const value = manual.value.trim();
+      document.getElementById('edit-card-owner-select').value = value;
+      const matched = ownerOptionsList.find(o => o.value === value);
+      document.getElementById('owner-dropdown-label').innerText = matched ? matched.label : (value || i18nDict[currentLanguage].unownedHouse);
     }
 
     function toggleTradeCardDropdown() {
