@@ -14,38 +14,36 @@
 
   window.supabaseClient = createClient(cfg.url, cfg.anonKey);
 
-  // Native application data bridge.
   const wire = document.createElement('script');
   wire.src = './js/supabase-app-wire.js';
   wire.defer = true;
   document.head.appendChild(wire);
 
-  // Native Inventory adapter.
   const inventory = document.createElement('script');
   inventory.src = './js/inventory-supabase.js';
   inventory.defer = true;
   document.head.appendChild(inventory);
 
-  // Native card views + live viewer/presence adapter.
+  const inventoryBackup = document.createElement('script');
+  inventoryBackup.src = './js/inventory-backup-import.js';
+  inventoryBackup.defer = true;
+  document.head.appendChild(inventoryBackup);
+
   const tracking = document.createElement('script');
   tracking.src = './js/card-tracking-supabase.js';
   tracking.defer = true;
   document.head.appendChild(tracking);
 
-  // Notification UX enhancement.
   const notifications = document.createElement('script');
   notifications.src = './js/notifications-enhancement.js';
   notifications.defer = true;
   document.head.appendChild(notifications);
 
-  // Profile picture upload/display flow.
   const profileAvatar = document.createElement('script');
   profileAvatar.src = './js/profile-avatar.js';
   profileAvatar.defer = true;
   document.head.appendChild(profileAvatar);
 
-  // Catalog image reliability: preserve exact uploaded/link artwork and
-  // normalize common share URLs after every dynamic catalog render.
   const catalogImages = document.createElement('script');
   catalogImages.src = './js/catalog-image-fix.js';
   catalogImages.defer = true;
