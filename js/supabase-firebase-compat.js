@@ -18,6 +18,71 @@
   }
 
   // ---------------------------------------------------------------------
+  // Firebase FieldValue compatibility
+  // ---------------------------------------------------------------------
+  // Some legacy Admin Hub code still calls firebase.firestore.FieldValue.
+  // The Supabase migration previously exposed auth/db but not this namespace,
+  // causing approval to fail with "Cannot read properties of undefined
+  // (reading 'FieldValue')". Provide the commonly used Firestore sentinels
+  // and resolve them before persisting to public.documents.
+  const FIELD_VALUE = Symbol("firebaseFieldValue");
+  const FieldValue = {
+    serverTimestamp() {
+      return { [FIELD_VALUE]: "serverTimestamp" };
+    },
+    increment(amount) {
+      return { [FIELD_VALUE]: "increment", amount: Number(amount) || 0 };
+    },
+    arrayUnion(...values) {
+      return { [FIELD_VALUE]: "arrayUnion", values };
+    },
+    arrayRemove(...values) {
+      return { [FIELD_VALUE]: "arrayRemove", values };
+    },
+    deleteField() {
+      return { [FIELD_VALUE]: "deleteField" };
+    }
+  };
+
+  // Keep this idempotent because index.html currently loads the compatibility
+  // layer more than once in some deployments.
+  window.firebase = window.firebase || {};
+  window.firebase.firestore = window.firebase.firestore || {};
+  window.firebase.firestore.FieldValue = FieldValue;
+
+  function resolveFieldValues(value, previous) {
+    if (Array.isArray(value)) {
+      return value.map((item, index) => resolveFieldValues(item, previous?.[index]));
+    }
+    if (!value || typeof value !== "object") return value;
+
+    const op = value[FIELD_VALUE];
+    if (op === "serverTimestamp") return new Date().toISOString();
+    if (op === "increment") return (Number(previous) || 0) + value.amount;
+    if (op === "arrayUnion") {
+      const base = Array.isArray(previous) ? previous.slice() : [];
+      for (const item of value.values) {
+        if (!base.some((existing) => JSON.stringify(existing) === JSON.stringify(item))) base.push(item);
+      }
+      return base;
+    }
+    if (op === "arrayRemove") {
+      const remove = value.values;
+      return (Array.isArray(previous) ? previous : []).filter(
+        (existing) => !remove.some((item) => JSON.stringify(existing) === JSON.stringify(item))
+      );
+    }
+    if (op === "deleteField") return undefined;
+
+    const out = {};
+    for (const [key, nested] of Object.entries(value)) {
+      const resolved = resolveFieldValues(nested, previous?.[key]);
+      if (resolved !== undefined) out[key] = resolved;
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------------
   // auth
   // ---------------------------------------------------------------------
   function toFirebaseUser(supaUser) {
@@ -109,6 +174,8 @@
           const existing = await this.get();
           toWrite = Object.assign({}, existing.exists ? existing.data() : {}, payload);
         }
+        const existingData = opts.merge ? (await this.get()).data() : undefined;
+        toWrite = resolveFieldValues(toWrite, existingData);
         const { error } = await client
           .from("documents")
           .upsert({ collection: collectionName, id, data: toWrite, updated_at: new Date().toISOString() }, { onConflict: "collection,id" });
@@ -116,7 +183,9 @@
       },
       async update(partial) {
         const existing = await this.get();
-        const merged = Object.assign({}, existing.exists ? existing.data() : {}, partial);
+        const existingData = existing.exists ? existing.data() : {};
+        const resolved = resolveFieldValues(partial, existingData);
+        const merged = Object.assign({}, existingData, resolved);
         const { error } = await client
           .from("documents")
           .upsert({ collection: collectionName, id, data: merged, updated_at: new Date().toISOString() }, { onConflict: "collection,id" });
