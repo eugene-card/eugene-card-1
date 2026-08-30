@@ -12,7 +12,7 @@ function isInventoryTabActive(){
  const active=[...document.querySelectorAll('.active,[aria-selected="true"],[data-active="true"],.tab-active')].filter(isVisible);
  if(active.some(e=>/inventory/i.test((e.textContent||'').trim())))return true;
  const visibleSections=[...document.querySelectorAll('section,main,[role="tabpanel"],.tab-content,.page-content,.view')].filter(isVisible);
- const inv=visibleSections.find(e=>/inventory/i.test((e.id||'')+' '+(e.getAttribute('data-section')||'')+' '+(e.getAttribute('data-tab')||'')));
+ const inv=visibleSections.find(e=>/inventory/i.test((e.id||'')+' '+(e.getAttribute('data-section')||'')+' '+(e.getAttribute('data-tab')||''));
  if(inv)return true;
  const heading=[...document.querySelectorAll('h1,h2,h3,h4')].find(e=>isVisible(e)&&/^inventory( manager)?$/i.test((e.textContent||'').trim()));
  return !!heading;
@@ -36,4 +36,19 @@ const status=t=>{const e=box.querySelector('#ecitStatus');if(e)e.textContent=t};
 box.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b||!guard())return;try{const a=b.dataset.a;if(a==='backup'){status('Backing up…');const r=await rows();dl('eugene-card-inventory-backup.json',JSON.stringify({schema_version:3,exported_at:new Date().toISOString(),data:r},null,2),'application/json');status(r.length+' cards backed up')}else if(a==='csv'){status('Exporting…');const r=await rows(),h=['id','serial','name','type','price','owner','status','image_url','img_url'];const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';dl('eugene-card-inventory.csv',h.join(',')+'\n'+r.map(x=>h.map(k=>q(x[k])).join(',')).join('\n'),'text/csv')}else if(a==='import'){const f=box.querySelector('#ecitFile');f.onchange=async()=>{if(!guard())return;try{const file=f.files?.[0];if(!file)return;const text=await file.text();let data;if(/\.csv$/i.test(file.name)){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean),parse=s=>{const out=[];let cur='',q=false;for(let i=0;i<s.length;i++){const ch=s[i];if(ch==='"'&&s[i+1]==='"'){cur+='"';i++}else if(ch==='"')q=!q;else if(ch===','&&!q){out.push(cur);cur=''}else cur+=ch}out.push(cur);return out};const h=parse(lines[0]);data=lines.slice(1).map(line=>{const v=parse(line),r={};h.forEach((k,i)=>r[k]=v[i]??'');return normalize(r)})}else{const p=JSON.parse(text);data=(Array.isArray(p)?p:(p?.data||p?.cards||[])).map(normalize)}if(!data.length)throw Error('No records found');if(!confirm('Import '+data.length+' records using Merge / Update?'))return;for(let i=0;i<data.length;i+=250){const x=await c.from('cards').upsert(data.slice(i,i+250),{onConflict:'id'});if(x.error)throw x.error}status('Imported '+data.length+' cards');setTimeout(()=>location.reload(),700)}catch(err){status('Import failed: '+(err.message||err))}f.value=''};f.click()}else if(a==='owners'){if(!confirm('Reset ALL owners and availability? Cards and images stay intact.'))return;status('Resetting owners…');const x=await c.from('cards').update({owner:null,status:'AVAILABLE'}).neq('id','__never_match__');if(x.error)throw x.error;status('Owners cleared; all AVAILABLE');setTimeout(()=>location.reload(),700)}else if(a==='all'){if(!confirm('RESET ALL CARDS TO 0? This permanently deletes the entire catalog. Backup first.'))return;if(!confirm('FINAL CONFIRMATION: permanently delete every card?'))return;status('Deleting all cards…');const x=await c.from('cards').delete().neq('id','__never_match__');if(x.error)throw x.error;status('Catalog reset — 0 cards');setTimeout(()=>location.reload(),700)}}catch(err){status('Error: '+(err.message||err))}})}
 function boot(){const c=window.supabaseClient;if(!c||!window.db||typeof window.db.collection!=='function')return setTimeout(boot,100);const legacy=window.db.collection.bind(window.db),nativeCards=makeCollection(c);window.db.collection=n=>String(n)==='cards'?nativeCards:legacy(n);window.__inventoryStorage='supabase';verifyAdmin(c).then(()=>ensureScope(c));c.auth.onAuthStateChange((_event,session)=>{adminVerified=!!session?.user?.email&&ADMIN_EMAILS.has(session.user.email.toLowerCase());ensureScope(c)});const mo=new MutationObserver(()=>watchScope(c));mo.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden','aria-selected','data-active']});document.addEventListener('click',()=>watchScope(c),true);window.addEventListener('popstate',()=>watchScope(c));setInterval(()=>ensureScope(c),1000)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+
+/* Social interaction loader: app.js contains the delegated Like / Comment / Repost repair. */
+(function(){
+  function load(){
+    if(window.__eugeneSocialLoader)return;
+    window.__eugeneSocialLoader=true;
+    const s=document.createElement('script');
+    s.src='./js/app.js?v=20260830-social2';
+    s.async=false;
+    s.onload=()=>console.info('[Eugene Card] social interaction repair loaded');
+    s.onerror=()=>console.error('[Eugene Card] social interaction repair failed to load');
+    document.head.appendChild(s);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',load,{once:true}); else load();
 })();
