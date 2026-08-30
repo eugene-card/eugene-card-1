@@ -1,10 +1,47 @@
 /* Native Supabase Inventory adapter.
- * The legacy index.html uses a Firestore-shaped `db.collection('cards')` API.
- * This adapter replaces ONLY the cards collection with direct Supabase CRUD.
- * No inventory read/write/delete is routed through public.documents/Firestore.
+ * Inventory uses the real public.cards table directly.
+ * This adapter preserves the small Firestore-shaped interface still used by
+ * legacy inventory UI code, while translating UI field names to Supabase's
+ * actual snake_case columns before every write.
  */
 (function () {
   'use strict';
+
+  const FIELD_MAP = {
+    imgUrl: 'img_url',
+    imageUrl: 'image_url',
+    image: 'image_url',
+    baseFloorPrice: 'base_floor_price',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
+  };
+
+  const CARD_COLUMNS = new Set([
+    'id', 'serial', 'name', 'type', 'price', 'base_floor_price', 'owner',
+    'status', 'img_url', 'edition', 'sn', 'tier', 'printing', 'created_at',
+    'updated_at', 'description', 'image_url', 'asset_value', 'metadata'
+  ]);
+
+  function normalizePayload(payload, forcedId) {
+    const source = payload || {};
+    const row = {};
+
+    Object.keys(source).forEach(key => {
+      const dbKey = FIELD_MAP[key] || key;
+      if (!CARD_COLUMNS.has(dbKey)) return;
+      row[dbKey] = source[key];
+    });
+
+    // The UI historically uses imgUrl/image; cards has both img_url and
+    // image_url, so keep both in sync when either representation is supplied.
+    if (source.imgUrl != null && row.img_url == null) row.img_url = source.imgUrl;
+    if (source.imageUrl != null && row.image_url == null) row.image_url = source.imageUrl;
+    if (source.image != null && row.image_url == null) row.image_url = source.image;
+
+    if (forcedId != null) row.id = String(forcedId);
+    if (!row.id) row.id = newId();
+    return row;
+  }
 
   function boot() {
     const client = window.supabaseClient;
@@ -25,7 +62,7 @@
   }
 
   function makeCollection(client) {
-    return makeQuery(client, []);
+    return makeQuery(client, [], null, null);
   }
 
   function makeQuery(client, filters, ordering, limitN) {
@@ -43,8 +80,7 @@
         return makeDoc(client, id || newId());
       },
       async add(payload) {
-        const row = { ...(payload || {}) };
-        if (!row.id) row.id = newId();
+        const row = normalizePayload(payload);
         const { error } = await client.from('cards').insert(row);
         if (error) throw error;
         return makeDoc(client, row.id);
@@ -88,16 +124,18 @@
         return data ? snapshot(data) : { id, exists: false, data: () => undefined };
       },
       async set(payload, opts) {
-        const row = { ...(payload || {}), id };
+        let row = normalizePayload(payload, id);
         if (opts && opts.merge) {
           const current = await this.get();
-          if (current.exists) Object.assign(row, current.data(), payload, { id });
+          if (current.exists) row = { ...normalizePayload(current.data(), id), ...row, id: String(id) };
         }
         const { error } = await client.from('cards').upsert(row, { onConflict: 'id' });
         if (error) throw error;
       },
       async update(payload) {
-        const { error } = await client.from('cards').update(payload || {}).eq('id', id);
+        const row = normalizePayload(payload, id);
+        delete row.id;
+        const { error } = await client.from('cards').update(row).eq('id', id);
         if (error) throw error;
       },
       async delete() {
@@ -117,11 +155,20 @@
   }
 
   function snapshot(row) {
-    return { id: row.id, exists: true, data: () => row, ref: makeDoc(window.supabaseClient, row.id) };
+    const data = { ...row };
+    // Give the existing UI the names it expects without ever writing those
+    // camelCase aliases back to Supabase.
+    data.imgUrl = row.img_url || row.image_url || '';
+    data.imageUrl = row.image_url || row.img_url || '';
+    data.image = row.image_url || row.img_url || '';
+    data.baseFloorPrice = row.base_floor_price;
+    return { id: row.id, exists: true, data: () => data, ref: makeDoc(window.supabaseClient, row.id) };
   }
 
   function newId() {
-    return window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'card-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    return window.crypto && crypto.randomUUID
+      ? crypto.randomUUID()
+      : 'card-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
