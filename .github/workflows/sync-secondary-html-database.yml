@@ -1,0 +1,50 @@
+name: Sync secondary HTML database wiring
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Point secondary pages at the same Supabase database as index.html
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          files = ['admin-command-center.html', 'analytics.html', 'revenue.html']
+          old_url = 'https://kbxqmgdnzxwshyzasssr.supabase.co'
+          old_key = 'sb_publishable__tPM9ty9ELyh3X70Hl1S-Q_7hWvPe2R'
+          new_url = 'https://tsjgvzpzfjyecnginipt.supabase.co'
+          new_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0c2pndnp6Zmp5ZWNuZ2luaXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0ODcyNjMsImV4cCI6MjEwMzA2MzI2M30.IdGwR7fxglsni_uncd-roCXCJxoxqfrUtvkHBiudKl0'
+
+          for name in files:
+              p = Path(name)
+              s = p.read_text()
+              s = s.replace(old_url, new_url).replace(old_key, new_key)
+              marker = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>'
+              config = marker + '\n  <script src="./js/supabase-config.js"></script>'
+              if marker in s and './js/supabase-config.js' not in s:
+                  s = s.replace(marker, config, 1)
+              p.write_text(s)
+          PY
+
+      - name: Commit synchronized pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add admin-command-center.html analytics.html revenue.html
+          if git diff --cached --quiet; then
+            echo "No secondary-page database changes needed."
+            exit 0
+          fi
+          git commit -m "Wire secondary HTML pages to index Supabase database [skip ci]"
+          git push
