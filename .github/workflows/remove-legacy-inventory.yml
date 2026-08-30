@@ -23,7 +23,6 @@ jobs:
           p = Path('index.html')
           s = p.read_text()
           original = s
-          # Remove stale storage-provider wording only.
           for a, b in {
             'Firestore': 'Supabase',
             'firestore': 'supabase',
@@ -31,7 +30,6 @@ jobs:
             'firebase': 'supabase',
           }.items():
             s = s.replace(a, b)
-          # Keep the shared compatibility layer for non-inventory features.
           marker = '  <script src="./js/supabase-init.js"></script>\n'
           compat = '  <script src="./js/supabase-firebase-compat.js"></script>\n'
           native = '  <script src="./js/inventory-supabase.js"></script>\n'
@@ -43,15 +41,37 @@ jobs:
           if s != original:
             p.write_text(s)
           PY
-      - name: Commit cleanup
+
+      - name: Repair secondary-page admin authentication
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          files = ['admin-command-center.html', 'analytics.html', 'revenue.html']
+          allowlist = "const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'eugenecard.market@gmail.com'];"
+          allowlist_pattern = re.compile(r"const\s+ADMIN_EMAILS\s*=\s*\[[^\]]*\]\s*;", re.S)
+          bridge = '  <script src="./js/admin-auth-bridge.js"></script>\n'
+
+          for name in files:
+            p = Path(name)
+            s = p.read_text()
+            s = allowlist_pattern.sub(allowlist, s, count=1)
+            if './js/admin-auth-bridge.js' not in s:
+              s = s.replace('</body>', bridge + '</body>', 1)
+            p.write_text(s)
+          PY
+
+      - name: Commit cleanup and admin repair
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
+          git add index.html admin-command-center.html analytics.html revenue.html
           if git diff --cached --quiet; then
-            echo 'No cleanup changes needed.'
+            echo 'No cleanup or admin changes needed.'
           else
-            git commit -m 'Remove Firestore wording from Inventory [skip ci]'
+            git commit -m 'Fix secondary admin authentication [skip ci]'
             git push
           fi
