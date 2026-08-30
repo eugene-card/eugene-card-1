@@ -1,0 +1,56 @@
+name: Remove legacy Inventory wiring
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Clean Inventory legacy wording and shim
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text()
+          original = s
+          # Remove the legacy Firebase/Firestore compatibility script from the page.
+          s = s.replace('  <script src="./js/supabase-firebase-compat.js"></script>\n', '')
+          # Remove stale Firestore/Firebase wording in the HTML source.
+          replacements = {
+            'Firestore': 'Supabase',
+            'firestore': 'supabase',
+            'Firebase': 'Supabase',
+            'firebase': 'supabase',
+          }
+          for a,b in replacements.items():
+            s = s.replace(a,b)
+          # Load the native Inventory adapter after the Supabase client is initialized.
+          marker = '  <script src="./js/supabase-init.js"></script>\n'
+          native = '  <script src="./js/inventory-supabase.js"></script>\n'
+          if native not in s and marker in s:
+            s = s.replace(marker, marker + native)
+          if s != original:
+            p.write_text(s)
+          PY
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'No cleanup changes needed.'
+          else
+            git commit -m 'Remove Firestore wording and legacy inventory shim [skip ci]'
+            git push
+          fi
