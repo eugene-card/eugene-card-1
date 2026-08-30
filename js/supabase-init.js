@@ -14,19 +14,15 @@
 
   window.supabaseClient = createClient(cfg.url, cfg.anonKey);
 
-  // The existing app uses a Firebase-shaped API. Keep that compatibility
-  // layer, then load the native Supabase data bridge after the page has been
-  // parsed so it can hydrate the real app state.
-  const compat = document.createElement('script');
-  compat.src = './js/supabase-firebase-compat.js';
-  compat.defer = true;
-  document.head.appendChild(compat);
-
+  // index.html already loads the legacy compatibility layer immediately
+  // after this file. The native bridge waits for the page to finish parsing
+  // and then connects the app state to real Supabase tables.
   const wire = document.createElement('script');
   wire.src = './js/supabase-app-wire.js';
   wire.defer = true;
   document.head.appendChild(wire);
 
+  // Notification UX enhancement.
   const notifications = document.createElement('script');
   notifications.src = './js/notifications-enhancement.js';
   notifications.defer = true;
