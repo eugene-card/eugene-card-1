@@ -20,13 +20,17 @@
   wire.defer = true;
   document.head.appendChild(wire);
 
-  // Native Inventory adapter. It waits for the legacy db compatibility layer
-  // to exist, then replaces ONLY db.collection('cards') with direct Supabase
-  // CRUD against public.cards.
+  // Native Inventory adapter.
   const inventory = document.createElement('script');
   inventory.src = './js/inventory-supabase.js';
   inventory.defer = true;
   document.head.appendChild(inventory);
+
+  // Native card views + live viewer/presence adapter.
+  const tracking = document.createElement('script');
+  tracking.src = './js/card-tracking-supabase.js';
+  tracking.defer = true;
+  document.head.appendChild(tracking);
 
   // Notification UX enhancement.
   const notifications = document.createElement('script');
