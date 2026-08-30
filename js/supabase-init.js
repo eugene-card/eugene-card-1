@@ -37,4 +37,10 @@
   notifications.src = './js/notifications-enhancement.js';
   notifications.defer = true;
   document.head.appendChild(notifications);
+
+  // Profile picture upload/display flow.
+  const profileAvatar = document.createElement('script');
+  profileAvatar.src = './js/profile-avatar.js';
+  profileAvatar.defer = true;
+  document.head.appendChild(profileAvatar);
 })();
