@@ -3,95 +3,61 @@ name: Fix secondary page admin access
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  fix:
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+  validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Normalize admin authentication
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate admin pages exist
         run: |
+          set -e
+          for file in admin-command-center.html analytics.html revenue.html; do
+            test -f "$file"
+            echo "Found $file"
+          done
+
+      - name: Validate embedded JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
           import re
+          import subprocess
+          import tempfile
 
           files = ['admin-command-center.html', 'analytics.html', 'revenue.html']
-          replacement = "const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'eugenecard.market@gmail.com'];"
-          pattern = re.compile(r"const\s+ADMIN_EMAILS\s*=\s*\[[^\]]*\]\s*;", re.S)
-
-          auth_replacement = '''window.auth = {
-            onAuthStateChanged(cb) {
-              let stopped = false;
-              let lastUserId = undefined;
-              const emit = (user) => {
-                if (stopped) return;
-                const id = user?.id || null;
-                if (id === lastUserId) return;
-                lastUserId = id;
-                cb(user || null);
-              };
-              // Wait for Supabase to restore the persisted session before authorizing.
-              client.auth.getSession().then(({ data }) => emit(data?.session?.user || null));
-              const { data } = client.auth.onAuthStateChange((_event, session) => {
-                emit(session?.user || null);
-              });
-              return () => { stopped = true; data.subscription.unsubscribe(); };
-            },
-            async signInWithPopup() {
-              return { data: null, error: new Error('Use the marketplace login page to sign in.') };
-            }
-          };'''
-          auth_pattern = re.compile(r"window\.auth\s*=\s*\{.*?\n\s*\};", re.S)
-
-          admin_fn = '''async function isUserAdmin(user) {
-      if (!user) return false;
-      const email = (user.email || '').trim().toLowerCase();
-      if (ADMIN_EMAILS.some(e => email === e)) return true;
-      try {
-        const { data, error } = await window.supabaseClient
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .maybeSingle();
-        return !error && String(data?.role || '').toLowerCase() === 'admin';
-      } catch (e) {
-        console.error('Admin role check failed:', e);
-        return false;
-      }
-    }'''
-          admin_pattern = re.compile(r"function\s+isUserAdmin\s*\(user\)\s*\{.*?\n\s*\}", re.S)
-
-          guard_pattern = re.compile(r"auth\.onAuthStateChanged\(user\s*=>\s*\{\s*if\s*\(!user\s*\|\|\s*!isUserAdmin\(user\)\)\s*\{", re.S)
-          guard_replacement = "auth.onAuthStateChanged(async user => {\n        if (!user || !(await isUserAdmin(user))) {"
-
-          changed = False
           for name in files:
-              p = Path(name)
-              s = p.read_text()
-              new = pattern.sub(replacement, s, count=1)
-              new = auth_pattern.sub(auth_replacement, new, count=1)
-              new = admin_pattern.sub(admin_fn, new, count=1)
-              new = guard_pattern.sub(guard_replacement, new, count=1)
-              if new != s:
-                  p.write_text(new)
-                  changed = True
-          if not changed:
-              print('Admin authentication already normalized.')
+              html = Path(name).read_text(encoding='utf-8')
+              scripts = re.findall(r'<script(?:\\s[^>]*)?>(.*?)</script>', html, re.S | re.I)
+              if not scripts:
+                  raise SystemExit(f'No embedded scripts found in {name}')
+              for index, script in enumerate(scripts, 1):
+                  if not script.strip():
+                      continue
+                  with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8') as f:
+                      f.write(script)
+                      temp = f.name
+                  result = subprocess.run(['node', '--check', temp], text=True, capture_output=True)
+                  if result.returncode:
+                      print(result.stderr)
+                      raise SystemExit(f'JavaScript syntax error in {name}, script {index}')
+              print(f'JavaScript syntax OK: {name}')
           PY
-      - name: Commit fix
+
+      - name: Validate admin allowlist and Supabase auth hooks
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add admin-command-center.html analytics.html revenue.html
-          if git diff --cached --quiet; then
-            echo 'No admin authentication changes needed.'
-          else
-            git commit -m 'Fix secondary admin session and role authorization [skip ci]'
-            git push
-          fi
+          set -e
+          for file in admin-command-center.html analytics.html revenue.html; do
+            grep -Eq 'eugene\.aquila06@gmail\.com|eugenecard\.market@gmail\.com' "$file"
+            grep -Eq 'supabase|auth|getUser|onAuthStateChange' "$file"
+            echo "Admin auth markers OK: $file"
+          done
