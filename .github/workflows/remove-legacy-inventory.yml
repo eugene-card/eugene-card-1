@@ -23,21 +23,23 @@ jobs:
           p = Path('index.html')
           s = p.read_text()
           original = s
-          # Keep the compatibility layer because non-inventory legacy app features
-          # still depend on window.db. Inventory itself is routed to public.cards
-          # by js/inventory-supabase.js.
-          replacements = {
+          # Remove stale storage-provider wording only.
+          for a, b in {
             'Firestore': 'Supabase',
             'firestore': 'supabase',
             'Firebase': 'Supabase',
             'firebase': 'supabase',
-          }
-          for a, b in replacements.items():
+          }.items():
             s = s.replace(a, b)
+          # Keep the shared compatibility layer for non-inventory features.
           marker = '  <script src="./js/supabase-init.js"></script>\n'
+          compat = '  <script src="./js/supabase-firebase-compat.js"></script>\n'
           native = '  <script src="./js/inventory-supabase.js"></script>\n'
-          if native not in s and marker in s:
-            s = s.replace(marker, marker + native)
+          if marker in s:
+            if compat not in s:
+              s = s.replace(marker, marker + compat)
+            if native not in s:
+              s = s.replace(compat, compat + native)
           if s != original:
             p.write_text(s)
           PY
