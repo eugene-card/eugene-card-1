@@ -34,7 +34,7 @@
 (() => {
   const client = window.supabaseClient || window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   window.supabaseClient=client;
-  const ADMIN_EMAILS=['eugene.aquila06@gmail.com','eugenecard.market@gmail.com'];
+  const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'eugenecard.market@gmail.com'];
   let orders=[],items=[],cards=[],trendChart,mixChart;
   const money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
   const completed=o=>['APPROVED','COMPLETED','PAID','CONFIRMED','FULFILLED'].includes(String(o.status||'').toUpperCase());
@@ -91,4 +91,5 @@
   start().catch(e=>{console.error('Revenue Supabase load failed:',e);alert('Unable to load Supabase revenue data. Please refresh and try again.')});
 })();
 </script>
+  <script src="./js/admin-auth-bridge.js"></script>
 </body></html>
