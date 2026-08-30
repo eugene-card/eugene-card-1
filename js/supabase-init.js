@@ -14,13 +14,19 @@
 
   window.supabaseClient = createClient(cfg.url, cfg.anonKey);
 
-  // index.html already loads the legacy compatibility layer immediately
-  // after this file. The native bridge waits for the page to finish parsing
-  // and then connects the app state to real Supabase tables.
+  // Native application data bridge.
   const wire = document.createElement('script');
   wire.src = './js/supabase-app-wire.js';
   wire.defer = true;
   document.head.appendChild(wire);
+
+  // Native Inventory adapter. It waits for the legacy db compatibility layer
+  // to exist, then replaces ONLY db.collection('cards') with direct Supabase
+  // CRUD against public.cards.
+  const inventory = document.createElement('script');
+  inventory.src = './js/inventory-supabase.js';
+  inventory.defer = true;
+  document.head.appendChild(inventory);
 
   // Notification UX enhancement.
   const notifications = document.createElement('script');
