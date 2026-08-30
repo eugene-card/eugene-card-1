@@ -1,0 +1,48 @@
+name: Fix secondary page admin access
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Normalize admin allowlist
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          files = ['admin-command-center.html', 'analytics.html', 'revenue.html']
+          replacement = "const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'eugenecard.market@gmail.com'];"
+          pattern = re.compile(r"const\s+ADMIN_EMAILS\s*=\s*\[[^\]]*\]\s*;", re.S)
+          changed = False
+          for name in files:
+              p = Path(name)
+              s = p.read_text()
+              new = pattern.sub(replacement, s, count=1)
+              if new != s:
+                  p.write_text(new)
+                  changed = True
+          if not changed:
+              print('Admin allowlist already correct.')
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add admin-command-center.html analytics.html revenue.html
+          if git diff --cached --quiet; then
+            echo 'No admin access changes needed.'
+          else
+            git commit -m 'Fix admin allowlist for secondary pages [skip ci]'
+            git push
+          fi
