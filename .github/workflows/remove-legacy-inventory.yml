@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Clean Inventory legacy wording and shim
+      - name: Clean Inventory legacy wording
         shell: bash
         run: |
           python3 - <<'PY'
@@ -23,18 +23,17 @@ jobs:
           p = Path('index.html')
           s = p.read_text()
           original = s
-          # Remove the legacy Firebase/Firestore compatibility script from the page.
-          s = s.replace('  <script src="./js/supabase-firebase-compat.js"></script>\n', '')
-          # Remove stale Firestore/Firebase wording in the HTML source.
+          # Keep the compatibility layer because non-inventory legacy app features
+          # still depend on window.db. Inventory itself is routed to public.cards
+          # by js/inventory-supabase.js.
           replacements = {
             'Firestore': 'Supabase',
             'firestore': 'supabase',
             'Firebase': 'Supabase',
             'firebase': 'supabase',
           }
-          for a,b in replacements.items():
-            s = s.replace(a,b)
-          # Load the native Inventory adapter after the Supabase client is initialized.
+          for a, b in replacements.items():
+            s = s.replace(a, b)
           marker = '  <script src="./js/supabase-init.js"></script>\n'
           native = '  <script src="./js/inventory-supabase.js"></script>\n'
           if native not in s and marker in s:
@@ -51,6 +50,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No cleanup changes needed.'
           else
-            git commit -m 'Remove Firestore wording and legacy inventory shim [skip ci]'
+            git commit -m 'Remove Firestore wording from Inventory [skip ci]'
             git push
           fi
