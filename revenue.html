@@ -8,6 +8,7 @@
   <!-- Browser Tab Favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='none' stroke='%2310b981' stroke-width='5' stroke-dasharray='210 50' transform='rotate(-45 50 50)'/><polygon points='50,18 80,35 80,68 50,85 20,68 20,35' fill='%2310b981'/><path d='M 32 42 C 38 32, 52 32, 58 40 C 62 46, 48 54, 40 60 C 35 64, 45 70, 60 62' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linecap='round'/></svg>">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase-config.js"></script>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -282,8 +283,8 @@ body{background:radial-gradient(circle at 12% 0%,rgba(99,102,241,.12),transparen
   <!-- Supabase Firestore-compat adapter: routes legacy collection calls to Phase 2 tables while UI migration is completed. -->
   <script>
   (function(){
-    const SUPABASE_URL = "https://kbxqmgdnzxwshyzasssr.supabase.co";
-    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable__tPM9ty9ELyh3X70Hl1S-Q_7hWvPe2R";
+    const SUPABASE_URL = "https://tsjgvzpzfjyecnginipt.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0c2pndnp6Zmp5ZWNuZ2luaXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0ODcyNjMsImV4cCI6MjEwMzA2MzI2M30.IdGwR7fxglsni_uncd-roCXCJxoxqfrUtvkHBiudKl0";
     const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
     });
