@@ -13,11 +13,11 @@
 
   <!-- Browser Tab Favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='none' stroke='%234f46e5' stroke-width='5' stroke-dasharray='210 50' transform='rotate(-45 50 50)'/><polygon points='50,18 80,35 80,68 50,85 20,68 20,35' fill='%236366f1'/><path d='M 32 42 C 38 32, 52 32, 58 40 C 62 46, 48 54, 40 60 C 35 64, 45 70, 60 62' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linecap='round'/></svg>">
-  <!-- Supabase Authentication + database (Firebase removed) -->
+  <!-- Supabase Authentication + database (Supabase removed) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./js/supabase-config.js"></script>
   <script src="./js/supabase-init.js"></script>
-  <script src="./js/supabase-firebase-compat.js"></script>
+  <script src="./js/inventory-supabase.js"></script>
   <!-- PAYPAL JS SDK — uses the PUBLIC Client ID only. This is safe to expose in the
        browser by design (that's how PayPal's own JS SDK works). The Secret Key is
        NEVER placed in this file — see the note near PAYPAL_CLIENT_ID below for why. -->
@@ -670,7 +670,7 @@ body.premium-global main > section {
 /* =========================================================
    EUGENE CARD — PREMIUM MODAL SYSTEM
    Visual-only layer: preserves existing modal IDs, handlers,
-   form fields, Firebase hooks and functionality.
+   form fields, Supabase hooks and functionality.
    ========================================================= */
 
 :root{
@@ -3941,16 +3941,16 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           return null;
         }
 
-        if (!firebase.messaging || !(await firebase.messaging.isSupported())) {
+        if (!supabase.messaging || !(await supabase.messaging.isSupported())) {
           if (showFeedback) showToast('FCM tidak didukung di browser ini.');
           return null;
         }
 
-        fcmServiceWorkerRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+        fcmServiceWorkerRegistration = await navigator.serviceWorker.register('/supabase-messaging-sw.js', { scope: '/' });
         await navigator.serviceWorker.ready;
-        fcmMessaging = firebase.messaging();
+        fcmMessaging = supabase.messaging();
 
-        // Firebase supports a default VAPID key, but a project-specific key is
+        // Supabase supports a default VAPID key, but a project-specific key is
         // recommended for production. Set FCM_VAPID_KEY when you generate one.
         const tokenOptions = { serviceWorkerRegistration: fcmServiceWorkerRegistration };
         if (window.EUGENE_FCM_VAPID_KEY) tokenOptions.vapidKey = window.EUGENE_FCM_VAPID_KEY;
@@ -3961,7 +3961,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         fcmPushReady = true;
         updatePushPermissionUI();
 
-        // Best-effort token registration. Firestore rules may intentionally
+        // Best-effort token registration. Supabase rules may intentionally
         // reject this; the browser token is still kept locally for testing.
         if (currentUser?.uid) {
           try {
@@ -3969,11 +3969,11 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
             await db.collection('notificationTokens').doc(currentUser.uid).collection('tokens').doc(tokenKey).set({
               token,
               uid: currentUser.uid,
-              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              updatedAt: supabase.supabase.FieldValue.serverTimestamp(),
               userAgent: navigator.userAgent.slice(0, 240)
             }, { merge: true });
           } catch (e) {
-            console.info('FCM token Firestore registration skipped by rules:', e.message);
+            console.info('FCM token Supabase registration skipped by rules:', e.message);
           }
         }
 
@@ -4088,11 +4088,11 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     //     switchAccountPersona() for the fixed call sites.
     //  IMPORTANT: this is still a client-side check. Anyone with devtools open can
     //  set currentUser.isAdmin = true and the admin screens will render. That's
-    //  fine for UI gating, but it means Firestore itself must independently refuse
+    //  fine for UI gating, but it means Supabase itself must independently refuse
     //  writes from non-admin accounts — this file has no way to enforce that from
-    //  the browser. Pair this with Firestore Security Rules deployed server-side,
+    //  the browser. Pair this with Supabase Security Rules deployed server-side,
     //  e.g. `allow write: if request.auth.token.email in ['eugene.aquila06@gmail.com', 'yujinybwork@gmail.com'];`
-    //  on the cards/transactions/listings/auction collections. Ask for a firestore.rules
+    //  on the cards/transactions/listings/auction collections. Ask for a supabase.rules
     //  starter file if you don't have one yet.
     const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'yujinybwork@gmail.com', 'eugene.aquila06', 'admin house'];
 
@@ -4109,7 +4109,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     //   KNOWN LIMITATION: because createOrder() runs in the browser, someone with devtools
     //   open could in theory alter the USD amount before it's sent to PayPal. For a small
     //   marketplace this is a low-value target, but if you want it fully hardened later,
-    //   the fix is a small serverless function (Firebase Cloud Function or a Supabase Edge
+    //   the fix is a small serverless function (Supabase Cloud Function or a Supabase Edge
     //   Function — you already have both) that creates/verifies the order server-side using
     //   the Secret Key kept in that function's environment secrets, never in this file.
     const PAYPAL_CLIENT_ID = "BAAoYAiZbWF53NkwmMPFG6k-8ryBxtTILmGAUiLyoeAZRSXze-DcPKkOJ3d8rEfgUPAW8KAva3YF3WRnUo";
@@ -5121,7 +5121,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     // ===== PROFILES <-> USERS SYNC =====
     // This app has always stored collector profile data (display name,
     // avatar, bio, socials) in a "profiles" collection keyed by email. A
-    // separate, older "users" collection (keyed by Firebase Auth UID) also
+    // separate, older "users" collection (keyed by Supabase Auth UID) also
     // holds profile-shaped data for some accounts, using different field
     // names (displayName instead of name, avatar instead of avatarUrl,
     // instagram/tiktok/website instead of socialIg/socialTiktok/socialWeb).
@@ -5149,7 +5149,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     // ===== CANONICAL COLLECTOR IDENTITY =====
-    // Firebase Auth UID is the canonical identity. Display names/usernames are
+    // Supabase Auth UID is the canonical identity. Display names/usernames are
     // mutable labels and must never create a second person when the same UID
     // exists in both the newer `profiles/{email}` collection and legacy
     // `users/{uid}` collection.
@@ -5241,7 +5241,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     // Rebuilds the public collector roster from both profile collections while
-    // collapsing records that represent the same Firebase Auth account.
+    // collapsing records that represent the same Supabase Auth account.
     // `profiles` is preferred because it contains the current profile fields;
     // `users/{uid}` is treated as a legacy mirror/fallback only.
     function rebuildGlobalCollectorProfiles() {
@@ -5291,11 +5291,11 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     // profile yet" (an empty object, same as a real first-time signup).
     // On a brand-new device with no localStorage/cookie cache to fall back
     // on, handleUserSession() would then compute fresh default name/avatar/
-    // bio values AND persist them back to Firestore with merge:true — which
+    // bio values AND persist them back to Supabase with merge:true — which
     // silently overwrote the collector's real profile, since the payload
     // includes exactly those fields. That's what made a profile "change
     // completely" on another device: a transient read failure (e.g. the
-    // Firestore auth token not being ready yet on a fresh sign-in) got
+    // Supabase auth token not being ready yet on a fresh sign-in) got
     // permanently written over the real data. profilesFetchFailed lets
     // callers tell "genuinely no profile" apart from "couldn't check", so
     // they can skip writing anything back in the second case.
@@ -5313,7 +5313,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         console.warn('Error loading collector profiles:', e);
         profilesFetchFailed = true;
       }
-      // Firebase's legacy users collection is no longer used; Supabase profiles are keyed by auth UUID.
+      // Supabase's legacy users collection is no longer used; Supabase profiles are keyed by auth UUID.
       rebuildGlobalCollectorProfiles();
     }
 
@@ -5344,7 +5344,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     function getCollectorProfileKey(nameOrUsername) {
-      // Like getCollectorProfile, but returns the matching Firestore doc ID
+      // Like getCollectorProfile, but returns the matching Supabase doc ID
       // (the "profiles" collection key) instead of the profile data itself,
       // so admin edits update the existing doc rather than creating a duplicate.
       if (!nameOrUsername) return null;
@@ -5636,7 +5636,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       const tokens = getChatIdentityTokens(currentUser);
       try {
         await db.collection('chats').doc(thread.id).set({
-          readBy: firebase.firestore.FieldValue.arrayUnion(...tokens)
+          readBy: supabase.supabase.FieldValue.arrayUnion(...tokens)
         }, { merge: true });
       } catch (e) { console.warn('Could not mark chat read:', e); }
     }
@@ -5648,7 +5648,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       try {
         const batch = db.batch();
         const tokens = getChatIdentityTokens(currentUser);
-        unread.forEach(t => batch.set(db.collection('chats').doc(t.id), { readBy: firebase.firestore.FieldValue.arrayUnion(...tokens) }, { merge: true }));
+        unread.forEach(t => batch.set(db.collection('chats').doc(t.id), { readBy: supabase.supabase.FieldValue.arrayUnion(...tokens) }, { merge: true }));
         await batch.commit();
         showToast(`Marked ${unread.length} conversation${unread.length === 1 ? '' : 's'} as read.`);
       } catch (e) { showToast('Could not mark conversations as read: ' + e.message); }
@@ -5846,7 +5846,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           [myKey]: { uid: currentUser.uid || null, name: currentUser.name || currentUser.username || '', username: currentUser.username || '' },
           [targetKey]: { uid: targetProfile?.uid || null, name: targetDisplay, username: targetProfile?.username || '' }
         },
-        readBy: firebase.firestore.FieldValue.arrayUnion(...myTokens)
+        readBy: supabase.supabase.FieldValue.arrayUnion(...myTokens)
       }, { merge: true }).catch(() => {});
 
       document.getElementById('chat-target-user-name').innerText = targetDisplay;
@@ -5955,7 +5955,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           participants: [currentUser.username || currentUser.name, currentChatTargetUser].map(p => String(p || '').toLowerCase()),
           participantUids: [currentUser.uid || null, targetProfile?.uid || null].filter(Boolean),
           participantKeys: [myKey, targetKey],
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: supabase.supabase.FieldValue.serverTimestamp(),
           readBy: myTokens
         }, { merge: true });
 
@@ -5966,7 +5966,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           senderUsername: currentUser.username || '',
           senderName: currentUser.name || '',
           text: text,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          timestamp: supabase.supabase.FieldValue.serverTimestamp()
         };
         if (chatAttachedImage) payload.imgUrl = chatAttachedImage;
         batch.set(msgDocRef, payload);
@@ -6214,17 +6214,17 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
             await batch.commit();
             processed += chunk.length;
-            updateImportProgress(processed, importedCards.length, `Batch saved to Firestore (${processed}/${importedCards.length})`);
+            updateImportProgress(processed, importedCards.length, `Batch saved to Supabase (${processed}/${importedCards.length})`);
           }
 
           await loadAppState();
           hideLoadingModal();
 
-          showToast(`Bulk imported ${importedCards.length} cards into Firestore!`);
-          addNotification('Firestore Import Success', `Imported ${importedCards.length} records into database.`, 'fa-circle-check text-emerald-400');
+          showToast(`Bulk imported ${importedCards.length} cards into Supabase!`);
+          addNotification('Supabase Import Success', `Imported ${importedCards.length} records into database.`, 'fa-circle-check text-emerald-400');
 
         } catch (err) {
-          console.error('Firestore Import Error:', err);
+          console.error('Supabase Import Error:', err);
           hideLoadingModal();
           showToast('Failed to parse or import backup JSON.');
         } finally {
@@ -6353,7 +6353,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           loadedFromDb = true;
         }
       } catch (err) {
-        console.warn('Firestore fetch exception:', err);
+        console.warn('Supabase fetch exception:', err);
       }
 
       if (!loadedFromDb || inventory.length === 0) {
@@ -6529,7 +6529,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       renderTradeRequests();
       renderHomepageHighlights();
       renderHomeStatsStrip();
-      // BUGFIX: login/logout resolves asynchronously (Firebase auth), often
+      // BUGFIX: login/logout resolves asynchronously (Supabase auth), often
       // *after* the Home feed has already rendered once with currentUser
       // still null. Without refreshing the composer + feed here too, the
       // per-post comment box (only injected into the HTML when currentUser
@@ -6824,7 +6824,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
       try {
         db.collection('cardViews').doc(cardId).set({
-          views: firebase.firestore.FieldValue.increment(1)
+          views: supabase.supabase.FieldValue.increment(1)
         }, { merge: true });
       } catch (e) {
         console.warn('View tracking error:', e);
@@ -6835,7 +6835,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       try {
         db.collection('cardPresence').doc(getViewSessionId()).set({
           cardId: cardId,
-          lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+          lastSeen: supabase.supabase.FieldValue.serverTimestamp()
         });
       } catch (e) {
         console.warn('Presence tracking error:', e);
@@ -6846,7 +6846,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       try {
         db.collection('cardPresence').doc(getViewSessionId()).set({
           cardId: null,
-          lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+          lastSeen: supabase.supabase.FieldValue.serverTimestamp()
         });
       } catch (e) {
         console.warn('Presence clear error:', e);
@@ -6932,7 +6932,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           username: currentUser.username || '',
           avatarUrl: currentUser.avatarUrl || '',
           email: currentUser.email || '',
-          lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+          lastSeen: supabase.supabase.FieldValue.serverTimestamp()
         }, { merge: true });
       } catch (e) {
         console.warn('User presence heartbeat error:', e);
@@ -7205,7 +7205,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         commentCount: 0,
         reposts: [],
         quoteCount: 0,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: supabase.supabase.FieldValue.serverTimestamp()
       };
 
       try {
@@ -7409,7 +7409,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         if (alreadyReposted) {
           await db.collection('posts').doc(repostDocId).delete();
           await db.collection('posts').doc(postId).update({
-            reposts: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+            reposts: supabase.supabase.FieldValue.arrayRemove(currentUser.uid)
           });
           showToast(dict.repostRemovedToast);
         } else {
@@ -7420,10 +7420,10 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
             authorUsername: currentUser.username || '',
             authorAvatar: currentUser.avatarUrl || '',
             originalPostId: postId,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            createdAt: supabase.supabase.FieldValue.serverTimestamp()
           });
           await db.collection('posts').doc(postId).update({
-            reposts: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+            reposts: supabase.supabase.FieldValue.arrayUnion(currentUser.uid)
           });
           showToast(dict.repostSuccessToast);
         }
@@ -7504,13 +7504,13 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         commentCount: 0,
         reposts: [],
         quoteCount: 0,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: supabase.supabase.FieldValue.serverTimestamp()
       };
 
       try {
         await db.collection('posts').add(postPayload);
         await db.collection('posts').doc(targetId).update({
-          quoteCount: firebase.firestore.FieldValue.increment(1)
+          quoteCount: supabase.supabase.FieldValue.increment(1)
         });
         closeQuoteRepostComposer();
         showToast(dict.quoteRepostPublished);
@@ -7528,8 +7528,8 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       try {
         await db.collection('posts').doc(postId).update({
           likes: alreadyLiked
-            ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-            : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+            ? supabase.supabase.FieldValue.arrayRemove(currentUser.uid)
+            : supabase.supabase.FieldValue.arrayUnion(currentUser.uid)
         });
       } catch (e) {
         showToast('Could not update like: ' + e.message);
@@ -7594,10 +7594,10 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           authorName: currentUser.name || '',
           authorAvatar: currentUser.avatarUrl || '',
           text,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          createdAt: supabase.supabase.FieldValue.serverTimestamp()
         });
         await db.collection('posts').doc(postId).update({
-          commentCount: firebase.firestore.FieldValue.increment(1)
+          commentCount: supabase.supabase.FieldValue.increment(1)
         });
         input.value = '';
       } catch (e) {
@@ -7614,7 +7614,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
         if (post && post.type === 'quote' && post.quotedPostId) {
           db.collection('posts').doc(post.quotedPostId).update({
-            quoteCount: firebase.firestore.FieldValue.increment(-1)
+            quoteCount: supabase.supabase.FieldValue.increment(-1)
           }).catch(() => {});
         }
 
@@ -8163,8 +8163,8 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       const email = user.email ? user.email.toLowerCase() : '';
 
       await loadCollectorProfiles();
-      const firestoreProfile = globalRawProfilesData[email] || globalRawProfilesData[user.id] || globalRawProfilesData[user.uid];
-      const savedCustomProfile = firestoreProfile || localStorage.getItem(`profile_${email}`) || getCookie(`profile_${email}`);
+      const supabaseProfile = globalRawProfilesData[email] || globalRawProfilesData[user.id] || globalRawProfilesData[user.uid];
+      const savedCustomProfile = supabaseProfile || localStorage.getItem(`profile_${email}`) || getCookie(`profile_${email}`);
       let customData = {};
       if (savedCustomProfile) {
         try { customData = typeof savedCustomProfile === 'object' ? savedCustomProfile : JSON.parse(savedCustomProfile); } catch (e) {}
@@ -8232,7 +8232,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       localStorage.setItem(`profile_${email}`, JSON.stringify(profilePayload));
       setCookie(`profile_${email}`, profilePayload, 30);
 
-      // BUGFIX: this used to write profilePayload back to Firestore on
+      // BUGFIX: this used to write profilePayload back to Supabase on
       // *every* login, unconditionally. If the "profiles" fetch above had
       // failed or simply hadn't found this email yet (e.g. on a fresh
       // device with no local cache to fall back on), `customData` resolved
@@ -8248,8 +8248,8 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       //     an already-matching doc.
       // Routine logins where a profile already exists just use the loaded
       // data as-is and don't write anything back.
-      const isNewProfile = !firestoreProfile;
-      const needsUidPatch = firestoreProfile && firestoreProfile.uid !== user.uid;
+      const isNewProfile = !supabaseProfile;
+      const needsUidPatch = supabaseProfile && supabaseProfile.uid !== user.uid;
       if (!profilesFetchFailed && (isNewProfile || needsUidPatch)) {
         try {
           await db.collection("profiles").doc(email).set(profilePayload, { merge: true });
@@ -8403,7 +8403,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     function closeProfileManagerModal() { document.getElementById('profile-manager-modal').classList.add('hidden'); }
 
     // Raw camera-phone photos, base64-encoded, routinely land at 2-6MB+ — well
-    // past Firestore's 1MB-per-document limit. Every avatar upload used to
+    // past Supabase's 1MB-per-document limit. Every avatar upload used to
     // store the raw file as-is, so writes to the "profiles" collection could
     // silently exceed that limit and fail (see saveProfileChanges below, which
     // used to swallow the error and still claim success). Downscaling +
@@ -8507,7 +8507,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         addNotification('Profile Updated', `Your unique username (@${newUsername}) and profile details were saved.`, 'fa-user-gear text-amber-400');
       } catch (e) {
         // Previously this catch block was empty, so a failed sync (e.g. an
-        // oversized avatar pushing the document past Firestore's 1MB limit)
+        // oversized avatar pushing the document past Supabase's 1MB limit)
         // still showed "Profile updated!" — the change looked saved locally
         // but never reached other viewers. Now we're honest about it.
         closeProfileManagerModal();
@@ -9183,10 +9183,10 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       try {
         await db.collection("cards").doc(cardId).set(updatedObj, { merge: true });
         Object.assign(card, updatedObj);
-        showToast(`Saved ${updatedSerial} to Firestore!`);
+        showToast(`Saved ${updatedSerial} to Supabase!`);
       } catch (e) {
-        console.error('Firestore DB write error:', e);
-        showToast('Error saving to Firestore: ' + e.message);
+        console.error('Supabase DB write error:', e);
+        showToast('Error saving to Supabase: ' + e.message);
       }
 
       closeInventoryModal();
@@ -10816,7 +10816,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       // Group cards by canonical collector identity, not by the mutable owner
       // label stored on older cards. This makes "Stellar", "stellar", and a
       // UID-backed owner resolve to the same holder when they represent one
-      // Firebase account.
+      // Supabase account.
       const holdersMap = {};
       inventory.forEach(c => {
         if (!c.owner) return;
@@ -10970,11 +10970,11 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
         const batch = db.batch();
         const txRef = db.collection("transactions").doc(txId);
-        batch.update(txRef, { status: 'APPROVED', approvedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        batch.update(txRef, { status: 'APPROVED', approvedAt: supabase.supabase.FieldValue.serverTimestamp() });
 
         if (tx.type === 'REDEMPTION') {
-          if (tx.giftId) batch.update(db.collection('clientGifts').doc(tx.giftId), { status:'REDEEMED', redeemedAt:firebase.firestore.FieldValue.serverTimestamp(), redeemedAmount:Number(tx.assetValue||0) });
-          if (tx.cardId) batch.update(db.collection('cards').doc(tx.cardId), { assetStatus:'REDEEMED', assetValue:0, redeemedAt:firebase.firestore.FieldValue.serverTimestamp() });
+          if (tx.giftId) batch.update(db.collection('clientGifts').doc(tx.giftId), { status:'REDEEMED', redeemedAt:supabase.supabase.FieldValue.serverTimestamp(), redeemedAmount:Number(tx.assetValue||0) });
+          if (tx.cardId) batch.update(db.collection('cards').doc(tx.cardId), { assetStatus:'REDEEMED', assetValue:0, redeemedAt:supabase.supabase.FieldValue.serverTimestamp() });
         } else if (Array.isArray(tx.items)) {
           tx.items.forEach(item => {
             const cardRef = db.collection("cards").doc(item.id);
@@ -11253,7 +11253,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       if (!qrisId || !recipientName) return showToast('Please enter your QRIS/payment ID and recipient name.');
       const ref = 'REDEEM-' + Date.now().toString(36).toUpperCase();
       const batch = db.batch();
-      batch.update(db.collection('clientGifts').doc(giftId), { status:'PENDING_REDEMPTION', redemptionRequestedAt:firebase.firestore.FieldValue.serverTimestamp(), redemptionQrisId:qrisId, redemptionRecipientName:recipientName, redemptionRequestedByUid:currentUser.uid });
+      batch.update(db.collection('clientGifts').doc(giftId), { status:'PENDING_REDEMPTION', redemptionRequestedAt:supabase.supabase.FieldValue.serverTimestamp(), redemptionQrisId:qrisId, redemptionRecipientName:recipientName, redemptionRequestedByUid:currentUser.uid });
       batch.set(db.collection('transactions').doc(ref), { id:ref, type:'REDEMPTION', order_type:'REDEMPTION', user_name:currentUser.username || currentUser.name || currentUser.email, user_uid:currentUser.uid, giftId, cardId:gift.cardId || null, items:[], assetValue:Number(gift.assetValue||0), total_amount:Number(gift.assetValue||0), payoutMethod:'QRIS', qrisId, recipientName, status:'PENDING', created_at:new Date().toISOString(), createdBy:'CLIENT_GIFT' });
       try { await batch.commit(); closeGiftRedeemModal(); await loadClientGifts(); showToast(`Redemption request ${ref} submitted.`); notifyUser('Gift redemption submitted', `Your ${formatIDR(gift.assetValue)} QRIS redemption is waiting for Admin approval.`, 'fa-qrcode text-pink-400', '#'); } catch(e) { showToast('Redemption error: ' + e.message); }
     }
