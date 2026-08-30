@@ -20,12 +20,9 @@
       let lastAuthorized = null;
 
       const emit = async (user) => {
-        if (stopped) return;
-        const userId = user?.id || null;
-        if (!user) {
-          // Do not race session initialization with a premature null callback.
-          return;
-        }
+        if (stopped || !user) return;
+        const userId = user.id || null;
+        if (!userId) return;
         if (userId === lastUserId && lastAuthorized === true) return;
 
         let authorized = false;
@@ -44,15 +41,16 @@
         lastUserId = userId;
         lastAuthorized = authorized;
 
-        // The legacy pages check the email synchronously. If Supabase says this
-        // account has role=admin, preserve the real user object but ensure the
-        // legacy email allowlist can recognize an admin profile.
-        const bridgedUser = authorized && !String(user.email || '').toLowerCase().includes('@')
-          ? { ...user, email: 'eugenecard.market@gmail.com' }
+        // Legacy pages only understand their email allowlist. The profile role
+        // is the source of truth; for an authorized admin, provide a compatible
+        // allowlisted email while keeping the real user id/session intact.
+        const bridgedUser = authorized
+          ? { ...user, email: String(user.email || '').toLowerCase().includes('@') ? user.email : 'eugenecard.market@gmail.com' }
           : user;
         callback(bridgedUser);
       };
 
+      // getSession waits for the persisted browser session to be restored.
       client.auth.getSession().then(({ data }) => emit(data?.session?.user || null));
       const { data } = client.auth.onAuthStateChange((_event, session) => {
         if (session?.user) emit(session.user);
