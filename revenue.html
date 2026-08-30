@@ -25,7 +25,7 @@
     <div class="card rounded-2xl p-5"><p class="text-[10px] uppercase font-black muted">Approval Rate</p><p id="rate" class="text-2xl font-black text-indigo-300 mt-2">0%</p></div>
   </section>
   <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-    <div class="card rounded-3xl p-5 lg:col-span-2"><h2 class="font-black">SALES TREND</h2><p class="text-xs muted mt-1">Approved transaction volume</p><div class="h-72 mt-4"><canvas id="trend"></canvas></div></div>
+    <div class="card rounded-3xl p-5 lg:col-span-2"><h2 class="font-black">SALES TREND</h2><p class="text-xs muted mt-1">Completed order volume</p><div class="h-72 mt-4"><canvas id="trend"></canvas></div></div>
     <div class="card rounded-3xl p-5"><h2 class="font-black">REVENUE MIX</h2><p class="text-xs muted mt-1">Sales and platform fee</p><div class="h-64 mt-4"><canvas id="mix"></canvas></div></div>
   </section>
   <section class="card rounded-3xl p-5"><div class="flex items-center justify-between mb-4"><div><h2 class="font-black">CARD REVENUE</h2><p id="count" class="text-xs muted mt-1">0 cards</p></div><input id="search" placeholder="Search serial or card name" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs outline-none"></div><div class="overflow-x-auto"><table class="w-full text-xs"><thead class="border-b border-slate-800 text-slate-500 uppercase"><tr><th class="text-left p-3">Serial</th><th class="text-left p-3">Card</th><th class="text-left p-3">Base Price</th><th class="text-left p-3">Sales Revenue</th><th class="text-left p-3">Status</th></tr></thead><tbody id="cardsBody"></tbody></table></div></section>
@@ -34,31 +34,61 @@
 (() => {
   const client = window.supabaseClient || window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   window.supabaseClient=client;
-  const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'eugenecard.market@gmail.com'];
-  let transactions=[],cards=[],trendChart,mixChart;
+  const ADMIN_EMAILS=['eugene.aquila06@gmail.com','eugenecard.market@gmail.com'];
+  let orders=[],items=[],cards=[],trendChart,mixChart;
   const money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
-  const admin=async user=>{if(!user)return false;const email=(user.email||'').toLowerCase();if(ADMIN_EMAILS.includes(email))return true;const {data}=await client.from('profiles').select('role').eq('id',user.id).maybeSingle();return String(data?.role||'').toLowerCase()==='admin'};
+  const completed=o=>['APPROVED','COMPLETED','PAID','CONFIRMED','FULFILLED'].includes(String(o.status||'').toUpperCase());
+  const isAdmin=async user=>{if(!user)return false;const email=String(user.email||'').toLowerCase();if(ADMIN_EMAILS.includes(email))return true;const {data,error}=await client.from('profiles').select('role').eq('id',user.id).maybeSingle();return !error&&String(data?.role||'').toLowerCase()==='admin'};
   const load=async()=>{
-    const [tx,cardsResult]=await Promise.all([client.from('transactions').select('*'),client.from('cards').select('*')]);
-    if(tx.error)throw tx.error;if(cardsResult.error)throw cardsResult.error;
-    transactions=tx.data||[];cards=cardsResult.data||[];render();
+    const [ordersResult,itemsResult,cardsResult]=await Promise.all([
+      client.from('orders').select('*').order('created_at',{ascending:false}),
+      client.from('order_items').select('*'),
+      client.from('cards').select('*')
+    ]);
+    if(ordersResult.error)throw ordersResult.error;
+    if(itemsResult.error)throw itemsResult.error;
+    if(cardsResult.error)throw cardsResult.error;
+    orders=ordersResult.data||[];items=itemsResult.data||[];cards=cardsResult.data||[];render();
   };
   const render=()=>{
-    const approvedTx=transactions.filter(t=>String(t.status||'').toUpperCase()==='APPROVED');
-    const gross=approvedTx.reduce((s,t)=>s+(Number(t.total_amount)||0),0),fee=gross*.02;
-    document.getElementById('gross').textContent=money(gross);document.getElementById('fee').textContent=money(fee);document.getElementById('approved').textContent=approvedTx.length;document.getElementById('rate').textContent=(transactions.length?Math.round(approvedTx.length/transactions.length*100):0)+'%';
-    const revenue={};approvedTx.forEach(t=>(Array.isArray(t.items)?t.items:[]).forEach(i=>{const k=i.id||i.serial;if(k)revenue[k]=(revenue[k]||0)+(Number(i.price)||0)}));
-    const q=(document.getElementById('search').value||'').toLowerCase();const visible=cards.filter(c=>!q||String(c.serial||'').toLowerCase().includes(q)||String(c.name||'').toLowerCase().includes(q)).sort((a,b)=>(revenue[b.id]||revenue[b.serial]||0)-(revenue[a.id]||revenue[a.serial]||0));
-    document.getElementById('count').textContent=visible.length+' cards';document.getElementById('cardsBody').innerHTML=visible.map(c=>`<tr class="border-b border-slate-800/60"><td class="p-3 font-mono text-amber-300">${c.serial||'—'}</td><td class="p-3 font-bold">${c.name||'Unnamed Card'}</td><td class="p-3">${money(c.price)}</td><td class="p-3 font-bold text-emerald-300">${money(revenue[c.id]||revenue[c.serial]||0)}</td><td class="p-3">${c.status||'AVAILABLE'}</td></tr>`).join('')||'<tr><td colspan="5" class="p-8 text-center muted">No cards found.</td></tr>';
-    const daily={};approvedTx.forEach(t=>{const d=new Date(t.created_at||Date.now());const key=d.toISOString().slice(0,10);daily[key]=(daily[key]||0)+(Number(t.total_amount)||0)});const keys=Object.keys(daily).sort().slice(-7);
-    if(trendChart)trendChart.destroy();trendChart=new Chart(document.getElementById('trend'),{type:'line',data:{labels:keys.map(k=>k.slice(5)),datasets:[{label:'Approved Sales',data:keys.map(k=>daily[k]),tension:.35,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
-    if(mixChart)mixChart.destroy();mixChart=new Chart(document.getElementById('mix'),{type:'doughnut',data:{labels:['Gross Sales','Platform Fee'],datasets:[{data:[gross,fee],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'bottom'}}}});
+    const approvedOrders=orders.filter(completed);
+    const gross=approvedOrders.reduce((sum,o)=>sum+(Number(o.total)||0),0);
+    const fee=gross*.02;
+    document.getElementById('gross').textContent=money(gross);
+    document.getElementById('fee').textContent=money(fee);
+    document.getElementById('approved').textContent=approvedOrders.length;
+    document.getElementById('rate').textContent=(orders.length?Math.round(approvedOrders.length/orders.length*100):0)+'%';
+
+    const approvedIds=new Set(approvedOrders.map(o=>o.id));
+    const revenue={};
+    items.filter(i=>approvedIds.has(i.order_id)).forEach(i=>{
+      const key=i.card_id;
+      if(key) revenue[key]=(revenue[key]||0)+(Number(i.unit_price)||0)*(Number(i.quantity)||1);
+    });
+    const q=(document.getElementById('search').value||'').toLowerCase();
+    const visible=cards.filter(c=>!q||String(c.serial||'').toLowerCase().includes(q)||String(c.name||'').toLowerCase().includes(q)).sort((a,b)=>(revenue[b.id]||0)-(revenue[a.id]||0));
+    document.getElementById('count').textContent=visible.length+' cards';
+    document.getElementById('cardsBody').innerHTML=visible.map(c=>`<tr class="border-b border-slate-800/60"><td class="p-3 font-mono text-amber-300">${c.serial||'—'}</td><td class="p-3 font-bold">${c.name||'Unnamed Card'}</td><td class="p-3">${money(c.price)}</td><td class="p-3 font-bold text-emerald-300">${money(revenue[c.id]||0)}</td><td class="p-3">${c.status||'AVAILABLE'}</td></tr>`).join('')||'<tr><td colspan="5" class="p-8 text-center muted">No cards found.</td></tr>';
+
+    const daily={};
+    approvedOrders.forEach(o=>{const key=new Date(o.created_at||Date.now()).toISOString().slice(0,10);daily[key]=(daily[key]||0)+(Number(o.total)||0)});
+    const keys=Object.keys(daily).sort().slice(-7);
+    if(trendChart)trendChart.destroy();
+    trendChart=new Chart(document.getElementById('trend'),{type:'line',data:{labels:keys.map(k=>k.slice(5)),datasets:[{label:'Completed Sales',data:keys.map(k=>daily[k]),tension:.35,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+    if(mixChart)mixChart.destroy();
+    mixChart=new Chart(document.getElementById('mix'),{type:'doughnut',data:{labels:['Gross Sales','Platform Fee'],datasets:[{data:[gross,fee],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{position:'bottom'}}}});
   };
-  const start=async()=>{const {data}=await client.auth.getUser();if(!(await admin(data?.user))){alert('Admin access required.');location.href='index.html';return}await load();
-    client.channel('revenue-transactions').on('postgres_changes',{event:'*',schema:'public',table:'transactions'},load).subscribe();client.channel('revenue-cards').on('postgres_changes',{event:'*',schema:'public',table:'cards'},load).subscribe();
+  const start=async()=>{
+    const {data}=await client.auth.getUser();
+    if(!(await isAdmin(data?.user))){alert('Admin access required.');location.href='index.html';return;}
+    await load();
+    client.channel('revenue-orders').on('postgres_changes',{event:'*',schema:'public',table:'orders'},load).subscribe();
+    client.channel('revenue-order-items').on('postgres_changes',{event:'*',schema:'public',table:'order_items'},load).subscribe();
+    client.channel('revenue-cards').on('postgres_changes',{event:'*',schema:'public',table:'cards'},load).subscribe();
   };
-  document.getElementById('refresh').onclick=load;document.getElementById('search').oninput=render;start().catch(e=>{console.error(e);alert('Unable to load Supabase revenue data.')});
+  document.getElementById('refresh').onclick=()=>load().catch(e=>console.error(e));
+  document.getElementById('search').oninput=render;
+  start().catch(e=>{console.error('Revenue Supabase load failed:',e);alert('Unable to load Supabase revenue data. Please refresh and try again.')});
 })();
 </script>
-  <script src="./js/admin-auth-bridge.js"></script>
 </body></html>
