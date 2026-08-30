@@ -43,4 +43,11 @@
   profileAvatar.src = './js/profile-avatar.js';
   profileAvatar.defer = true;
   document.head.appendChild(profileAvatar);
+
+  // Catalog image reliability: preserve exact uploaded/link artwork and
+  // normalize common share URLs after every dynamic catalog render.
+  const catalogImages = document.createElement('script');
+  catalogImages.src = './js/catalog-image-fix.js';
+  catalogImages.defer = true;
+  document.head.appendChild(catalogImages);
 })();
