@@ -23,16 +23,22 @@ jobs:
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
 
-          bad = '  <script src="./js/supabase-supabase-compat.js"></script>\n'
-          s = s.replace(bad, '')
-
           firebase = '  <script src="./js/supabase-firebase-compat.js"></script>\n'
+          alias = '  <script src="./js/supabase-supabase-compat.js"></script>\n'
           while s.count(firebase) > 1:
               s = s.replace(firebase, '', 1)
+          while s.count(alias) > 1:
+              s = s.replace(alias, '', 1)
+          if firebase in s and alias not in s:
+              s = s.replace(firebase, firebase + alias, 1)
+          elif firebase not in s:
+              marker = '  <script src="./js/supabase-init.js"></script>\n'
+              if marker in s and alias not in s:
+                  s = s.replace(marker, marker + firebase + alias, 1)
 
           app = '  <script src="./js/app.js"></script>\n'
           if app not in s:
-              marker = firebase if firebase in s else '  <script src="./js/supabase-init.js"></script>\n'
+              marker = alias if alias in s else (firebase if firebase in s else '  <script src="./js/supabase-init.js"></script>\n')
               s = s.replace(marker, marker + app, 1)
 
           p.write_text(s, encoding='utf-8')
@@ -46,5 +52,5 @@ jobs:
             echo 'No changes needed'
             exit 0
           fi
-          git commit -m 'Load social interaction repair script correctly [skip ci]'
+          git commit -m 'Restore Supabase FieldValue compatibility for social interactions [skip ci]'
           git push
