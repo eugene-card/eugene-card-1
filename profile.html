@@ -23,20 +23,35 @@ html,body{margin:0;width:100%;height:100%;background:#030712;overflow:hidden}
  const valid=/^[a-z0-9_.-]{1,64}$/.test(raw);
  if(!valid){loading.textContent='Profile not found';return;}
  document.title=`@${raw} · Eugene Card Vault`;
- function showVault(){
+ let activated=false;
+ let guardTimer=null;
+ function applyVault(){
    try{
      const w=frame.contentWindow,d=w.document;
      if(typeof w.openHolderVaultModal!=='function')return false;
-     w.openHolderVaultModal(raw);
+     const view=d.getElementById('view-holder-vault');
+     const alreadyVisible=view && !view.classList.contains('hidden') && getComputedStyle(view).display!=='none';
+     if(!alreadyVisible) w.openHolderVaultModal(raw);
      const hide='header, body > header, nav, #loginPanel, #accountPanel, #loginButton, #logoutButton';
      d.querySelectorAll(hide).forEach(el=>el.style.display='none');
      const main=d.querySelector('main');
      if(main){main.style.paddingTop='18px';main.style.paddingLeft='12px';main.style.paddingRight='12px';}
-     const view=d.getElementById('view-holder-vault');
-     if(view){view.classList.remove('hidden');view.style.display='block';}
-     const allViews=d.querySelectorAll('[id^="view-"]');
-     allViews.forEach(el=>{if(el.id!=='view-holder-vault')el.classList.add('hidden');});
+     const vault=d.getElementById('view-holder-vault');
+     if(vault){vault.classList.remove('hidden');vault.style.display='block';}
+     d.querySelectorAll('[id^="view-"]').forEach(el=>{if(el.id!=='view-holder-vault')el.classList.add('hidden');});
      loading.classList.add('hidden');
+     if(!activated){
+       activated=true;
+       // The main app performs a late startup/render pass. Keep the public
+       // username route on Vault if that pass switches back to Home.
+       guardTimer=setInterval(()=>{
+         try{
+           const v=frame.contentWindow.document.getElementById('view-holder-vault');
+           const visible=v && !v.classList.contains('hidden') && getComputedStyle(v).display!=='none';
+           if(!visible) applyVault();
+         }catch(e){}
+       },500);
+     }
      return true;
    }catch(e){console.error('Public Vault bootstrap failed',e);return false;}
  }
@@ -44,9 +59,10 @@ html,body{margin:0;width:100%;height:100%;background:#030712;overflow:hidden}
    let tries=0;
    const timer=setInterval(()=>{
      tries++;
-     if(showVault()||tries>100){clearInterval(timer);if(tries>100){loading.textContent='Vault unavailable';loading.classList.remove('hidden')}}
+     if(applyVault()||tries>120){clearInterval(timer);if(tries>120){loading.textContent='Vault unavailable';loading.classList.remove('hidden')}}
    },100);
  });
+ window.addEventListener('beforeunload',()=>{if(guardTimer)clearInterval(guardTimer);});
 })();
 </script>
 </body>
