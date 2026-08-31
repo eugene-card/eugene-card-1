@@ -4,66 +4,57 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#030712">
-<title>Eugene Card Profile</title>
+<title>Eugene Card Binder</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
 <style>
 :root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;color:#f8fafc;background:#030712;overflow-x:hidden}
 body:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 15% 0%,rgba(99,102,241,.2),transparent 38%),radial-gradient(circle at 85% 12%,rgba(245,158,11,.14),transparent 34%),linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:auto,auto,40px 40px,40px 40px}
-main{position:relative;min-height:100vh;display:grid;place-items:center;padding:32px 18px}.shell{width:min(680px,100%);border:1px solid rgba(148,163,184,.16);border-radius:28px;background:linear-gradient(145deg,rgba(15,23,42,.9),rgba(2,6,23,.82));box-shadow:0 30px 100px rgba(0,0,0,.45);backdrop-filter:blur(20px);overflow:hidden}
-.hero{padding:38px 28px 30px;text-align:center;border-bottom:1px solid rgba(148,163,184,.1)}.avatar{width:112px;height:112px;border-radius:999px;object-fit:cover;margin:0 auto 18px;border:3px solid rgba(251,191,36,.7);background:#111827;box-shadow:0 0 35px rgba(245,158,11,.18)}
-.fallback-avatar{display:grid;place-items:center;font-size:40px;font-weight:800;color:#fde68a;background:linear-gradient(135deg,#312e81,#92400e)}h1{margin:0;font-size:32px;letter-spacing:-.03em}.username{margin-top:6px;color:#94a3b8;font-size:15px}.bio{max-width:560px;margin:16px auto 0;color:#cbd5e1;line-height:1.65;white-space:pre-wrap}
-.content{padding:26px}.links{display:grid;gap:12px}.link{display:flex;align-items:center;justify-content:center;min-height:48px;padding:12px 16px;border-radius:14px;border:1px solid rgba(148,163,184,.15);background:rgba(15,23,42,.68);color:#f8fafc;text-decoration:none;font-weight:650}.link:hover{border-color:rgba(251,191,36,.55);transform:translateY(-1px)}
-.meta{margin-top:24px;text-align:center;color:#64748b;font-size:12px}.home{display:inline-block;margin-top:22px;color:#fbbf24;text-decoration:none;font-size:13px;font-weight:700}.state{text-align:center;padding:70px 28px}.state h1{font-size:28px}.state p{color:#94a3b8;line-height:1.6}.spinner{width:34px;height:34px;border:3px solid rgba(148,163,184,.25);border-top-color:#fbbf24;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px}@keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:520px){.hero{padding:30px 20px}.content{padding:20px}h1{font-size:27px}}
+main{position:relative;min-height:100vh;padding:32px 18px}.shell{width:min(920px,100%);margin:0 auto;border:1px solid rgba(148,163,184,.16);border-radius:28px;background:linear-gradient(145deg,rgba(15,23,42,.9),rgba(2,6,23,.82));box-shadow:0 30px 100px rgba(0,0,0,.45);backdrop-filter:blur(20px);overflow:hidden}
+.hero{padding:34px 28px 28px;border-bottom:1px solid rgba(148,163,184,.1);display:flex;gap:20px;align-items:center}.avatar{width:96px;height:96px;flex:0 0 96px;border-radius:999px;object-fit:cover;border:3px solid rgba(251,191,36,.7);background:#111827;box-shadow:0 0 35px rgba(245,158,11,.18)}.fallback-avatar{display:grid;place-items:center;font-size:34px;font-weight:800;color:#fde68a;background:linear-gradient(135deg,#312e81,#92400e)}
+.hero h1{margin:0;font-size:30px;letter-spacing:-.03em}.username{margin-top:5px;color:#94a3b8;font-size:15px}.bio{margin-top:12px;color:#cbd5e1;line-height:1.6;white-space:pre-wrap}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;font-weight:800;margin-bottom:5px}
+.content{padding:26px}.workspace-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap}.workspace-head h2{margin:0;font-size:22px}.workspace-head p{margin:5px 0 0;color:#94a3b8}.workspace-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}.workspace-card{border:1px solid #273449;border-radius:16px;overflow:hidden;background:#0b1220}.workspace-card img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;background:#111827}.workspace-card-body{padding:14px}.workspace-card-body h3{margin:0 0 5px;font-size:16px}.workspace-card-body p{margin:5px 0;color:#94a3b8;font-size:13px}.workspace-badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#123524;color:#bbf7d0;font-size:11px}.workspace-badge.sold{background:#3f1d1d;color:#fecaca}.empty,.state{text-align:center;padding:55px 20px;color:#94a3b8}.state h1{color:#f8fafc;font-size:28px}.state p{line-height:1.6}.home{display:inline-block;margin-top:22px;color:#fbbf24;text-decoration:none;font-size:13px;font-weight:700}.meta{margin-top:22px;text-align:center;color:#64748b;font-size:12px}
+@media(max-width:620px){main{padding:18px 12px}.hero{padding:26px 20px;align-items:flex-start}.avatar{width:78px;height:78px;flex-basis:78px}.hero h1{font-size:25px}.content{padding:20px}.workspace-card-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<main><section class="shell" id="app"><div class="state"><div class="spinner"></div><p>Loading profile…</p></div></section></main>
+<main><section class="shell" id="app"><div class="state"><p>Loading Binder…</p></div></section></main>
 <script>
-(() => {
-  const app=document.getElementById('app');
-  const cfg=window.SUPABASE_CONFIG||{};
-  const params=new URLSearchParams(location.search);
-  const raw=params.get('username')||location.pathname.split('/').filter(Boolean)[0]||'';
-  const username=raw.trim().replace(/^@/,'').toLowerCase();
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-  const url=v=>{try{const s=String(v??'').trim();if(!s)return '';const u=new URL(/^https?:\/\//i.test(s)?s:`https://${s}`);return /^https?:$/.test(u.protocol)?u.href:''}catch{return ''}};
-  const state=(title,msg)=>{app.innerHTML='';const box=document.createElement('div');box.className='state';const h=document.createElement('h1');h.textContent=title;const p=document.createElement('p');p.textContent=msg;const a=document.createElement('a');a.className='home';a.href='/';a.textContent='← Back to Eugene Card';box.append(h,p,a);app.append(box)};
-  if(!username||!/^[a-z0-9_.-]{1,64}$/.test(username)){state('Profile not found','That Eugene Card username is not valid.');return}
-  if(!window.supabase||!cfg.url||!cfg.anonKey){state('Profile unavailable','Eugene Card could not initialize its public profile service.');return}
-  const client=window.supabase.createClient(cfg.url,cfg.anonKey);
-  async function findProfile(slug){
-    const q1=await client.from('profiles').select('username,display_name,avatar_url,bio,social_ig,social_twitter,social_tiktok,social_web').ilike('username',slug).limit(1);
-    if(q1.error)throw q1.error;if(q1.data?.length)return q1.data[0];
-    const q2=await client.from('profiles').select('username,display_name,avatar_url,bio,social_ig,social_twitter,social_tiktok,social_web').ilike('display_name',slug).limit(1);
-    if(q2.error)throw q2.error;return q2.data?.[0]||null;
-  }
-  findProfile(username).then(data=>{
-    if(!data){state('Profile not found',`No Eugene Card profile exists for @${username}.`);return}
-    const display=data.display_name||data.username||username;
-    document.title=`${display} (@${data.username||username}) · Eugene Card`;
-    app.innerHTML='';
-    const hero=document.createElement('div');hero.className='hero';
-    if(url(data.avatar_url)){
-      const img=document.createElement('img');img.className='avatar';img.alt=display;img.src=url(data.avatar_url);img.addEventListener('error',()=>{const fallback=document.createElement('div');fallback.className='avatar fallback-avatar';fallback.textContent=(display.trim()[0]||'E').toUpperCase();img.replaceWith(fallback)},{once:true});hero.append(img);
-    }else{const fallback=document.createElement('div');fallback.className='avatar fallback-avatar';fallback.textContent=(display.trim()[0]||'E').toUpperCase();hero.append(fallback)}
-    const h=document.createElement('h1');h.textContent=display;hero.append(h);
-    const u=document.createElement('div');u.className='username';u.textContent=`@${data.username||username}`;hero.append(u);
-    if(data.bio){const b=document.createElement('div');b.className='bio';b.textContent=data.bio;hero.append(b)}
-    const content=document.createElement('div');content.className='content';
-    const links=[];
-    const add=(label,value)=>{const href=url(value);if(!href)return;const a=document.createElement('a');a.className='link';a.href=href;a.target='_blank';a.rel='noopener noreferrer';a.textContent=label;links.push(a)};
-    if(data.social_ig)add('Instagram',`https://instagram.com/${String(data.social_ig).replace(/^@/,'')}`);
-    if(data.social_tiktok)add('TikTok',`https://tiktok.com/@${String(data.social_tiktok).replace(/^@/,'')}`);
-    if(data.social_twitter)add('X / Twitter',data.social_twitter);
-    if(data.social_web)add('Website',data.social_web);
-    if(links.length){const wrap=document.createElement('div');wrap.className='links';links.forEach(a=>wrap.append(a));content.append(wrap)}else{const empty=document.createElement('div');empty.className='meta';empty.textContent='No public links added yet.';content.append(empty)}
-    const meta=document.createElement('div');meta.className='meta';meta.textContent='Public Eugene Card profile';content.append(meta);
-    const home=document.createElement('a');home.className='home';home.href='/';home.textContent='← Open Eugene Card';content.append(home);
-    app.append(hero,content);
-  }).catch(error=>{console.error('Public profile lookup failed:',error);state('Profile unavailable','The public profile service is temporarily unavailable.')});
+(()=>{
+ const app=document.getElementById('app'),cfg=window.SUPABASE_CONFIG||{};
+ const raw=(new URLSearchParams(location.search).get('username')||location.pathname.split('/').filter(Boolean)[0]||'').trim().replace(/^@/,'').toLowerCase();
+ const valid=/^[a-z0-9_.-]{1,64}$/.test(raw);
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+ const safeUrl=v=>{try{const s=String(v??'').trim();if(!s)return '';const u=new URL(/^https?:\/\//i.test(s)?s:`https://${s}`);return /^https?:$/.test(u.protocol)?u.href:''}catch{return ''}};
+ const state=(title,msg)=>{app.innerHTML='';const box=document.createElement('div');box.className='state';const h=document.createElement('h1');h.textContent=title;const p=document.createElement('p');p.textContent=msg;const a=document.createElement('a');a.className='home';a.href='/';a.textContent='← Open Eugene Card';box.append(h,p,a);app.append(box)};
+ if(!valid)return state('Profile not found','That Eugene Card username is not valid.');
+ if(!window.supabase||!cfg.url||!cfg.anonKey)return state('Profile unavailable','Eugene Card could not initialize its public profile service.');
+ const sb=window.supabase.createClient(cfg.url,cfg.anonKey);
+ async function load(){
+   const p=await sb.from('profiles').select('id,email,username,display_name,avatar_url,bio').ilike('username',raw).limit(1);
+   if(p.error)throw p.error;
+   const profile=p.data?.[0];
+   if(!profile)return null;
+   const c=await sb.from('cards').select('*').order('created_at',{ascending:false});
+   if(c.error)throw c.error;
+   const ownerKeys=new Set([String(profile.id||'').toLowerCase(),String(profile.email||'').toLowerCase(),String(profile.username||'').toLowerCase()].filter(Boolean));
+   const cards=(c.data||[]).filter(card=>ownerKeys.has(String(card.owner||'').toLowerCase()));
+   return {profile,cards};
+ }
+ load().then(result=>{
+   if(!result)return state('Profile not found',`No Eugene Card profile exists for @${raw}.`);
+   const {profile,cards}=result,display=profile.display_name||profile.username||raw;
+   document.title=`${display} (@${profile.username||raw}) · Eugene Card Binder`;
+   app.innerHTML='';
+   const hero=document.createElement('div');hero.className='hero';
+   const avatar=safeUrl(profile.avatar_url);
+   if(avatar){const img=document.createElement('img');img.className='avatar';img.alt=display;img.src=avatar;img.addEventListener('error',()=>{const f=document.createElement('div');f.className='avatar fallback-avatar';f.textContent=(display.trim()[0]||'E').toUpperCase();img.replaceWith(f)},{once:true});hero.append(img)}else{const f=document.createElement('div');f.className='avatar fallback-avatar';f.textContent=(display.trim()[0]||'E').toUpperCase();hero.append(f)}
+   const info=document.createElement('div');const eyebrow=document.createElement('div');eyebrow.className='eyebrow';eyebrow.textContent='Collector Binder';info.append(eyebrow);const h=document.createElement('h1');h.textContent=display;info.append(h);const u=document.createElement('div');u.className='username';u.textContent='@'+(profile.username||raw);info.append(u);if(profile.bio){const b=document.createElement('div');b.className='bio';b.textContent=profile.bio;info.append(b)}hero.append(info);app.append(hero);
+   const content=document.createElement('div');content.className='content';const head=document.createElement('div');head.className='workspace-head';const left=document.createElement('div');const eh=document.createElement('div');eh.className='eyebrow';eh.textContent='Public collection';left.append(eh);const hh=document.createElement('h2');hh.textContent='Binder';left.append(hh);const pp=document.createElement('p');pp.textContent=cards.length?`${cards.length} card${cards.length===1?'':'s'} in this collection.`:'This Binder is empty.';left.append(pp);head.append(left);content.append(head);
+   if(cards.length){const grid=document.createElement('div');grid.className='workspace-card-grid';cards.forEach(card=>{const article=document.createElement('article');article.className='workspace-card';const image=safeUrl(card.img_url||card.image_url);if(image){const img=document.createElement('img');img.src=image;img.alt=card.name||'Card';img.addEventListener('error',()=>img.style.visibility='hidden',{once:true});article.append(img)}const body=document.createElement('div');body.className='workspace-card-body';const name=document.createElement('h3');name.textContent=card.name||'Untitled card';body.append(name);const serial=document.createElement('p');serial.textContent=`${card.serial||card.sn||'Unnumbered'} · ${card.edition||'Eugene Card'}`;body.append(serial);const price=document.createElement('p');price.textContent=`$${Number(card.price||card.asset_value||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;body.append(price);const badge=document.createElement('span');badge.className='workspace-badge '+(String(card.status||'').toLowerCase()==='sold'?'sold':'');badge.textContent=card.status||'available';body.append(badge);article.append(body);grid.append(article)});content.append(grid)}else{const empty=document.createElement('div');empty.className='empty';empty.textContent='No public cards are currently assigned to this Binder.';content.append(empty)}
+   const meta=document.createElement('div');meta.className='meta';meta.textContent='Public Eugene Card Binder';content.append(meta);const home=document.createElement('a');home.className='home';home.href='/';home.textContent='← Open Eugene Card';content.append(home);app.append(content);
+ }).catch(err=>{console.error('Public Binder lookup failed:',err);state('Binder unavailable','The public collection service is temporarily unavailable.')});
 })();
 </script>
 </body>
