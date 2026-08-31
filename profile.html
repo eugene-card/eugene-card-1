@@ -55,12 +55,27 @@
   }
 
   const client = window.supabase.createClient(cfg.url, cfg.anonKey);
-  client.from('profiles').select('username,display_name,avatar_url,bio,instagram,tiktok,x_url,website').ilike('username', username).maybeSingle().then(({data,error}) => {
-    if (error) {
-      console.error('Public profile lookup failed:', error);
-      showState('Profile unavailable', 'The public profile service is temporarily unavailable.');
-      return;
-    }
+
+  async function findProfile(slug) {
+    // Primary contract: exact Eugene Card username.
+    const byUsername = await client.from('profiles')
+      .select('username,display_name,avatar_url,bio,social_ig,social_twitter,social_tiktok,social_web')
+      .ilike('username', slug)
+      .limit(1);
+    if (byUsername.error) throw byUsername.error;
+    if (byUsername.data && byUsername.data.length) return byUsername.data[0];
+
+    // Compatibility alias: allow public links generated from a display name slug.
+    // Example: /yujin resolves the profile whose display_name is exactly "Yujin".
+    const byDisplayName = await client.from('profiles')
+      .select('username,display_name,avatar_url,bio,social_ig,social_twitter,social_tiktok,social_web')
+      .ilike('display_name', slug)
+      .limit(1);
+    if (byDisplayName.error) throw byDisplayName.error;
+    return byDisplayName.data && byDisplayName.data.length ? byDisplayName.data[0] : null;
+  }
+
+  findProfile(username).then(data => {
     if (!data) {
       showState('Profile not found', `No Eugene Card profile exists for @${username}.`);
       return;
@@ -71,10 +86,10 @@
     const avatar = normalizeUrl(data.avatar_url);
     const links = [];
     const addLink = (label, value) => { const url = normalizeUrl(value); if (url) links.push(`<a class="link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`); };
-    if (data.instagram) addLink('Instagram', `https://instagram.com/${String(data.instagram).replace(/^@/,'')}`);
-    if (data.tiktok) addLink('TikTok', `https://tiktok.com/@${String(data.tiktok).replace(/^@/,'')}`);
-    if (data.x_url) addLink('X / Twitter', data.x_url);
-    if (data.website) addLink('Website', data.website);
+    if (data.social_ig) addLink('Instagram', `https://instagram.com/${String(data.social_ig).replace(/^@/,'')}`);
+    if (data.social_tiktok) addLink('TikTok', `https://tiktok.com/@${String(data.social_tiktok).replace(/^@/,'')}`);
+    if (data.social_twitter) addLink('X / Twitter', data.social_twitter);
+    if (data.social_web) addLink('Website', data.social_web);
 
     document.title = `${displayName} (@${data.username || username}) · Eugene Card`;
     app.innerHTML = `<div class="hero">
@@ -88,6 +103,9 @@
       <div class="meta">Public Eugene Card profile</div>
       <a class="home" href="/">← Open Eugene Card</a>
     </div>`;
+  }).catch(error => {
+    console.error('Public profile lookup failed:', error);
+    showState('Profile unavailable', 'The public profile service is temporarily unavailable.');
   });
 })();
 </script>
