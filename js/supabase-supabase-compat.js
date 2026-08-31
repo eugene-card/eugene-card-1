@@ -22,9 +22,21 @@
   }
 
   window.supabase = window.supabase || {};
-  // Idempotent + non-destructive: if something already installed a full
-  // FieldValue here, don't clobber it. Otherwise, always point at the
-  // canonical implementation.
   window.supabase.supabase = window.supabase.supabase || {};
   window.supabase.supabase.FieldValue = firestoreFieldValue;
+
+  // Eugene Card loads this compatibility shim twice. Keep the Lunarist
+  // integration loader idempotent so the existing bootstrap is untouched.
+  if (!window.__EC_LUNARIST_SCRIPT_LOADING) {
+    window.__EC_LUNARIST_SCRIPT_LOADING = true;
+    var script = document.createElement('script');
+    script.src = './js/lunarist-integration.js?v=1';
+    script.async = true;
+    script.onerror = function () {
+      // Integration failure must never break the marketplace.
+      window.__EC_LUNARIST_SCRIPT_LOADING = false;
+      console.warn('[Lunarist] integration module unavailable');
+    };
+    document.head.appendChild(script);
+  }
 })();
