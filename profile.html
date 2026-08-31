@@ -25,6 +25,7 @@ html,body{margin:0;width:100%;height:100%;background:#030712;overflow:hidden}
  document.title=`@${raw} · Eugene Card Vault`;
  let activated=false;
  let guardTimer=null;
+ let returning=false;
  function applyVault(){
    try{
      const w=frame.contentWindow,d=w.document;
@@ -39,21 +40,35 @@ html,body{margin:0;width:100%;height:100%;background:#030712;overflow:hidden}
      const vault=d.getElementById('view-holder-vault');
      if(vault){vault.classList.remove('hidden');vault.style.display='block';}
      d.querySelectorAll('[id^="view-"]').forEach(el=>{if(el.id!=='view-holder-vault')el.classList.add('hidden');});
+     bindBackButton(d);
      loading.classList.add('hidden');
      if(!activated){
        activated=true;
-       // The main app performs a late startup/render pass. Keep the public
-       // username route on Vault if that pass switches back to Home.
        guardTimer=setInterval(()=>{
+         if(returning)return;
          try{
            const v=frame.contentWindow.document.getElementById('view-holder-vault');
            const visible=v && !v.classList.contains('hidden') && getComputedStyle(v).display!=='none';
            if(!visible) applyVault();
+           else bindBackButton(frame.contentWindow.document);
          }catch(e){}
        },500);
      }
      return true;
    }catch(e){console.error('Public Vault bootstrap failed',e);return false;}
+ }
+ function bindBackButton(d){
+   d.querySelectorAll('button,a,[role="button"]').forEach(el=>{
+     const label=(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+     if(!label.includes('kembali ke kolektor'))return;
+     if(el.dataset.ecBackBound==='1')return;
+     el.dataset.ecBackBound='1';
+     el.addEventListener('click',()=>{
+       returning=true;
+       if(guardTimer)clearInterval(guardTimer);
+       window.top.location.href='/';
+     },true);
+   });
  }
  frame.addEventListener('load',()=>{
    let tries=0;
