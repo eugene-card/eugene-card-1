@@ -28,5 +28,5 @@ async function loadPending(){const {data,error}=await client.from('documents').s
 function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 async function initAuth(){const {data:{user}}=await client.auth.getUser();if(user&&ADMINS.includes(String(user.email||'').toLowerCase())){setHealth('admin-status','VERIFIED',true);$('auth-state').innerHTML='<div class="glass rounded-2xl p-4 text-sm text-emerald-300">Admin session verified: <b>'+escapeHtml(user.email)+'</b></div>'}else{setHealth('admin-status','UNAUTHORIZED',false);$('auth-state').innerHTML='<div class="glass rounded-2xl p-4 text-sm text-amber-300">Running in guest view. <a class="underline" href="index.html">Log in via Marketplace</a>.</div>'}}
 client.auth.onAuthStateChange(()=>initAuth());initAuth();refreshDashboard();
-</script><script src="./js/admin-auth-bridge.js"></script><script src="./js/oauth-admin.js"></script>
+</script><script src="./js/admin-auth-bridge.js?v=20260901"></script><script src="./js/oauth-admin.js?v=20260901"></script>
 </body></html>
