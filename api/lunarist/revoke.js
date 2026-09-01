@@ -31,9 +31,12 @@ module.exports = async function handler(req, res) {
     if (!user) return json(res, 401, { error: 'eugene_card_supabase_authentication_could_not_be_verified' });
 
     const base = `${SUPABASE_URL}/rest/v1`;
+    // The user's Supabase access token must be forwarded to PostgREST so
+    // auth.uid() is the Eugene Card user. Using the publishable key here
+    // authenticates as anon and is rejected by the lunarist_links RLS policy.
     const headers = {
       apikey: SUPABASE_PUBLISHABLE_KEY,
-      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
       Prefer: 'return=minimal'
     };
