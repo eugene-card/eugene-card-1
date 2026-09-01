@@ -39,8 +39,6 @@ module.exports = async function handler(req, res) {
       return json(res, 400, { error: 'missing_code_or_supabase_access_token' });
     }
 
-    // Never trust a browser-provided token merely because it is present.
-    // Validate it against Eugene Card's own Supabase Auth before forwarding it.
     const verification = await verifySupabaseToken(token);
     if (!verification.ok) {
       return json(res, 401, { error: 'eugene_card_supabase_authentication_could_not_be_verified' });
@@ -48,12 +46,17 @@ module.exports = async function handler(req, res) {
 
     const upstream = await fetch(LUNARIST_TOKEN, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'accept': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        'accept': 'application/json',
+        'authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({
         code: String(code),
         client_id: 'eugene-card',
         redirect_uri: REDIRECT_URI,
-        supabase_access_token: token
+        supabase_access_token: token,
+        eugene_user_id: verification.user.id
       })
     });
 
