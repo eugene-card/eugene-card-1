@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-<head>
+<head>\n<script data-force-default-english>
+(() => {
+  try {
+    document.documentElement.lang = 'en';
+    for (const key of ['language','lang','locale','preferredLanguage','selectedLanguage','currentLanguage']) {
+      const value = localStorage.getItem(key);
+      if (value && /^(id|id-ID|in)$/i.test(value)) localStorage.setItem(key, 'en');
+    }
+  } catch (_) {}
+})();
+</script>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#6366f1">
