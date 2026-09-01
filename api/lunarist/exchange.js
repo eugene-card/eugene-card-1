@@ -12,11 +12,7 @@ function json(res, status, body) {
 async function verifySupabaseToken(token) {
   const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
     method: 'GET',
-    headers: {
-      apikey: SUPABASE_PUBLISHABLE_KEY,
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/json'
-    }
+    headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token}`, Accept: 'application/json' }
   });
   const text = await response.text();
   let data;
@@ -41,10 +37,7 @@ async function syncLink(token, eugeneUserId, identity) {
       lunarist_profile_url: identity.profile_url || identity.profile || null,
       sync_source: 'lunarist',
       last_synced_at: new Date().toISOString(),
-      metadata: {
-        issuer: 'https://lunaristudio.vercel.app',
-        scopes: identity.scope || 'identity profile offline_access'
-      }
+      metadata: { issuer: 'https://lunaristudio.vercel.app', scopes: identity.scope || 'identity profile offline_access' }
     })
   });
   const text = await response.text();
@@ -56,23 +49,19 @@ async function syncLink(token, eugeneUserId, identity) {
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'method_not_allowed' });
-
   try {
     const body = req.body || {};
     const code = String(body.code || '').trim();
     const codeVerifier = String(body.code_verifier || '').trim();
     const bearer = String(req.headers?.authorization || '').replace(/^Bearer\s+/i, '').trim();
     const token = String(body.supabase_access_token || bearer || '').trim();
-
-    if (!code || !codeVerifier || !token) {
-      return json(res, 400, { error: 'missing_code_code_verifier_or_supabase_access_token' });
-    }
+    if (!code || !codeVerifier || !token) return json(res, 400, { error: 'missing_code_code_verifier_or_supabase_access_token' });
 
     const verification = await verifySupabaseToken(token);
-    if (!verification.ok) {
-      return json(res, 401, { error: 'eugene_card_supabase_authentication_could_not_be_verified' });
-    }
+    if (!verification.ok) return json(res, 401, { error: 'eugene_card_supabase_authentication_could_not_be_verified' });
 
+    // Eugene Card is a public PKCE client. No client secret is sent or required.
+    // Authentication is provided by the authorization code + S256 PKCE verifier.
     const form = new URLSearchParams({
       grant_type: 'authorization_code',
       code,
@@ -83,26 +72,17 @@ module.exports = async function handler(req, res) {
 
     const upstream = await fetch(LUNARIST_TOKEN, {
       method: 'POST',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded',
-        accept: 'application/json'
-      },
+      headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
       body: form.toString()
     });
-
     const text = await upstream.text();
     let tokenData;
     try { tokenData = JSON.parse(text); } catch (_) { tokenData = null; }
-    if (!upstream.ok || !tokenData?.access_token) {
-      return json(res, upstream.status || 502, tokenData || { error: 'lunarist_token_exchange_failed' });
-    }
+    if (!upstream.ok || !tokenData?.access_token) return json(res, upstream.status || 502, tokenData || { error: 'lunarist_token_exchange_failed' });
 
     const userinfo = await fetch(LUNARIST_USERINFO, {
       method: 'GET',
-      headers: {
-        accept: 'application/json',
-        authorization: `Bearer ${tokenData.access_token}`
-      }
+      headers: { accept: 'application/json', authorization: `Bearer ${tokenData.access_token}` }
     });
     const userText = await userinfo.text();
     let identity;
@@ -112,7 +92,6 @@ module.exports = async function handler(req, res) {
     }
 
     const link = await syncLink(token, verification.user.id, identity);
-
     return json(res, 200, {
       eugene_user_id: verification.user.id,
       lunarist_user_id: link?.lunarist_user_id || identity.lunarist_user_id || identity.sub || identity.user_id,
