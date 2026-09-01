@@ -1,0 +1,48 @@
+name: Fix English Default Language
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix-default-language:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Force English defaults
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          for path in Path('.').rglob('*.html'):
+              if any(part in {'.git', 'node_modules'} for part in path.parts):
+                  continue
+              text = path.read_text(encoding='utf-8')
+              original = text
+              text = re.sub(r'(<html\\b[^>]*\\blang=["\'])(?:id|id-ID|in)(["\'])', r'\\1en\\2', text, flags=re.I)
+              text = re.sub(r'(document\\.documentElement\\.lang\\s*=\\s*["\'])(?:id|id-ID|in)(["\'])', r'\\1en\\2', text, flags=re.I)
+              text = re.sub(r'((?:default|fallback|initial|current|preferred)[A-Za-z]*Language\\s*[:=]\\s*["\'])(?:id|id-ID|in)(["\'])', r'\\1en\\2', text, flags=re.I)
+              if path.name == 'index.html' and 'data-force-default-english' not in text:
+                  marker = '<head>'
+                  script = '''<script data-force-default-english>\n(() => {\n  try {\n    document.documentElement.lang = 'en';\n    for (const key of ['language','lang','locale','preferredLanguage','selectedLanguage','currentLanguage']) {\n      const value = localStorage.getItem(key);\n      if (value && /^(id|id-ID|in)$/i.test(value)) localStorage.setItem(key, 'en');\n    }\n  } catch (_) {}\n})();\n</script>\n'''
+                  if marker in text:
+                      text = text.replace(marker, marker + '\\n' + script, 1)
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+
+      - name: Commit language fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add '*.html'
+          if git diff --cached --quiet; then
+            echo "No language changes needed"
+            exit 0
+          fi
+          git commit -m "Fix English as default language [skip ci]"
+          git push
