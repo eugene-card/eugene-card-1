@@ -1,6 +1,5 @@
 const SUPABASE_URL = 'https://tsjgvzpzfjyecnginipt.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_o3oWlPh_EPj5xd0GBjDWYQ_UhVicSH3';
-const LUNARIST_REVOKE = 'https://lunaristudio.vercel.app/api/eugene-card/revoke';
 
 function json(res, status, body) {
   res.status(status).setHeader('Cache-Control', 'no-store').json(body);
@@ -29,26 +28,27 @@ module.exports = async function handler(req, res) {
     if (!token) return json(res, 401, { error: 'missing_supabase_access_token' });
 
     const user = await verifySupabaseToken(token);
-    if (!user) {
-      return json(res, 401, { error: 'eugene_card_supabase_authentication_could_not_be_verified' });
+    if (!user) return json(res, 401, { error: 'eugene_card_supabase_authentication_could_not_be_verified' });
+
+    const base = `${SUPABASE_URL}/rest/v1`;
+    const headers = {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal'
+    };
+
+    const response = await fetch(`${base}/lunarist_links?eugene_user_id=eq.${encodeURIComponent(user.id)}`, {
+      method: 'DELETE',
+      headers
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('Failed to delete Lunarist link:', response.status, text);
+      return json(res, 502, { error: 'lunarist_link_revoke_failed' });
     }
 
-    const upstream = await fetch(LUNARIST_REVOKE, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'accept': 'application/json',
-        'authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        supabase_access_token: token,
-        eugene_user_id: user.id
-      })
-    });
-    const text = await upstream.text();
-    let data;
-    try { data = JSON.parse(text); } catch (_) { data = { error: 'invalid_lunarist_response' }; }
-    return json(res, upstream.status, data);
+    return json(res, 200, { ok: true, disconnected: true, eugene_user_id: user.id });
   } catch (error) {
     console.error('Lunarist revoke failed:', error);
     return json(res, 502, { error: 'lunarist_revoke_failed' });
