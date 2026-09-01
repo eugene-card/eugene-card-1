@@ -8,8 +8,10 @@ function json(res, status, body) {
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'method_not_allowed' });
   try {
-    const { code, firebase_id_token } = req.body || {};
-    if (!code || !firebase_id_token) return json(res, 400, { error: 'missing_code_or_identity_token' });
+    const { code, supabase_access_token } = req.body || {};
+    if (!code || !supabase_access_token) {
+      return json(res, 400, { error: 'missing_code_or_supabase_access_token' });
+    }
 
     const upstream = await fetch(LUNARIST_TOKEN, {
       method: 'POST',
@@ -18,7 +20,7 @@ module.exports = async function handler(req, res) {
         code: String(code),
         client_id: 'eugene-card',
         redirect_uri: REDIRECT_URI,
-        firebase_id_token: String(firebase_id_token)
+        supabase_access_token: String(supabase_access_token)
       })
     });
 
