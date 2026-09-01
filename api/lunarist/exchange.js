@@ -2,8 +2,8 @@ const SUPABASE_URL = 'https://tsjgvzpzfjyecnginipt.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_o3oWlPh_EPj5xd0GBjDWYQ_UhVicSH3';
 const LUNARIST_TOKEN = 'https://lunaristudio.vercel.app/oauth/token';
 const LUNARIST_USERINFO = 'https://lunaristudio.vercel.app/oauth/userinfo';
-const CLIENT_ID = 'lunarist-studio';
-const REDIRECT_URI = 'https://lunaristudio.vercel.app/api/eugene-card/callback';
+const CLIENT_ID = 'eugene-card';
+const REDIRECT_URI = 'https://eugene-card-1.vercel.app/?connect=lunarist';
 
 function json(res, status, body) {
   res.status(status).setHeader('Cache-Control', 'no-store').json(body);
@@ -43,7 +43,7 @@ async function syncLink(token, eugeneUserId, identity) {
       last_synced_at: new Date().toISOString(),
       metadata: {
         issuer: 'https://lunaristudio.vercel.app',
-        scopes: identity.scope || 'openid profile email offline_access'
+        scopes: identity.scope || 'identity profile offline_access'
       }
     })
   });
