@@ -4,7 +4,7 @@
   let viewPatchTimer = 0;
   let viewRefreshTimer = 0;
 
-  function cleanupLiteralEscapedNewlines(root = document.body) {
+  function cleanupLiteralEscapedNewlines(root = document.documentElement) {
     if (!root) return;
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const nodes = [];
@@ -50,7 +50,7 @@
       clearTimeout(viewPatchTimer);
       viewPatchTimer = setTimeout(() => patchVisibleViewCounts(client), 180);
     });
-    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+    observer.observe(document.documentElement, { subtree: true, childList: true, characterData: true });
 
     document.addEventListener('click', event => {
       const card = event.target?.closest?.('[data-card-id],[data-id],[data-card],article,.card-holo-premium,.card-holo-standard');
@@ -76,6 +76,21 @@
 
   function viewTextPattern() {
     return /\b(\d+)\s*(views?|kali\s+dilihat)\b/i;
+  }
+
+  async function resolveCardId(client, id) {
+    const raw = String(id ?? '').trim();
+    if (!raw) return '';
+
+    const { data: direct } = await client.from('cards').select('id').eq('id', raw).maybeSingle();
+    if (direct?.id != null) return String(direct.id);
+
+    const serialKey = normalizeSerial(raw);
+    if (!serialKey) return raw;
+
+    const { data: cards } = await client.from('cards').select('id,serial');
+    const match = (cards || []).find(row => normalizeSerial(row.serial) === serialKey);
+    return match?.id != null ? String(match.id) : raw;
   }
 
   function findCardId(el, bySerial) {
@@ -163,17 +178,22 @@
     return {
       id,
       async get() {
-        const { data, error } = await client.from(table).select('*').eq(table === 'card_views' ? 'card_id' : 'session_id', id).maybeSingle();
+        const key = table === 'card_views' ? 'card_id' : 'session_id';
+        const resolved = table === 'card_views' ? await resolveCardId(client, id) : id;
+        const { data, error } = await client.from(table).select('*').eq(key, resolved).maybeSingle();
         if (error) throw error;
-        return data ? snapshot(client, table, data) : { id, exists: false, data: () => undefined };
+        return data ? snapshot(client, table, data) : { id: resolved, exists: false, data: () => undefined };
       },
       async set(payload) {
         if (table === 'card_views') {
+          const resolved = await resolveCardId(client, id);
+          if (!resolved) throw new Error('card_id is required');
           if (payload && payload.views && payload.views.__supabaseIncrement) {
-            await client.rpc('increment_card_view', { p_card_id: id });
+            const { error } = await client.rpc('increment_card_view', { p_card_id: resolved });
+            if (error) throw error;
             return;
           }
-          const row = { card_id: id, views: Number(payload?.views || 0), updated_at: new Date().toISOString() };
+          const row = { card_id: resolved, views: Number(payload?.views || 0), updated_at: new Date().toISOString() };
           const { error } = await client.from(table).upsert(row, { onConflict: 'card_id' });
           if (error) throw error;
           return;
@@ -185,23 +205,22 @@
       async update(payload) { return this.set(payload, { merge: true }); },
       async delete() {
         const key = table === 'card_views' ? 'card_id' : 'session_id';
-        const { error } = await client.from(table).delete().eq(key, id);
+        const resolved = table === 'card_views' ? await resolveCardId(client, id) : id;
+        const { error } = await client.from(table).delete().eq(key, resolved);
         if (error) throw error;
       },
       onSnapshot(callback) {
         const key = table === 'card_views' ? 'card_id' : 'session_id';
         let active = true;
         const load = async () => {
-          const { data, error } = await client.from(table).select('*').eq(key, id).maybeSingle();
+          const resolved = table === 'card_views' ? await resolveCardId(client, id) : id;
+          const { data, error } = await client.from(table).select('*').eq(key, resolved).maybeSingle();
           if (!active) return;
           if (error) { console.warn('[Supabase] ' + table + ' doc:', error.message); return; }
-          callback(data ? snapshot(client, table, data) : { id, exists: false, data: () => undefined });
+          callback(data ? snapshot(client, table, data) : { id: resolved, exists: false, data: () => undefined });
         };
         load();
-        const channel = client.channel(table + '-doc-' + id + '-' + Math.random().toString(36).slice(2))
-          .on('postgres_changes', { event: '*', schema: 'public', table, filter: key + '=eq.' + id }, load)
-          .subscribe();
-        return () => { active = false; client.removeChannel(channel); };
+        return () => { active = false; };
       }
     };
   }
