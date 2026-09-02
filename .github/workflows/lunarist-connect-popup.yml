@@ -28,9 +28,6 @@ jobs:
           if needle not in s:
               raise SystemExit('Expected OAuth session wait marker not found')
 
-          # The callback already contains a valid authorization code and state.
-          # Ask the Eugene Card user for explicit approval before consuming the
-          # single-use code at the token exchange endpoint.
           replacement = """const approved=await approveLunaristConnection();
           if(!approved){clearOAuthState();history.replaceState({},'',location.pathname+location.hash);return}
           /* EUGENE_LUNARIST_CALLBACK_APPROVAL_V1 */
