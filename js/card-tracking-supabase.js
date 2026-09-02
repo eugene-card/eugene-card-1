@@ -4,6 +4,18 @@
   let viewPatchTimer = 0;
   let viewRefreshTimer = 0;
 
+  function cleanupLiteralEscapedNewlines(root = document.body) {
+    if (!root) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const node of nodes) {
+      const parent = node.parentElement;
+      if (!parent || /^(SCRIPT|STYLE|PRE|TEXTAREA)$/i.test(parent.tagName)) continue;
+      if (node.nodeValue?.includes('\\n')) node.nodeValue = node.nodeValue.replace(/\\n+/g, ' ');
+    }
+  }
+
   function boot() {
     const client = window.supabaseClient;
     const db = window.db;
@@ -30,9 +42,11 @@
 
     window.__cardTrackingStorage = 'supabase';
     window.refreshEugeneCardViewCounts = () => patchVisibleViewCounts(client);
+    cleanupLiteralEscapedNewlines();
     patchVisibleViewCounts(client);
 
     const observer = new MutationObserver(() => {
+      cleanupLiteralEscapedNewlines();
       clearTimeout(viewPatchTimer);
       viewPatchTimer = setTimeout(() => patchVisibleViewCounts(client), 180);
     });
@@ -94,7 +108,12 @@
         if (key) bySerial.set(key, String(row.id));
       });
 
-      const nodes = [...document.querySelectorAll('body *')].filter(el => viewTextPattern().test(el.textContent || ''));
+      const pattern = viewTextPattern();
+      const nodes = [...document.querySelectorAll('body *')].filter(el => {
+        if (!pattern.test(el.textContent || '')) return false;
+        return ![...el.children].some(child => pattern.test(child.textContent || ''));
+      });
+
       for (const el of nodes) {
         const id = findCardId(el, bySerial);
         if (!id) continue;
@@ -105,8 +124,8 @@
         const textNodes = [];
         while (walker.nextNode()) textNodes.push(walker.currentNode);
         for (const node of textNodes) {
-          if (!viewTextPattern().test(node.nodeValue || '')) continue;
-          node.nodeValue = node.nodeValue.replace(viewTextPattern(), (_, __, unit) =>
+          if (!pattern.test(node.nodeValue || '')) continue;
+          node.nodeValue = node.nodeValue.replace(pattern, (_, __, unit) =>
             unit.toLowerCase().startsWith('kali')
               ? `${count} kali dilihat`
               : `${count} ${count === 1 ? 'view' : 'views'}`
