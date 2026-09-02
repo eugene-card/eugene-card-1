@@ -1,0 +1,39 @@
+name: Fix Lunarist OAuth state mismatch recovery
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch callback state handling
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('js/lunarist-integration.js')
+          s = p.read_text(encoding='utf-8')
+          marker = '/* EUGENE_LUNARIST_STATE_RECOVERY_V2 */'
+          if marker in s:
+              print('State recovery already present')
+              raise SystemExit(0)
+          old = "if(!state||!saved.state||state!==saved.state||!saved.verifier){toast('Lunarist OAuth state validation failed. Please start the connection again.','error');return}"
+          new = "if(!state||!saved.state||state!==saved.state||!saved.verifier){showOAuthDialog('Lunarist connection expired','This authorization response no longer matches the active Eugene Card OAuth request. For security, the authorization code cannot be exchanged. Start a fresh Lunarist connection so Eugene Card can generate a new state and PKCE verifier.',[{text:'Start again',kind:'primary',fn:()=>{clearOAuthState();location.assign(location.pathname+'?connect=lunarist')}}]);return} /* EUGENE_LUNARIST_STATE_RECOVERY_V2 */"
+          if old not in s:
+              raise SystemExit('Expected state validation branch not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+      - name: Commit patch
+        shell: bash
+        run: |
+          if git diff --quiet -- js/lunarist-integration.js; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/lunarist-integration.js
+          git commit -m "Improve Lunarist OAuth state mismatch recovery [skip ci]"
+          git push
