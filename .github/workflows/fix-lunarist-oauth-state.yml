@@ -9,7 +9,6 @@ permissions:
 
 jobs:
   migrate-oauth-state:
-    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,18 +22,27 @@ jobs:
           from pathlib import Path
           p = Path('js/lunarist-integration.js')
           s = p.read_text()
-          old = "function random(){const a=new Uint8Array(16);crypto.getRandomValues(a);return[...a].map(x=>x.toString(16).padStart(2,'0')).join('')}"
-          new = "function random(bytes=16){const a=new Uint8Array(bytes);crypto.getRandomValues(a);return[...a].map(x=>x.toString(16).padStart(2,'0')).join('')}"
-          if old in s:
+          if 'LEGACY_STATE_KEY' not in s:
+              old = "const ROOT='ec-lunarist-control',HOST='ec-lunarist-host',MENU_CLASS='ec-l-menu',STATE_KEY='ec-lunarist-oauth-pending';"
+              new = "const ROOT='ec-lunarist-control',HOST='ec-lunarist-host',MENU_CLASS='ec-l-menu',STATE_KEY='ec-lunarist-oauth-pending',LEGACY_STATE_KEY='ec-lunarist-oauth-state';"
               s = s.replace(old, new, 1)
+          if 'legacyRaw=sessionStorage.getItem(LEGACY_STATE_KEY)' not in s:
+              old_fn = "function readPending(){try{const raw=sessionStorage.getItem(STATE_KEY)||getCookie(STATE_KEY);const parsed=raw?JSON.parse(raw):{};return parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed:{}}catch{return{}}}"
+              new_fn = "function readPending(){try{const raw=sessionStorage.getItem(STATE_KEY)||getCookie(STATE_KEY);const parsed=raw?JSON.parse(raw):{};if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)&&Object.keys(parsed).length)return parsed;const legacyRaw=sessionStorage.getItem(LEGACY_STATE_KEY)||getCookie(LEGACY_STATE_KEY);if(!legacyRaw)return{};const legacy=JSON.parse(legacyRaw);if(!legacy||typeof legacy!=='object'||Array.isArray(legacy))return{};const legacyState=String(legacy.state||'');const legacyVerifier=String(legacy.verifier||'');if(!legacyState||!legacyVerifier)return{};const migrated={[legacyState]:{verifier:legacyVerifier,createdAt:Number(legacy.createdAt||Date.now())}};sessionStorage.setItem(STATE_KEY,JSON.stringify(migrated));setCookie(STATE_KEY,JSON.stringify(migrated));return migrated}catch{return{}}}"
+              s = s.replace(old_fn, new_fn, 1)
+          old_clear = "function clearOAuthState(){sessionStorage.removeItem(STATE_KEY);delCookie(STATE_KEY)}"
+          new_clear = "function clearOAuthState(){sessionStorage.removeItem(STATE_KEY);delCookie(STATE_KEY);sessionStorage.removeItem(LEGACY_STATE_KEY);delCookie(LEGACY_STATE_KEY)}"
+          s = s.replace(old_clear, new_clear, 1)
+          old_random = "function random(){const a=new Uint8Array(16);crypto.getRandomValues(a);return[...a].map(x=>x.toString(16).padStart(2,'0')).join('')}"
+          new_random = "function random(bytes=16){const a=new Uint8Array(bytes);crypto.getRandomValues(a);return[...a].map(x=>x.toString(16).padStart(2,'0')).join('')}"
+          s = s.replace(old_random, new_random, 1)
           old_start = "const state=random(),verifier=random(),challenge=await sha(verifier);"
           new_start = "const state=random(16),verifier=random(32),challenge=await sha(verifier);"
-          if old_start in s:
-              s = s.replace(old_start, new_start, 1)
+          s = s.replace(old_start, new_start, 1)
           p.write_text(s)
           PY
 
-      - name: Commit PKCE fix
+      - name: Commit patched OAuth client
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
