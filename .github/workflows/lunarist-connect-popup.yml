@@ -1,0 +1,56 @@
+name: Ensure Lunarist connect approval popup
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Lunarist connect auto-prompt
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('js/lunarist-integration.js')
+          s = p.read_text(encoding='utf-8')
+          marker = '/* EUGENE_LUNARIST_AUTO_PROMPT_V1 */'
+          if marker in s:
+              print('Auto-prompt already present')
+              raise SystemExit(0)
+          old = "function init(){\n  oauthDialogCss();"
+          new = """function autoPromptLunaristConnect(){
+  const q=new URL(location.href).searchParams;
+  if(q.get('connect')!=='lunarist'||q.get('code')||q.get('error')||window.__ecLunaristAutoPrompt)return;
+  window.__ecLunaristAutoPrompt=true;
+  setTimeout(async()=>{
+    const u=await me();
+    if(!u)return;
+    const l=await link(u.id);
+    if(clean(l?.lunarist_username))return;
+    const approved=await approveLunaristConnection();
+    if(approved)await start();
+  },250);
+}
+/* EUGENE_LUNARIST_AUTO_PROMPT_V1 */
+function init(){
+  oauthDialogCss();"""
+          if old not in s:
+              raise SystemExit('Expected init marker not found')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+      - name: Commit patch
+        shell: bash
+        run: |
+          if git diff --quiet -- js/lunarist-integration.js; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/lunarist-integration.js
+          git commit -m "Auto-show Lunarist connect approval popup [skip ci]"
+          git push
