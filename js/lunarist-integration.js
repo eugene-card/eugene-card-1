@@ -2,19 +2,19 @@
 const L='https://lunaristudio.vercel.app';
 const CLIENT_ID='eugene-card';
 const REDIRECT_URI='https://eugene-card-1.vercel.app/?connect=lunarist';
-const ROOT='ec-lunarist-control',HOST='ec-lunarist-host',MENU_CLASS='ec-l-menu',STATE_KEY='ec-lunarist-oauth-pending';
+const ROOT='ec-lunarist-control',HOST='ec-lunarist-host',MENU_CLASS='ec-l-menu',STATE_KEY='ec-lunarist-oauth-pending',LEGACY_STATE_KEY='ec-lunarist-oauth-state';
 if(window.__EUGENE_LUNARIST_SINGLETON__)return;window.__EUGENE_LUNARIST_SINGLETON__=true;
 const db=()=>window.supabaseClient;
 const clean=v=>String(v||'').trim().replace(/^@/,'');
 function setCookie(k,v){document.cookie=encodeURIComponent(k)+'='+encodeURIComponent(v)+'; Max-Age=600; Path=/; SameSite=Lax'}
 function getCookie(k){const p=encodeURIComponent(k)+'=';return document.cookie.split(';').map(x=>x.trim()).find(x=>x.indexOf(p)===0)?.slice(p.length)||''}
 function delCookie(k){document.cookie=encodeURIComponent(k)+'=; Max-Age=0; Path=/; SameSite=Lax'}
-function readPending(){try{const raw=sessionStorage.getItem(STATE_KEY)||getCookie(STATE_KEY);const parsed=raw?JSON.parse(raw):{};return parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed:{}}catch{return{}}}
+function readPending(){try{const raw=sessionStorage.getItem(STATE_KEY)||getCookie(STATE_KEY);const parsed=raw?JSON.parse(raw):{};if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)&&Object.keys(parsed).length)return parsed;const legacyRaw=sessionStorage.getItem(LEGACY_STATE_KEY)||getCookie(LEGACY_STATE_KEY);if(!legacyRaw)return{};const legacy=JSON.parse(legacyRaw);if(!legacy||typeof legacy!=='object'||Array.isArray(legacy))return{};const legacyState=String(legacy.state||'');const legacyVerifier=String(legacy.verifier||'');if(!legacyState||!legacyVerifier)return{};const migrated={[legacyState]:{verifier:legacyVerifier,createdAt:Number(legacy.createdAt||Date.now())}};sessionStorage.setItem(STATE_KEY,JSON.stringify(migrated));setCookie(STATE_KEY,JSON.stringify(migrated));return migrated}catch{return{}}}
 function writePending(p){const now=Date.now(),fresh={};Object.keys(p||{}).forEach(k=>{const v=p[k];if(v&&typeof v==='object'&&typeof v.verifier==='string'&&now-Number(v.createdAt||0)<600000)fresh[k]=v});const keys=Object.keys(fresh).sort((a,b)=>Number(fresh[b].createdAt||0)-Number(fresh[a].createdAt||0)).slice(0,8);const out={};keys.forEach(k=>out[k]=fresh[k]);const raw=JSON.stringify(out);sessionStorage.setItem(STATE_KEY,raw);setCookie(STATE_KEY,raw)}
 function saveOAuthState(state,verifier){const p=readPending();p[state]={verifier,createdAt:Date.now()};writePending(p)}
 function loadOAuthState(state){const p=readPending();const saved=p[state];if(!saved)return null;if(Date.now()-Number(saved.createdAt||0)>=600000){delete p[state];writePending(p);return null}return saved}
 function consumeOAuthState(state){const p=readPending();if(state&&p[state]){delete p[state];writePending(p)}}
-function clearOAuthState(){sessionStorage.removeItem(STATE_KEY);delCookie(STATE_KEY)}
+function clearOAuthState(){sessionStorage.removeItem(STATE_KEY);delCookie(STATE_KEY);sessionStorage.removeItem(LEGACY_STATE_KEY);delCookie(LEGACY_STATE_KEY)}
 async function me(){try{return window.EugeneCardAuth?.user||(await db()?.auth?.getUser())?.data?.user||null}catch{return null}}
 async function token(){try{return(await db()?.auth?.getSession())?.data?.session?.access_token||null}catch{return null}}
 async function link(id){try{const r=await db().from('lunarist_links').select('lunarist_user_id,lunarist_username,lunarist_profile_url,last_synced_at').eq('eugene_user_id',id).maybeSingle();return r.error?null:r.data}catch{return null}}
