@@ -2,6 +2,7 @@
 (function () {
   'use strict';
   let viewPatchTimer = 0;
+  let viewRefreshTimer = 0;
 
   function boot() {
     const client = window.supabaseClient;
@@ -28,43 +29,89 @@
     }
 
     window.__cardTrackingStorage = 'supabase';
+    window.refreshEugeneCardViewCounts = () => patchVisibleViewCounts(client);
     patchVisibleViewCounts(client);
+
     const observer = new MutationObserver(() => {
       clearTimeout(viewPatchTimer);
       viewPatchTimer = setTimeout(() => patchVisibleViewCounts(client), 180);
     });
-    observer.observe(document.body, {subtree:true, childList:true});
-    client.channel('card-view-counts-ui').on('postgres_changes',{event:'*',schema:'public',table:'card_views'},()=>patchVisibleViewCounts(client)).subscribe();
+    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+
+    document.addEventListener('click', event => {
+      const card = event.target?.closest?.('[data-card-id],[data-id],[data-card],article,.card-holo-premium,.card-holo-standard');
+      if (!card) return;
+      clearTimeout(viewRefreshTimer);
+      viewRefreshTimer = setTimeout(() => patchVisibleViewCounts(client), 350);
+      setTimeout(() => patchVisibleViewCounts(client), 1100);
+    }, true);
+
+    client.channel('card-view-counts-ui')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'card_views' }, () => patchVisibleViewCounts(client))
+      .subscribe();
+
     console.info('[Supabase] Card views + live presence wired to Supabase');
+  }
+
+  function normalizeSerial(value) {
+    const raw = String(value || '').replace(/^#/, '').trim();
+    if (!raw) return '';
+    const match = raw.match(/\d+/);
+    return match ? String(Number(match[0])).padStart(3, '0') : '';
+  }
+
+  function viewTextPattern() {
+    return /\b(\d+)\s*(views?|kali\s+dilihat)\b/i;
+  }
+
+  function findCardId(el, bySerial) {
+    let node = el;
+    for (let depth = 0; node && depth < 8; depth++, node = node.parentElement) {
+      const direct = node.getAttribute?.('data-card-id') || node.getAttribute?.('data-id') || node.getAttribute?.('data-card');
+      if (direct) return String(direct);
+      const serialText = node.textContent || '';
+      const serials = serialText.match(/#?\b\d{1,4}\b/g) || [];
+      for (const serial of serials) {
+        const key = normalizeSerial(serial);
+        if (key && bySerial.has(key)) return bySerial.get(key);
+      }
+    }
+    return '';
   }
 
   async function patchVisibleViewCounts(client) {
     try {
-      const cards = await client.from('cards').select('id,serial');
-      const views = await client.from('card_views').select('card_id,views');
-      if (cards.error || views.error) return;
-      const byId = new Map((views.data || []).map(r => [String(r.card_id), Number(r.views || 0)]));
-      const bySerial = new Map((cards.data || []).map(r => [String(r.serial || '').replace(/^#/, '').trim(), String(r.id)]));
-      const candidates = [...document.querySelectorAll('[data-card-id],[data-id],[data-card],article,.card-holo-premium,.card-holo-standard')];
-      for (const el of candidates) {
-        const text = (el.textContent || '').trim();
-        if (!/\b\d+\s+views?\b/i.test(text)) continue;
-        let id = el.getAttribute('data-card-id') || el.getAttribute('data-id') || el.getAttribute('data-card');
-        if (!id) {
-          const serialMatch = text.match(/#?([0-9]{2,})/);
-          if (serialMatch) id = bySerial.get(serialMatch[1]);
-        }
+      const [{ data: cards, error: cardsError }, { data: views, error: viewsError }] = await Promise.all([
+        client.from('cards').select('id,serial'),
+        client.from('card_views').select('card_id,views')
+      ]);
+      if (cardsError || viewsError) return;
+
+      const byId = new Map((views || []).map(row => [String(row.card_id), Number(row.views || 0)]));
+      const bySerial = new Map();
+      (cards || []).forEach(row => {
+        const key = normalizeSerial(row.serial);
+        if (key) bySerial.set(key, String(row.id));
+      });
+
+      const nodes = [...document.querySelectorAll('body *')].filter(el => viewTextPattern().test(el.textContent || ''));
+      for (const el of nodes) {
+        const id = findCardId(el, bySerial);
         if (!id) continue;
         const count = byId.get(String(id));
         if (count == null) continue;
+
         const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-        const nodes=[];
-        while (walker.nextNode()) nodes.push(walker.currentNode);
-        for (const node of nodes) {
-          if (/\b\d+\s+views?\b/i.test(node.nodeValue || '')) {
-            node.nodeValue = node.nodeValue.replace(/\b\d+\s+views?\b/i, `${count} ${count === 1 ? 'view' : 'views'}`);
-            break;
-          }
+        const textNodes = [];
+        while (walker.nextNode()) textNodes.push(walker.currentNode);
+        for (const node of textNodes) {
+          if (!viewTextPattern().test(node.nodeValue || '')) continue;
+          node.nodeValue = node.nodeValue.replace(viewTextPattern(), (_, __, unit) =>
+            unit.toLowerCase().startsWith('kali')
+              ? `${count} kali dilihat`
+              : `${count} ${count === 1 ? 'view' : 'views'}`
+          );
+          break;
         }
       }
     } catch (_) {}
@@ -101,7 +148,7 @@
         if (error) throw error;
         return data ? snapshot(client, table, data) : { id, exists: false, data: () => undefined };
       },
-      async set(payload, opts) {
+      async set(payload) {
         if (table === 'card_views') {
           if (payload && payload.views && payload.views.__supabaseIncrement) {
             await client.rpc('increment_card_view', { p_card_id: id });
