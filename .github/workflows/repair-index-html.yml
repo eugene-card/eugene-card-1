@@ -1,0 +1,43 @@
+name: Repair index HTML
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Repair literal newline markup
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          original = s
+          s = s.replace('<head>\\n', '<head>\n')
+          s = s.replace('>\\n<', '>\n<')
+          s = s.replace('\\n</', '\n</')
+          duplicate = '  <script src="./js/supabase-supabase-compat.js"></script>\n  <script src="./js/supabase-supabase-compat.js"></script>'
+          s = s.replace(duplicate, '  <script src="./js/supabase-supabase-compat.js"></script>')
+          if s != original:
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit repaired HTML
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'No index repair needed.'
+            exit 0
+          fi
+          git commit -m 'Repair literal newline markup in index [skip ci]'
+          git push
