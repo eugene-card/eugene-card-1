@@ -25,32 +25,11 @@
   window.supabase.supabase = window.supabase.supabase || {};
   window.supabase.supabase.FieldValue = firestoreFieldValue;
 
-  // The compatibility shim is loaded more than once by the legacy page.
-  // Keep the Lunarist integration loader and DOM mount strictly singleton.
-  if (!window.__EC_LUNARIST_SCRIPT_LOADING) {
-    window.__EC_LUNARIST_SCRIPT_LOADING = true;
-    var script = document.createElement('script');
-    script.src = './js/lunarist-integration.js?v=2';
-    script.async = true;
-    script.onerror = function () {
-      window.__EC_LUNARIST_SCRIPT_LOADING = false;
-      console.warn('[Lunarist] integration module unavailable');
-    };
-    document.head.appendChild(script);
-  }
-
-  // Defensive cleanup for concurrent auth callbacks/mounts. Multiple async
-  // mount() calls can race before the first root is appended, creating several
-  // elements with the same id. Keep the first connector and remove later ones.
-  if (!window.__EC_LUNARIST_DEDUP_OBSERVER) {
-    window.__EC_LUNARIST_DEDUP_OBSERVER = true;
-    var dedupe = function () {
-      var nodes = document.querySelectorAll('#ec-lunarist-fab');
-      if (nodes.length > 1) {
-        for (var i = 1; i < nodes.length; i++) nodes[i].remove();
-      }
-    };
-    if (document.body) dedupe();
-    new MutationObserver(dedupe).observe(document.documentElement, { childList: true, subtree: true });
-  }
+  // NOTE: js/lunarist-integration.js is loaded exactly once, by the script
+  // list in js/supabase-init.js. It used to also be injected from here,
+  // which loaded the module twice (under two different URLs) and produced
+  // duplicate "Lunarist Connected" pills in the nav. Do not re-add a loader
+  // here — lunarist-integration.js is also self-healing (see its own
+  // dedupe-on-mount logic) in case this file still ends up on the page
+  // more than once.
 })();

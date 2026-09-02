@@ -188,12 +188,19 @@
         if (table === 'card_views') {
           const resolved = await resolveCardId(client, id);
           if (!resolved) throw new Error('card_id is required');
-          if (payload && payload.views && payload.views.__supabaseIncrement) {
+          // FieldValue.increment(n) sentinels (from supabase-firebase-compat.js) are
+          // Symbol-tagged objects shaped like { [FIELD_VALUE]: 'increment', amount: n }.
+          // Detect them generically by shape (any non-null object with a numeric
+          // `amount`, or the older `__supabaseIncrement` marker) rather than requiring
+          // one exact key, since the literal key never actually matched here.
+          const v = payload?.views;
+          const isIncrementSentinel = v && typeof v === 'object' && (typeof v.amount === 'number' || typeof v.__supabaseIncrement === 'number');
+          if (isIncrementSentinel) {
             const { error } = await client.rpc('increment_card_view', { p_card_id: resolved });
             if (error) throw error;
             return;
           }
-          const row = { card_id: resolved, views: Number(payload?.views || 0), updated_at: new Date().toISOString() };
+          const row = { card_id: resolved, views: Number(v || 0), updated_at: new Date().toISOString() };
           const { error } = await client.from(table).upsert(row, { onConflict: 'card_id' });
           if (error) throw error;
           return;
