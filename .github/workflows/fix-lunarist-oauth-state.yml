@@ -16,29 +16,41 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Patch OAuth state migration and PKCE verifier
+      - name: Patch Lunarist OAuth client
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('js/lunarist-integration.js')
           s = p.read_text()
-          if 'LEGACY_STATE_KEY' not in s:
-              old = "const ROOT='ec-lunarist-control',HOST='ec-lunarist-host',MENU_CLASS='ec-l-menu',STATE_KEY='ec-lunarist-oauth-pending';"
-              new = "const ROOT='ec-lunarist-control',HOST='ec-lunarist-host',MENU_CLASS='ec-l-menu',STATE_KEY='ec-lunarist-oauth-pending',LEGACY_STATE_KEY='ec-lunarist-oauth-state';"
-              s = s.replace(old, new, 1)
-          if 'legacyRaw=sessionStorage.getItem(LEGACY_STATE_KEY)' not in s:
-              old_fn = "function readPending(){try{const raw=sessionStorage.getItem(STATE_KEY)||getCookie(STATE_KEY);const parsed=raw?JSON.parse(raw):{};return parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed:{}}catch{return{}}}"
-              new_fn = "function readPending(){try{const raw=sessionStorage.getItem(STATE_KEY)||getCookie(STATE_KEY);const parsed=raw?JSON.parse(raw):{};if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)&&Object.keys(parsed).length)return parsed;const legacyRaw=sessionStorage.getItem(LEGACY_STATE_KEY)||getCookie(LEGACY_STATE_KEY);if(!legacyRaw)return{};const legacy=JSON.parse(legacyRaw);if(!legacy||typeof legacy!=='object'||Array.isArray(legacy))return{};const legacyState=String(legacy.state||'');const legacyVerifier=String(legacy.verifier||'');if(!legacyState||!legacyVerifier)return{};const migrated={[legacyState]:{verifier:legacyVerifier,createdAt:Number(legacy.createdAt||Date.now())}};sessionStorage.setItem(STATE_KEY,JSON.stringify(migrated));setCookie(STATE_KEY,JSON.stringify(migrated));return migrated}catch{return{}}}"
-              s = s.replace(old_fn, new_fn, 1)
-          old_clear = "function clearOAuthState(){sessionStorage.removeItem(STATE_KEY);delCookie(STATE_KEY)}"
-          new_clear = "function clearOAuthState(){sessionStorage.removeItem(STATE_KEY);delCookie(STATE_KEY);sessionStorage.removeItem(LEGACY_STATE_KEY);delCookie(LEGACY_STATE_KEY)}"
-          s = s.replace(old_clear, new_clear, 1)
-          old_random = "function random(){const a=new Uint8Array(16);crypto.getRandomValues(a);return[...a].map(x=>x.toString(16).padStart(2,'0')).join('')}"
-          new_random = "function random(bytes=16){const a=new Uint8Array(bytes);crypto.getRandomValues(a);return[...a].map(x=>x.toString(16).padStart(2,'0')).join('')}"
-          s = s.replace(old_random, new_random, 1)
-          old_start = "const state=random(),verifier=random(),challenge=await sha(verifier);"
-          new_start = "const state=random(16),verifier=random(32),challenge=await sha(verifier);"
-          s = s.replace(old_start, new_start, 1)
+
+          # Keep the existing PKCE implementation untouched. Add only a
+          # short-lived session hydration retry and user-facing approval/error UI.
+          if 'function waitForLunaristSession' not in s:
+              marker = "async function finishOAuth(){"
+              helper = "async function waitForLunaristSession(timeout=5000){const end=Date.now()+timeout;while(Date.now()<end){const t=await token();if(t)return t;await new Promise(r=>setTimeout(r,250))}return null}\nfunction closeOAuthDialog(){const d=document.getElementById('ec-l-oauth-dialog');if(d)d.remove()}\nfunction showOAuthDialog(title,message,actions){closeOAuthDialog();const d=document.createElement('div');d.id='ec-l-oauth-dialog';d.innerHTML='<div class=\"ec-l-dialog-backdrop\"></div><div class=\"ec-l-dialog\"><div class=\"ec-l-dialog-title\"></div><div class=\"ec-l-dialog-message\"></div><div class=\"ec-l-dialog-actions\"></div></div>';d.querySelector('.ec-l-dialog-title').textContent=title;d.querySelector('.ec-l-dialog-message').textContent=message;const box=d.querySelector('.ec-l-dialog-actions');(actions||[]).forEach(a=>{const b=document.createElement('button');b.type='button';b.className='ec-l-dialog-btn '+(a.kind||'');b.textContent=a.text;b.onclick=()=>{closeOAuthDialog();a.fn?.()};box.appendChild(b)});d.querySelector('.ec-l-dialog-backdrop').onclick=closeOAuthDialog;document.body.appendChild(d)}\nasync function approveLunaristConnection(){return new Promise(resolve=>{showOAuthDialog('Connect Lunarist Studio?','Eugene Card will request identity, profile, and offline access from your authenticated Lunarist account. You will be sent to Lunarist Studio to authorize the connection.',[{text:'Cancel',fn:()=>resolve(false)},{text:'Continue',kind:'primary',fn:()=>resolve(true)}])})}\n"
+              s = s.replace(marker, helper + marker, 1)
+
+          old_finish_token = "const t=await token();if(!t){toast('Please sign in to Eugene Card first.','error');return}"
+          new_finish_token = "const t=await waitForLunaristSession();if(!t){showOAuthDialog('Connection could not be completed','Your Eugene Card session was not ready when Lunarist returned. Please stay signed in and try Connect Lunarist again.',[{text:'Close'}]);return}"
+          s = s.replace(old_finish_token, new_finish_token, 1)
+
+          old_finish_catch = "}catch(e){toast(e.message||'Failed to complete Lunarist OAuth.','error')}}"
+          new_finish_catch = "}catch(e){showOAuthDialog('Lunarist authorization failed',e.message||'Failed to complete Lunarist OAuth. Please try the connection again.',[{text:'Close'}]);}}"
+          s = s.replace(old_finish_catch, new_finish_catch, 1)
+
+          old_action = "actions.append(action('Connect Lunarist',start));"
+          new_action = "actions.append(action('Connect Lunarist',async b=>{const approved=await approveLunaristConnection();if(approved)await start(b)}));"
+          s = s.replace(old_action, new_action, 1)
+
+          if 'ec-l-oauth-dialog' not in s.split("function css(){",1)[-1]:
+              css_marker = "function css(){"
+              css_add = "function oauthDialogCss(){if(document.getElementById('ec-l-oauth-dialog-css'))return;const s=document.createElement('style');s.id='ec-l-oauth-dialog-css';s.textContent='#ec-l-oauth-dialog{position:fixed;inset:0;z-index:2147483647;font-family:Inter,system-ui,sans-serif}.ec-l-dialog-backdrop{position:absolute;inset:0;background:rgba(2,6,23,.72);backdrop-filter:blur(7px)}.ec-l-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(430px,calc(100vw - 32px));padding:22px;border:1px solid rgba(129,140,248,.3);border-radius:20px;background:linear-gradient(145deg,#111827,#030712);color:#f8fafc;box-shadow:0 30px 90px rgba(0,0,0,.65)}.ec-l-dialog-title{font-size:18px;font-weight:900}.ec-l-dialog-message{margin-top:9px;color:#94a3b8;font-size:12px;line-height:1.6}.ec-l-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.ec-l-dialog-btn{border:1px solid rgba(148,163,184,.22);border-radius:11px;padding:9px 14px;background:#1e293b;color:#e2e8f0;font:800 12px Inter,system-ui,sans-serif;cursor:pointer}.ec-l-dialog-btn.primary{background:#4f46e5;border-color:#6366f1;color:white}.ec-l-dialog-btn:hover{filter:brightness(1.08)}';document.head.appendChild(s)}\n"
+              s = s.replace(css_marker, css_add + css_marker, 1)
+
+          old_init = "function init(){\n  const run=async()=>{cleanupLiteralEscapedNewlines();await finishOAuth();await mount()};"
+          new_init = "function init(){\n  oauthDialogCss();\n  const run=async()=>{cleanupLiteralEscapedNewlines();await finishOAuth();await mount()};"
+          s = s.replace(old_init, new_init, 1)
+
           p.write_text(s)
           PY
 
@@ -48,5 +60,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add js/lunarist-integration.js
           git diff --cached --quiet && exit 0
-          git commit -m "Fix Eugene Card PKCE verifier length [skip ci]"
+          git commit -m "Add Lunarist connect approval and callback recovery [skip ci]"
           git push origin main
