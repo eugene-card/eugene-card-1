@@ -12,78 +12,77 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply mobile floating navigation styles
-        shell: python
+      - name: Apply mobile navigation and modal stacking styles
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          marker = '/* EUGENE_MOBILE_FLOATING_TABS_V1 */'
+          marker = '/* EUGENE_MOBILE_MODAL_STACK_V2 */'
           if marker in s:
-              print('Mobile floating tabs already present')
+              print('Mobile modal stacking patch already present')
               raise SystemExit(0)
+
           css = r'''
-<style>
-/* EUGENE_MOBILE_FLOATING_TABS_V1 */
+<style id="eugene-mobile-modal-stack-v2">
+/* EUGENE_MOBILE_MODAL_STACK_V2 */
 @media (max-width: 768px) {
-  header nav {
-    position: fixed !important;
-    left: 12px !important;
-    right: 12px !important;
-    bottom: max(12px, env(safe-area-inset-bottom)) !important;
-    top: auto !important;
-    width: auto !important;
-    max-width: 680px;
-    margin: 0 auto !important;
-    padding: 8px !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: space-around;
-    gap: 4px;
-    z-index: 9999;
-    border: 1px solid rgba(148,163,184,.16);
-    border-radius: 22px;
-    background: rgba(3,7,18,.86) !important;
-    backdrop-filter: blur(22px) saturate(150%);
-    -webkit-backdrop-filter: blur(22px) saturate(150%);
-    box-shadow: 0 14px 40px rgba(0,0,0,.45), 0 0 28px rgba(99,102,241,.12);
+  /* The mobile navigation remains usable, but every popup/drawer is above it. */
+  header.sticky { z-index:1000 !important; }
+  header nav { z-index:1000 !important; }
+  .mobile-nav { z-index:1000 !important; }
+
+  #profile-manager-modal,
+  #complete-profile-modal,
+  #admin-edit-collector-modal,
+  #generic-confirm-modal,
+  #auction-winner-modal,
+  #auth-modal,
+  #card-detail-modal,
+  #image-preview-modal,
+  #onboarding-modal,
+  #loading-modal,
+  #chat-drawer-overlay,
+  #cart-drawer-overlay {
+    z-index:20000 !important;
   }
 
-  header nav button {
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 48px;
-    padding: 7px 5px !important;
-    border-radius: 16px !important;
-    display: flex !important;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    font-size: 10px !important;
-    line-height: 1.1;
-    white-space: nowrap;
+  #cart-drawer {
+    z-index:20001 !important;
+    top:0 !important;
+    bottom:0 !important;
+    height:100dvh !important;
+    max-height:100dvh !important;
+    padding-top:max(16px, env(safe-area-inset-top)) !important;
+    padding-bottom:max(16px, env(safe-area-inset-bottom)) !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch;
   }
 
-  header nav button i,
-  header nav button svg {
-    font-size: 17px;
-    line-height: 1;
+  #profile-manager-modal {
+    z-index:20000 !important;
+    padding-top:max(10px, env(safe-area-inset-top)) !important;
+    padding-bottom:max(10px, env(safe-area-inset-bottom)) !important;
   }
 
-  header nav button.bg-slate-800::after {
-    bottom: 4px !important;
-    left: 30% !important;
-    right: 30% !important;
-    height: 2px;
+  #profile-manager-modal .profile-manager-modal-panel {
+    max-height:calc(100dvh - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom))) !important;
   }
 
-  main {
-    padding-bottom: 104px !important;
+  #profile-manager-modal .profile-manager-modal-panel > button:first-child,
+  #cart-drawer > div:first-child button,
+  #complete-profile-modal > div:first-child > button,
+  #admin-edit-collector-modal > div:first-child > button {
+    z-index:50 !important;
+    touch-action:manipulation !important;
   }
 
-  body {
-    padding-bottom: env(safe-area-inset-bottom);
+  /* Avoid browser scroll chaining while a popup is open. */
+  #profile-manager-modal,
+  #cart-drawer-overlay,
+  #cart-drawer {
+    overscroll-behavior:contain !important;
   }
 }
 </style>
@@ -92,6 +91,7 @@ jobs:
               raise SystemExit('Could not find </head> in index.html')
           s = s.replace('</head>', css + '\n</head>', 1)
           p.write_text(s, encoding='utf-8')
+          PY
       - name: Commit patch
         shell: bash
         run: |
@@ -99,5 +99,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Move mobile tabs to floating bottom navigation [skip ci]"
+          git commit -m "Fix mobile profile and cart popup stacking [skip ci]"
           git push
