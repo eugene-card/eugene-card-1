@@ -52,3 +52,27 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',load,{once:true}); else load();
 })();
+
+/* Mobile modal stacking fix. This file is loaded after app.js, so inject a final CSS layer at runtime. */
+(function(){
+  function install(){
+    if(document.getElementById('eugene-mobile-modal-stack-v2')) return;
+    const style=document.createElement('style');
+    style.id='eugene-mobile-modal-stack-v2';
+    style.textContent=`
+@media (max-width:768px){
+  header.sticky{z-index:1000!important}
+  header nav{z-index:1000!important}
+  .mobile-nav{z-index:1000!important}
+  #profile-manager-modal,#complete-profile-modal,#admin-edit-collector-modal,#generic-confirm-modal,#auction-winner-modal,#auth-modal,#card-detail-modal,#image-preview-modal,#onboarding-modal,#loading-modal,#chat-drawer-overlay,#cart-drawer-overlay{z-index:20000!important}
+  #cart-drawer{z-index:20001!important;top:0!important;bottom:0!important;height:100dvh!important;max-height:100dvh!important;padding-top:max(16px,env(safe-area-inset-top))!important;padding-bottom:max(16px,env(safe-area-inset-bottom))!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+  #profile-manager-modal{z-index:20000!important;padding-top:max(10px,env(safe-area-inset-top))!important;padding-bottom:max(10px,env(safe-area-inset-bottom))!important}
+  #profile-manager-modal .profile-manager-modal-panel{max-height:calc(100dvh - max(20px,env(safe-area-inset-top)) - max(20px,env(safe-area-inset-bottom)))!important}
+  #profile-manager-modal .profile-manager-modal-panel>button:first-child,#cart-drawer>div:first-child button,#complete-profile-modal>div:first-child>button,#admin-edit-collector-modal>div:first-child>button{z-index:50!important;touch-action:manipulation!important}
+  #profile-manager-modal,#cart-drawer-overlay,#cart-drawer{overscroll-behavior:contain!important}
+}
+`;
+    document.head.appendChild(style);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',install,{once:true}); else install();
+})();
