@@ -4,6 +4,7 @@
 
   const ROOT_IDS = ['profile-manager-modal', 'cart-drawer-overlay'];
   const PANEL_IDS = ['cart-drawer'];
+  const PROFILE_PANEL = '.profile-manager-modal-panel';
   const STYLE_ID = 'eugene-notification-style-popouts';
   const HIDDEN_ATTR = 'data-eugene-duplicate-popup';
 
@@ -21,16 +22,17 @@
     background:rgba(2,6,23,.28)!important;
     pointer-events:none!important;
     padding:0!important;
-    overflow:visible!important;
+    overflow:hidden!important;
   }
 
   #profile-manager-modal[${HIDDEN_ATTR}="1"],
   #cart-drawer-overlay[${HIDDEN_ATTR}="1"],
-  #cart-drawer[${HIDDEN_ATTR}="1"]{
+  #cart-drawer[${HIDDEN_ATTR}="1"],
+  #profile-manager-modal .profile-manager-modal-panel[${HIDDEN_ATTR}="1"]{
     display:none!important;
   }
 
-  #profile-manager-modal > *:first-child,
+  #profile-manager-modal .profile-manager-modal-panel,
   #cart-drawer{
     pointer-events:auto!important;
     position:fixed!important;
@@ -57,22 +59,27 @@
     animation:eugenePopoutIn .18s ease-out!important;
   }
 
-  #profile-manager-modal > *:first-child{
+  #profile-manager-modal .profile-manager-modal-panel{
     padding-bottom:24px!important;
     scrollbar-width:thin!important;
+    scrollbar-color:rgba(139,92,246,.65) rgba(2,6,23,.35)!important;
   }
 
-  #profile-manager-modal .profile-manager-modal-panel{
-    height:auto!important;
+  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar,
+  #cart-drawer::-webkit-scrollbar{width:6px!important}
+  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar-track,
+  #cart-drawer::-webkit-scrollbar-track{background:rgba(2,6,23,.35)!important;border-radius:999px!important}
+  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar-thumb,
+  #cart-drawer::-webkit-scrollbar-thumb{background:rgba(139,92,246,.65)!important;border-radius:999px!important}
+
+  #profile-manager-modal .profile-manager-modal-panel > .space-y-3{
     min-height:0!important;
-    max-height:none!important;
-    overflow:visible!important;
+    padding-bottom:max(20px,env(safe-area-inset-bottom))!important;
   }
 
   #cart-drawer{
     padding-top:8px!important;
     padding-bottom:max(12px,env(safe-area-inset-bottom))!important;
-    scrollbar-width:thin!important;
   }
 
   #profile-manager-modal button,
@@ -80,10 +87,9 @@
     touch-action:manipulation!important;
   }
 
-  #profile-manager-modal button[aria-label*="lose" i],
-  #profile-manager-modal button[title*="lose" i],
-  #cart-drawer button[aria-label*="lose" i],
-  #cart-drawer button[title*="lose" i]{
+  #profile-manager-modal button[onclick*="closeProfileManagerModal"],
+  #cart-drawer button[onclick*="closeCart"],
+  #cart-drawer button[onclick*="close"]{
     position:absolute!important;
     top:10px!important;
     right:10px!important;
@@ -96,6 +102,7 @@
     align-items:center!important;
     justify-content:center!important;
     border-radius:14px!important;
+    touch-action:manipulation!important;
   }
 
   @keyframes eugenePopoutIn{
@@ -122,10 +129,7 @@
   function dedupe(id) {
     const els = allById(id);
     if (els.length <= 1) return els[0] || null;
-
-    let keeper = els.find(el => !isHidden(el));
-    if (!keeper) keeper = els[0];
-
+    let keeper = els.find(el => !isHidden(el)) || els[0];
     els.forEach(el => {
       if (el === keeper) {
         el.removeAttribute(HIDDEN_ATTR);
@@ -137,18 +141,34 @@
     return keeper;
   }
 
+  function dedupeProfilePanels(root) {
+    if (!root) return;
+    const panels = Array.from(root.querySelectorAll(PROFILE_PANEL));
+    if (panels.length <= 1) return;
+    const keeper = panels.find(el => !isHidden(el)) || panels[0];
+    panels.forEach(el => {
+      if (el === keeper) {
+        el.removeAttribute(HIDDEN_ATTR);
+        return;
+      }
+      el.setAttribute(HIDDEN_ATTR, '1');
+      el.style.setProperty('display', 'none', 'important');
+    });
+  }
+
   function moveToBody(el) {
     if (el && el.parentElement !== document.body) document.body.appendChild(el);
   }
 
   function prepare() {
     installStyle();
-
     ROOT_IDS.forEach(id => {
       const el = dedupe(id);
-      if (el) moveToBody(el);
+      if (el) {
+        dedupeProfilePanels(el);
+        moveToBody(el);
+      }
     });
-
     PANEL_IDS.forEach(id => {
       const el = dedupe(id);
       if (el) moveToBody(el);
@@ -159,7 +179,7 @@
     prepare();
     const observer = new MutationObserver(() => prepare());
     observer.observe(document.documentElement, { childList: true, subtree: true });
-    setInterval(prepare, 500);
+    setInterval(prepare, 1000);
   }
 
   if (document.readyState === 'loading') {
