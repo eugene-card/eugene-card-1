@@ -57,7 +57,7 @@
     if(window.__eugeneMobilePopoutsLoaded) return;
     window.__eugeneMobilePopoutsLoaded = true;
     const s=document.createElement('script');
-    s.src='./js/mobile-popup-popout.js?v=2';
+    s.src='./js/mobile-popup-popout.js?v=4';
     s.async=false;
     document.head.appendChild(s);
   }
