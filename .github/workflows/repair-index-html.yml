@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - name: Repair literal newline markup and mobile modal stacking
+      - name: Repair literal newline markup
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -27,70 +27,6 @@ jobs:
           s = s.replace('\\n</', '\n</')
           duplicate = '  <script src="./js/supabase-supabase-compat.js"></script>\n  <script src="./js/supabase-supabase-compat.js"></script>'
           s = s.replace(duplicate, '  <script src="./js/supabase-supabase-compat.js"></script>')
-
-          marker = '<style id="eugene-mobile-modal-stack-fix">'
-          if marker not in s:
-              css = r'''<style id="eugene-mobile-modal-stack-fix">
-/* Final mobile modal layer: the sticky header intentionally sits below dialogs/drawers. */
-@media (max-width: 768px){
-  /* Keep all interactive modal surfaces above the top navigation and bottom tabs. */
-  #profile-manager-modal,
-  #complete-profile-modal,
-  #admin-edit-collector-modal,
-  #generic-confirm-modal,
-  #auction-winner-modal,
-  #auth-modal,
-  #card-detail-modal,
-  #image-preview-modal,
-  #onboarding-modal,
-  #loading-modal,
-  #chat-drawer-overlay,
-  #cart-drawer-overlay{
-    z-index:20000 !important;
-  }
-
-  #cart-drawer{
-    z-index:20001 !important;
-    top:0 !important;
-    bottom:0 !important;
-    height:100dvh !important;
-    max-height:100dvh !important;
-    padding-top:max(16px, env(safe-area-inset-top)) !important;
-    padding-bottom:max(16px, env(safe-area-inset-bottom)) !important;
-    overflow-y:auto !important;
-    -webkit-overflow-scrolling:touch;
-  }
-
-  #profile-manager-modal{
-    z-index:20000 !important;
-    padding-top:max(10px, env(safe-area-inset-top)) !important;
-    padding-bottom:max(10px, env(safe-area-inset-bottom)) !important;
-  }
-
-  #profile-manager-modal .profile-manager-modal-panel{
-    max-height:calc(100dvh - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom))) !important;
-  }
-
-  /* The close control must remain above panel content and easy to tap. */
-  #profile-manager-modal .profile-manager-modal-panel > button:first-child,
-  #cart-drawer > div:first-child button,
-  #complete-profile-modal > div:first-child > button,
-  #admin-edit-collector-modal > div:first-child > button{
-    z-index:50 !important;
-    touch-action:manipulation !important;
-  }
-
-  /* Preserve the existing sticky header/nav, but never let it cover dialogs. */
-  header.sticky{
-    z-index:1000 !important;
-  }
-  .mobile-nav{
-    z-index:1000 !important;
-  }
-}
-</style>'''
-              s = s.replace('</head>', css + '\n</head>', 1)
-
           if s != original:
               p.write_text(s, encoding='utf-8')
           PY
@@ -103,5 +39,5 @@ jobs:
             echo 'No index repair needed.'
             exit 0
           fi
-          git commit -m 'Fix mobile modal stacking and cart drawer [skip ci]'
+          git commit -m 'Repair literal newline markup in index [skip ci]'
           git push
