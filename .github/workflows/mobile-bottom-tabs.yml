@@ -12,86 +12,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply mobile floating navigation styles
+      - name: Apply mobile navigation and popout surfaces
         shell: python
         run: |
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          marker = '/* EUGENE_MOBILE_FLOATING_TABS_V1 */'
-          if marker in s:
-              print('Mobile floating tabs already present')
-              raise SystemExit(0)
-          css = r'''
+          changed = False
+
+          if '/* EUGENE_MOBILE_FLOATING_TABS_V1 */' not in s:
+              css = r'''
 <style>
 /* EUGENE_MOBILE_FLOATING_TABS_V1 */
 @media (max-width: 768px) {
-  header nav {
-    position: fixed !important;
-    left: 12px !important;
-    right: 12px !important;
-    bottom: max(12px, env(safe-area-inset-bottom)) !important;
-    top: auto !important;
-    width: auto !important;
-    max-width: 680px;
-    margin: 0 auto !important;
-    padding: 8px !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: space-around;
-    gap: 4px;
-    z-index: 9999;
-    border: 1px solid rgba(148,163,184,.16);
-    border-radius: 22px;
-    background: rgba(3,7,18,.86) !important;
-    backdrop-filter: blur(22px) saturate(150%);
-    -webkit-backdrop-filter: blur(22px) saturate(150%);
-    box-shadow: 0 14px 40px rgba(0,0,0,.45), 0 0 28px rgba(99,102,241,.12);
-  }
-
-  header nav button {
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 48px;
-    padding: 7px 5px !important;
-    border-radius: 16px !important;
-    display: flex !important;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    font-size: 10px !important;
-    line-height: 1.1;
-    white-space: nowrap;
-  }
-
-  header nav button i,
-  header nav button svg {
-    font-size: 17px;
-    line-height: 1;
-  }
-
-  header nav button.bg-slate-800::after {
-    bottom: 4px !important;
-    left: 30% !important;
-    right: 30% !important;
-    height: 2px;
-  }
-
-  main {
-    padding-bottom: 104px !important;
-  }
-
-  body {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+  header nav { position:fixed!important; left:12px!important; right:12px!important; bottom:max(12px,env(safe-area-inset-bottom))!important; top:auto!important; width:auto!important; max-width:680px; margin:0 auto!important; padding:8px!important; display:flex!important; align-items:center; justify-content:space-around; gap:4px; z-index:9999; border:1px solid rgba(148,163,184,.16); border-radius:22px; background:rgba(3,7,18,.86)!important; backdrop-filter:blur(22px) saturate(150%); -webkit-backdrop-filter:blur(22px) saturate(150%); box-shadow:0 14px 40px rgba(0,0,0,.45),0 0 28px rgba(99,102,241,.12); }
+  header nav button { flex:1 1 0; min-width:0; min-height:48px; padding:7px 5px!important; border-radius:16px!important; display:flex!important; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:10px!important; line-height:1.1; white-space:nowrap; }
+  main { padding-bottom:104px!important; }
+  body { padding-bottom:env(safe-area-inset-bottom); }
 }
 </style>
 '''
-          if '</head>' not in s:
-              raise SystemExit('Could not find </head> in index.html')
-          s = s.replace('</head>', css + '\n</head>', 1)
-          p.write_text(s, encoding='utf-8')
+              s = s.replace('</head>', css + '\n</head>', 1)
+              changed = True
+
+          script = '<script src="./js/mobile-popup-popout.js"></script>'
+          if script not in s:
+              s = s.replace('</head>', '  ' + script + '\n</head>', 1)
+              changed = True
+
+          if changed:
+              p.write_text(s, encoding='utf-8')
       - name: Commit patch
         shell: bash
         run: |
@@ -99,5 +49,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Move mobile tabs to floating bottom navigation [skip ci]"
+          git commit -m "Load notification-style mobile popouts [skip ci]"
           git push
