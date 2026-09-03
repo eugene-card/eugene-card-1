@@ -50,3 +50,17 @@
 
   window.EugeneCardViews = { increment, load };
 })();
+
+/* Ensure the notification-style mobile Profile and Cart popouts are loaded on every page. */
+(function(){
+  function load(){
+    if(window.__eugeneMobilePopoutsLoaded) return;
+    window.__eugeneMobilePopoutsLoaded = true;
+    const s=document.createElement('script');
+    s.src='./js/mobile-popup-popout.js?v=2';
+    s.async=false;
+    document.head.appendChild(s);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',load,{once:true});
+  else load();
+})();
