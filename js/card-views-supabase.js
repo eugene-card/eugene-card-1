@@ -1,13 +1,11 @@
-/* Supabase-backed card view counter. */
+/* Supabase-backed card view counter. Every qualifying card click counts, including logged-out visitors. */
 (function(){'use strict';
-  const viewedThisPage = new Set();
   const client = () => window.supabaseClient;
 
   async function increment(cardId){
     cardId = String(cardId || '').trim();
     const c = client();
-    if(!cardId || !c || viewedThisPage.has(cardId)) return null;
-    viewedThisPage.add(cardId);
+    if(!cardId || !c) return null;
     try {
       const { data, error } = await c.rpc('increment_card_view', { p_card_id: cardId });
       if(error) throw error;
@@ -15,7 +13,6 @@
       document.querySelectorAll('[data-card-views="'+CSS.escape(cardId)+'"]').forEach(el => el.textContent = views.toLocaleString());
       return views;
     } catch(error){
-      viewedThisPage.delete(cardId);
       console.warn('[Eugene Card] card view increment failed:', error);
       return null;
     }
@@ -85,7 +82,7 @@
     if(window.__eugeneClientEditionCatalogLoaded) return;
     window.__eugeneClientEditionCatalogLoaded = true;
     const s=document.createElement('script');
-    s.src='./js/client-edition-catalog.js?v=1';
+    s.src='./js/client-edition-catalog.js?v=2';
     s.async=false;
     document.head.appendChild(s);
   }
