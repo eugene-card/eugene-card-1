@@ -1,91 +1,17 @@
 /* Supabase-backed card view counter. Every qualifying card click counts, including logged-out visitors. */
 (function(){'use strict';
   const client = () => window.supabaseClient;
-
   async function increment(cardId){
-    cardId = String(cardId || '').trim();
-    const c = client();
-    if(!cardId || !c) return null;
-    try {
-      const { data, error } = await c.rpc('increment_card_view', { p_card_id: cardId });
-      if(error) throw error;
-      const views = Number(data || 0);
-      document.querySelectorAll('[data-card-views="'+CSS.escape(cardId)+'"]').forEach(el => el.textContent = views.toLocaleString());
-      return views;
-    } catch(error){
-      console.warn('[Eugene Card] card view increment failed:', error);
-      return null;
-    }
+    cardId=String(cardId||'').trim(); const c=client(); if(!cardId||!c)return null;
+    try{const{data,error}=await c.rpc('increment_card_view',{p_card_id:cardId});if(error)throw error;const views=Number(data||0);document.querySelectorAll('[data-card-views="'+CSS.escape(cardId)+'"]').forEach(el=>el.textContent=views.toLocaleString());return views;}catch(error){console.warn('[Eugene Card] card view increment failed:',error);return null;}
   }
-
-  async function load(cardId){
-    const c = client();
-    cardId = String(cardId || '').trim();
-    if(!c || !cardId) return 0;
-    try {
-      const { data, error } = await c.from('card_views').select('views').eq('card_id', cardId).maybeSingle();
-      if(error) throw error;
-      const views = Number(data?.views || 0);
-      document.querySelectorAll('[data-card-views="'+CSS.escape(cardId)+'"]').forEach(el => el.textContent = views.toLocaleString());
-      return views;
-    } catch(error){
-      console.warn('[Eugene Card] card view load failed:', error);
-      return 0;
-    }
-  }
-
-  function findCardId(target){
-    const el = target?.closest?.('[data-card-id],[data-card],[data-id]');
-    if(!el) return null;
-    return el.dataset.cardId || el.dataset.card || el.dataset.id || null;
-  }
-
-  document.addEventListener('click', event => {
-    const id = findCardId(event.target);
-    if(id) increment(id);
-  }, true);
-
-  window.EugeneCardViews = { increment, load };
+  async function load(cardId){const c=client();cardId=String(cardId||'').trim();if(!c||!cardId)return 0;try{const{data,error}=await c.from('card_views').select('views').eq('card_id',cardId).maybeSingle();if(error)throw error;const views=Number(data?.views||0);document.querySelectorAll('[data-card-views="'+CSS.escape(cardId)+'"]').forEach(el=>el.textContent=views.toLocaleString());return views;}catch(error){console.warn('[Eugene Card] card view load failed:',error);return 0;}}
+  function findCardId(target){const el=target?.closest?.('[data-card-id],[data-card],[data-id]');if(!el)return null;return el.dataset.cardId||el.dataset.card||el.dataset.id||null;}
+  document.addEventListener('click',event=>{const id=findCardId(event.target);if(id)increment(id);},true);
+  window.EugeneCardViews={increment,load};
 })();
-
-/* Ensure the notification-style mobile Profile and Cart popouts are loaded on every page. */
-(function(){
-  function load(){
-    if(window.__eugeneMobilePopoutsLoaded) return;
-    window.__eugeneMobilePopoutsLoaded = true;
-    const s=document.createElement('script');
-    s.src='./js/mobile-popup-popout.js?v=4';
-    s.async=false;
-    document.head.appendChild(s);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',load,{once:true});
-  else load();
-})();
-
-/* Load the persistent Inventory Edition dropdown + Add Edition action. */
-(function(){
-  function load(){
-    if(window.__eugeneInventoryEditionsLoaded) return;
-    window.__eugeneInventoryEditionsLoaded = true;
-    const s=document.createElement('script');
-    s.src='./js/inventory-editions.js?v=1';
-    s.async=false;
-    document.head.appendChild(s);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',load,{once:true});
-  else load();
-})();
-
-/* Load card-linked Client Edition benefits and make Catalog the default main page. */
-(function(){
-  function load(){
-    if(window.__eugeneClientEditionCatalogLoaded) return;
-    window.__eugeneClientEditionCatalogLoaded = true;
-    const s=document.createElement('script');
-    s.src='./js/client-edition-catalog.js?v=2';
-    s.async=false;
-    document.head.appendChild(s);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',load,{once:true});
-  else load();
-})();
+(function(){function load(){if(window.__eugeneMobilePopoutsLoaded)return;window.__eugeneMobilePopoutsLoaded=true;const s=document.createElement('script');s.src='./js/mobile-popup-popout.js?v=4';s.async=false;document.head.appendChild(s);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();})();
+(function(){function load(){if(window.__eugeneInventoryEditionsLoaded)return;window.__eugeneInventoryEditionsLoaded=true;const s=document.createElement('script');s.src='./js/inventory-editions.js?v=1';s.async=false;document.head.appendChild(s);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();})();
+(function(){function load(){if(window.__eugeneClientEditionCatalogLoaded)return;window.__eugeneClientEditionCatalogLoaded=true;const s=document.createElement('script');s.src='./js/client-edition-catalog.js?v=2';s.async=false;document.head.appendChild(s);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();})();
+/* Inventory editor modal: loaded after the global modal CSS so its internal scrolling wins. */
+(function(){function load(){if(window.__eugeneInventoryModalScrollFixLoaded)return;window.__eugeneInventoryModalScrollFixLoaded=true;const s=document.createElement('script');s.src='./js/inventory-modal-scroll-fix.js?v=1';s.async=false;document.head.appendChild(s);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();})();
