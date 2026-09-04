@@ -1,10 +1,11 @@
-/* Eugene Card mobile popout surfaces: profile + cart behave like the notification bell. */
+/* Eugene Card modal surfaces: profile + cart behave like notification popouts; inventory editor remains a scrollable dialog. */
 (function () {
   'use strict';
 
   const ROOT_IDS = ['profile-manager-modal', 'cart-drawer-overlay'];
   const PANEL_IDS = ['cart-drawer'];
   const PROFILE_PANEL = '.profile-manager-modal-panel';
+  const INVENTORY_MODAL = '#admin-edit-collector-modal';
   const STYLE_ID = 'eugene-notification-style-popouts';
   const HIDDEN_ATTR = 'data-eugene-duplicate-popup';
 
@@ -13,6 +14,30 @@
     const s = document.createElement('style');
     s.id = STYLE_ID;
     s.textContent = `
+/* Inventory card editor: keep the dialog fixed, but make its CONTENT scroll independently. */
+#admin-edit-collector-modal{
+  overflow:hidden!important;
+}
+#admin-edit-collector-modal > div:first-child{
+  box-sizing:border-box!important;
+  max-height:calc(100dvh - 32px)!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior:contain!important;
+  touch-action:pan-y!important;
+  scrollbar-width:thin!important;
+  scrollbar-color:rgba(139,92,246,.65) rgba(2,6,23,.35)!important;
+}
+#admin-edit-collector-modal > div:first-child::-webkit-scrollbar{width:6px!important}
+#admin-edit-collector-modal > div:first-child::-webkit-scrollbar-track{background:rgba(2,6,23,.35)!important;border-radius:999px!important}
+#admin-edit-collector-modal > div:first-child::-webkit-scrollbar-thumb{background:rgba(139,92,246,.65)!important;border-radius:999px!important}
+#admin-edit-collector-modal > div:first-child > button:first-child{
+  position:sticky!important;
+  top:0!important;
+  z-index:100!important;
+}
+
 @media (max-width:768px){
   #profile-manager-modal,
   #cart-drawer-overlay{
@@ -83,7 +108,8 @@
   }
 
   #profile-manager-modal button,
-  #cart-drawer button{
+  #cart-drawer button,
+  #admin-edit-collector-modal button{
     touch-action:manipulation!important;
   }
 
@@ -103,6 +129,27 @@
     justify-content:center!important;
     border-radius:14px!important;
     touch-action:manipulation!important;
+  }
+
+  /* On small screens the inventory editor uses the full available height and the inner panel scrolls. */
+  #admin-edit-collector-modal > div:first-child{
+    width:calc(100vw - 24px)!important;
+    max-width:calc(100vw - 24px)!important;
+    max-height:calc(100dvh - 24px)!important;
+    margin:12px!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior:contain!important;
+    touch-action:pan-y!important;
+    scrollbar-width:thin!important;
+    scrollbar-color:rgba(139,92,246,.65) rgba(2,6,23,.35)!important;
+  }
+
+  #admin-edit-collector-modal > div:first-child > button:first-child{
+    position:sticky!important;
+    top:0!important;
+    z-index:100!important;
   }
 
   @keyframes eugenePopoutIn{
@@ -129,7 +176,7 @@
   function dedupe(id) {
     const els = allById(id);
     if (els.length <= 1) return els[0] || null;
-    let keeper = els.find(el => !isHidden(el)) || els[0];
+    const keeper = els.find(el => !isHidden(el)) || els[0];
     els.forEach(el => {
       if (el === keeper) {
         el.removeAttribute(HIDDEN_ATTR);
@@ -182,9 +229,6 @@
     setInterval(prepare, 1000);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', run, { once: true });
-  } else {
-    run();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run, { once: true });
+  else run();
 })();
