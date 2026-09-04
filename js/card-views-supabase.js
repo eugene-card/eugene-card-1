@@ -64,3 +64,17 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',load,{once:true});
   else load();
 })();
+
+/* Load the persistent Inventory Edition dropdown + Add Edition action. */
+(function(){
+  function load(){
+    if(window.__eugeneInventoryEditionsLoaded) return;
+    window.__eugeneInventoryEditionsLoaded = true;
+    const s=document.createElement('script');
+    s.src='./js/inventory-editions.js?v=1';
+    s.async=false;
+    document.head.appendChild(s);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',load,{once:true});
+  else load();
+})();
