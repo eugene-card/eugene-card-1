@@ -6,6 +6,7 @@
   const BENEFIT_KEY = 'free_trade_tax';
   const DEFAULT_CATALOG_ID = 'view-catalog';
   let wrapped = false;
+  let tradeCollectionWrapped = false;
 
   const normalize = value => String(value || '').trim().replace(/\s+/g, ' ');
 
@@ -31,6 +32,14 @@
     if (hasClientEdition(card)) return { exempt: true, source: 'Client Edition', rate: 0 };
     if (isBetaEdition(card)) return { exempt: true, source: 'Beta Edition', rate: 0 };
     return { exempt: false, source: null, rate: 0.02 };
+  }
+
+  function getTradeTaxForCards(targetCard, offeredCard) {
+    const target = getTradeBenefit(targetCard);
+    const offered = getTradeBenefit(offeredCard);
+    const exempt = target.exempt || offered.exempt;
+    const sources = [target.source, offered.source].filter(Boolean);
+    return { rate: exempt ? 0 : 0.02, exempt, sources };
   }
 
   async function saveClientEdition(cardId, enabled) {
@@ -123,17 +132,51 @@
     };
   }
 
+  function wrapTradeRequests() {
+    if (tradeCollectionWrapped || !window.db || typeof window.db.collection !== 'function') return;
+    tradeCollectionWrapped = true;
+    const originalCollection = window.db.collection.bind(window.db);
+    window.db.collection = function (name) {
+      const collection = originalCollection(name);
+      if (String(name) !== 'tradeRequests' || !collection || typeof collection.doc !== 'function') return collection;
+      return new Proxy(collection, {
+        get(target, prop) {
+          if (prop !== 'doc') return target[prop];
+          return function (id) {
+            const doc = target.doc(id);
+            if (!doc || typeof doc.set !== 'function') return doc;
+            const originalSet = doc.set.bind(doc);
+            doc.set = async function (payload, options) {
+              const data = { ...(payload || {}) };
+              if (String(data.offerType || '').toUpperCase() === 'TRADE' && Array.isArray(window.inventory)) {
+                const targetCard = window.inventory.find(c => String(c.id) === String(data.cardId));
+                const offeredCard = window.inventory.find(c => String(c.id) === String(data.offeredCardId));
+                const benefit = getTradeTaxForCards(targetCard, offeredCard);
+                data.tradeTaxRate = benefit.rate;
+                data.tradeTaxAmount = Math.round(Number(data.plusAmount || 0) * benefit.rate);
+                data.tradeTaxExempt = benefit.exempt;
+                data.tradeTaxBenefits = benefit.sources;
+              }
+              return originalSet(data, options);
+            };
+            return doc;
+          };
+        }
+      });
+    };
+  }
+
   function showCatalogByDefault() {
     const catalog = document.getElementById(DEFAULT_CATALOG_ID);
     if (!catalog) return;
+    if (typeof window.switchTab === 'function') {
+      try { window.switchTab('catalog'); return; } catch (_) {}
+    }
     const home = document.getElementById('view-home');
     if (home && !home.classList.contains('hidden')) home.classList.add('hidden');
     catalog.classList.remove('hidden');
-
-    // Keep the existing navigation intact; only mark the Catalog destination active.
     document.querySelectorAll('nav button,[role="tab"],button').forEach(btn => {
       const label = normalize(btn.textContent).toLowerCase();
-      if (!label) return;
       if (label === 'catalog' || label.includes('catalog')) {
         btn.classList.add('bg-slate-800');
         btn.setAttribute('aria-selected', 'true');
@@ -153,19 +196,21 @@
   }
 
   function exposeHelpers() {
-    window.EugeneCardBenefits = { isBetaEdition, hasClientEdition, hasFreeTradeTax, getTradeTaxRate, getTradeBenefit, saveClientEdition };
+    window.EugeneCardBenefits = { isBetaEdition, hasClientEdition, hasFreeTradeTax, getTradeTaxRate, getTradeBenefit, getTradeTaxForCards, saveClientEdition };
   }
 
   function init() {
     injectStyles();
     exposeHelpers();
     wrapInventoryModal();
+    wrapTradeRequests();
     ensureClientField();
     showCatalogByDefault();
     patchTradeUI();
 
     const observer = new MutationObserver(() => {
       wrapInventoryModal();
+      wrapTradeRequests();
       ensureClientField();
       patchTradeUI();
     });
