@@ -78,3 +78,17 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',load,{once:true});
   else load();
 })();
+
+/* Load card-linked Client Edition benefits and make Catalog the default main page. */
+(function(){
+  function load(){
+    if(window.__eugeneClientEditionCatalogLoaded) return;
+    window.__eugeneClientEditionCatalogLoaded = true;
+    const s=document.createElement('script');
+    s.src='./js/client-edition-catalog.js?v=1';
+    s.async=false;
+    document.head.appendChild(s);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',load,{once:true});
+  else load();
+})();
